@@ -1,0 +1,70 @@
+{
+    "MASE": {
+        "name": "Test MASE",
+        "shortname": "MASE",
+        "unit": "number",
+        "group": "Performance",
+        "weight": 0.165,
+        "independent_of_task": true
+    },
+    "RMSE": {
+        "name": "Test RMSE",
+        "shortname": "RMSE",
+        "unit": "number",
+        "group": "Performance",
+        "weight": 0.0825,
+        "independent_of_task": true
+    },
+    "MAPE": {
+        "name": "Test MAPE",
+        "shortname": "MAPE",
+        "unit": "number",
+        "group": "Performance",
+        "weight": 0.0825,
+        "independent_of_task": true
+    },
+    "parameters": {
+        "name": "Number of Parameters",
+        "shortname": "Params",
+        "unit": "number",
+        "group": "Complexity",
+        "weight": 0.165,
+        "independent_of_task": true
+    },
+    "fsize": {
+        "name": "Model Size on Disc",
+        "shortname": "Size",
+        "unit": "byte",
+        "group": "Complexity",
+        "weight": 0.165,
+        "independent_of_task": true
+    },
+    "train_power_draw": {
+        "name": "Training Power Draw",
+        "shortname": "T Power",
+        "unit": "wattseconds",
+        "group": "Resources",
+        "weight": 0.1
+    },
+    "train_running_time": {
+        "name": "Training Time",
+        "shortname": "T Time",
+        "unit": "seconds",
+        "group": "Resources",
+        "weight": 0.065
+    },
+    "power_draw": {
+        "name": "Power Draw per Inference",
+        "shortname": "I Power",
+        "unit": "wattseconds",
+        "group": "Resources",
+        "weight": 0.1
+    },
+    "running_time": {
+        "name": "Running Time per Inference",
+        "shortname": "I Time",
+        "unit": "seconds",
+        "group": "Resources",
+        "weight": 0.065
+    }
+}

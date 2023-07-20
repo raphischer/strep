@@ -1,0 +1,14 @@
+{
+    "ml_backends": {
+        "GluonTS ": {"Packages": ["gluonts"]},
+        "Scikit-learn": {"Packages": ["scikit-learn"]}
+    },
+
+    "processor_shortforms": {
+        "NVIDIA A100-SXM4-40GB": "A100",
+        "Quadro RTX 5000": "RTX 5000",
+        "Intel(R) Xeon(R) W-2155 CPU @ 3.30GHz": "Xeon W-2155",
+        "Intel(R) Core(TM) i7-8700 CPU @ 3.20GHz": "Core i7-8700",
+        "AMD EPYC 7742 64-Core Processor": "EPYC 7742"
+    }
+}

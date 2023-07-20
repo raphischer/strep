@@ -1,0 +1,514 @@
+{
+    "web_traffic_extended_dataset_without_missing_values": {
+        "name": "Extended Wikipedia Web Traffic Daily",
+        "doi": "10.5281/zenodo.7371038",
+        "license": {
+            "id": "CC-BY-3.0"
+        },
+        "publication_date": "2022-11-28"
+    },
+    "web_traffic_extended_dataset_with_missing_values": {
+        "name": "Extended Wikipedia Web Traffic Daily",
+        "doi": "10.5281/zenodo.7370977",
+        "license": {
+            "id": "CC-BY-3.0"
+        },
+        "publication_date": "2022-11-28"
+    },
+    "oikolab_weather_dataset": {
+        "name": "Oikolab Weather",
+        "doi": "10.5281/zenodo.5184708",
+        "license": {
+            "id": "CC-BY-4.0"
+        },
+        "publication_date": "2021-08-12"
+    },
+    "temperature_rain_dataset_without_missing_values": {
+        "name": "Temperature Rain",
+        "doi": "10.5281/zenodo.5129091",
+        "license": {
+            "id": "CC-BY-4.0"
+        },
+        "publication_date": "2021-07-23"
+    },
+    "temperature_rain_dataset_with_missing_values": {
+        "name": "Temperature Rain",
+        "doi": "10.5281/zenodo.5129073",
+        "license": {
+            "id": "CC-BY-4.0"
+        },
+        "publication_date": "2021-07-23"
+    },
+    "vehicle_trips_dataset_without_missing_values": {
+        "name": "Vehicle Trips",
+        "doi": "10.5281/zenodo.5122537",
+        "license": {
+            "id": "CC-BY-4.0"
+        },
+        "publication_date": "2021-07-22"
+    },
+    "vehicle_trips_dataset_with_missing_values": {
+        "name": "Vehicle Trips",
+        "doi": "10.5281/zenodo.5122535",
+        "license": {
+            "id": "CC-BY-4.0"
+        },
+        "publication_date": "2021-07-22"
+    },
+    "rideshare_dataset_without_missing_values": {
+        "name": "Rideshare",
+        "doi": "10.5281/zenodo.5122232",
+        "license": {
+            "id": "CC-BY-4.0"
+        },
+        "publication_date": "2021-07-22"
+    },
+    "rideshare_dataset_with_missing_values": {
+        "name": "Rideshare",
+        "doi": "10.5281/zenodo.5122114",
+        "license": {
+            "id": "CC-BY-4.0"
+        },
+        "publication_date": "2021-07-22"
+    },
+    "bitcoin_dataset_without_missing_values": {
+        "name": "Bitcoin",
+        "doi": "10.5281/zenodo.5122101",
+        "license": {
+            "id": "CC-BY-4.0"
+        },
+        "publication_date": "2021-07-22"
+    },
+    "bitcoin_dataset_with_missing_values": {
+        "name": "Bitcoin",
+        "doi": "10.5281/zenodo.5121965",
+        "license": {
+            "id": "CC-BY-4.0"
+        },
+        "publication_date": "2021-07-22"
+    },
+    "covid_mobility_dataset_without_missing_values": {
+        "name": "COVID-19 Mobility",
+        "doi": "10.5281/zenodo.4663809",
+        "license": {
+            "id": "CC-BY-4.0"
+        },
+        "publication_date": "2021-04-06"
+    },
+    "covid_mobility_dataset_with_missing_values": {
+        "name": "COVID-19 Mobility",
+        "doi": "10.5281/zenodo.4663762",
+        "license": {
+            "id": "CC-BY-4.0"
+        },
+        "publication_date": "2021-04-06"
+    },
+    "australian_electricity_demand_dataset": {
+        "name": "Australian Electricity Demand",
+        "doi": "10.5281/zenodo.4659727",
+        "license": {
+            "id": "CC-BY-4.0"
+        },
+        "publication_date": "2021-04-02"
+    },
+    "kdd_cup_2018_dataset_without_missing_values": {
+        "name": "KDD Cup",
+        "doi": "10.5281/zenodo.4656756",
+        "license": {
+            "id": "CC-BY-4.0"
+        },
+        "publication_date": "2020-06-14"
+    },
+    "kdd_cup_2018_dataset_with_missing_values": {
+        "name": "KDD Cup",
+        "doi": "10.5281/zenodo.4656719",
+        "license": {
+            "id": "CC-BY-4.0"
+        },
+        "publication_date": "2020-06-14"
+    },
+    "kaggle_web_traffic_weekly_dataset": {
+        "name": "Kaggle Wikipedia Web Traffic Weekly",
+        "doi": "10.5281/zenodo.4656664",
+        "license": {
+            "id": "CC-BY-4.0"
+        },
+        "publication_date": "2020-06-13"
+    },
+    "pedestrian_counts_dataset": {
+        "name": "Melbourne Pedestrian Counts",
+        "doi": "10.5281/zenodo.4656626",
+        "license": {
+            "id": "CC-BY-4.0"
+        },
+        "publication_date": "2020-06-13"
+    },
+    "m4_hourly_dataset": {
+        "name": "M4 Hourly",
+        "doi": "10.5281/zenodo.4656589",
+        "license": {
+            "id": "CC-BY-4.0"
+        },
+        "publication_date": "2020-06-13"
+    },
+    "london_smart_meters_dataset_without_missing_values": {
+        "name": "London Smart Meters",
+        "doi": "10.5281/zenodo.4656091",
+        "license": {
+            "id": "CC-BY-4.0"
+        },
+        "publication_date": "2020-06-14"
+    },
+    "m4_daily_dataset": {
+        "name": "M4 Daily",
+        "doi": "10.5281/zenodo.4656548",
+        "license": {
+            "id": "CC-BY-4.0"
+        },
+        "publication_date": "2020-06-13"
+    },
+    "m4_weekly_dataset": {
+        "name": "M4 Weekly",
+        "doi": "10.5281/zenodo.4656522",
+        "license": {
+            "id": "CC-BY-4.0"
+        },
+        "publication_date": "2020-06-13"
+    },
+    "m4_monthly_dataset": {
+        "name": "M4 Monthly",
+        "doi": "10.5281/zenodo.4656480",
+        "license": {
+            "id": "CC-BY-4.0"
+        },
+        "publication_date": "2020-06-13"
+    },
+    "m4_quarterly_dataset": {
+        "name": "M4 Quarterly",
+        "doi": "10.5281/zenodo.4656410",
+        "license": {
+            "id": "CC-BY-4.0"
+        },
+        "publication_date": "2020-06-13"
+    },
+    "m4_yearly_dataset": {
+        "name": "M4 Yearly",
+        "doi": "10.5281/zenodo.4656379",
+        "license": {
+            "id": "CC-BY-4.0"
+        },
+        "publication_date": "2020-06-12"
+    },
+    "m3_other_dataset": {
+        "name": "M3 Other",
+        "doi": "10.5281/zenodo.4656335",
+        "license": {
+            "id": "CC-BY-4.0"
+        },
+        "publication_date": "2020-06-12"
+    },
+    "m3_monthly_dataset": {
+        "name": "M3 Monthly",
+        "doi": "10.5281/zenodo.4656298",
+        "license": {
+            "id": "CC-BY-4.0"
+        },
+        "publication_date": "2020-06-12"
+    },
+    "m3_quarterly_dataset": {
+        "name": "M3 Quarterly",
+        "doi": "10.5281/zenodo.4656262",
+        "license": {
+            "id": "CC-BY-4.0"
+        },
+        "publication_date": "2020-06-12"
+    },
+    "m3_yearly_dataset": {
+        "name": "M3 Yearly",
+        "doi": "10.5281/zenodo.4656222",
+        "license": {
+            "id": "CC-BY-4.0"
+        },
+        "publication_date": "2020-06-12"
+    },
+    "m1_yearly_dataset": {
+        "name": "M1 Yearly",
+        "doi": "10.5281/zenodo.4656193",
+        "license": {
+            "id": "CC-BY-4.0"
+        },
+        "publication_date": "2020-06-11"
+    },
+    "m1_monthly_dataset": {
+        "name": "M1 Monthly",
+        "doi": "10.5281/zenodo.4656159",
+        "license": {
+            "id": "CC-BY-4.0"
+        },
+        "publication_date": "2020-06-11"
+    },
+    "m1_quarterly_dataset": {
+        "name": "M1 Quarterly",
+        "doi": "10.5281/zenodo.4656154",
+        "license": {
+            "id": "CC-BY-4.0"
+        },
+        "publication_date": "2020-06-11"
+    },
+    "solar_weekly_dataset": {
+        "name": "Solar Weekly",
+        "doi": "10.5281/zenodo.4656151",
+        "license": {
+            "id": "CC-BY-4.0"
+        },
+        "publication_date": "2020-06-11"
+    },
+    "solar_10_minutes_dataset": {
+        "name": "Solar (10 Minutes Observations)",
+        "doi": "10.5281/zenodo.4656144",
+        "license": {
+            "id": "CC-BY-4.0"
+        },
+        "publication_date": "2020-06-11"
+    },
+    "electricity_weekly_dataset": {
+        "name": "Electricity Weekly",
+        "doi": "10.5281/zenodo.4656141",
+        "license": {
+            "id": "CC-BY-4.0"
+        },
+        "publication_date": "2020-06-11"
+    },
+    "electricity_hourly_dataset": {
+        "name": "Electricity Hourly",
+        "doi": "10.5281/zenodo.4656140",
+        "license": {
+            "id": "CC-BY-4.0"
+        },
+        "publication_date": "2020-06-11"
+    },
+    "traffic_weekly_dataset": {
+        "name": "Traffic Weekly",
+        "doi": "10.5281/zenodo.4656135",
+        "license": {
+            "id": "CC-BY-4.0"
+        },
+        "publication_date": "2020-06-11"
+    },
+    "traffic_hourly_dataset": {
+        "name": "Traffic Hourly",
+        "doi": "10.5281/zenodo.4656132",
+        "license": {
+            "id": "CC-BY-4.0"
+        },
+        "publication_date": "2020-06-11"
+    },
+    "nn5_weekly_dataset": {
+        "name": "NN5 Weekly",
+        "doi": "10.5281/zenodo.4656125",
+        "license": {
+            "id": "CC-BY-4.0"
+        },
+        "publication_date": "2020-06-11"
+    },
+    "nn5_daily_dataset_without_missing_values": {
+        "name": "NN5 Daily",
+        "doi": "10.5281/zenodo.4656117",
+        "license": {
+            "id": "CC-BY-4.0"
+        },
+        "publication_date": "2020-06-11"
+    },
+    "nn5_daily_dataset_with_missing_values": {
+        "name": "NN5 Daily",
+        "doi": "10.5281/zenodo.4656110",
+        "license": {
+            "id": "CC-BY-4.0"
+        },
+        "publication_date": "2020-06-11"
+    },
+    "tourism_yearly_dataset": {
+        "name": "Tourism Yearly",
+        "doi": "10.5281/zenodo.4656103",
+        "license": {
+            "id": "CC-BY-4.0"
+        },
+        "publication_date": "2020-06-10"
+    },
+    "tourism_monthly_dataset": {
+        "name": "Tourism Monthly",
+        "doi": "10.5281/zenodo.4656096",
+        "license": {
+            "id": "CC-BY-4.0"
+        },
+        "publication_date": "2020-06-11"
+    },
+    "tourism_quarterly_dataset": {
+        "name": "Tourism Quarterly",
+        "doi": "10.5281/zenodo.4656093",
+        "license": {
+            "id": "CC-BY-4.0"
+        },
+        "publication_date": "2020-06-11"
+    },
+    "kaggle_web_traffic_dataset_with_missing_values": {
+        "name": "Kaggle Wikipedia Web Traffic Daily",
+        "doi": "10.5281/zenodo.4656080",
+        "license": {
+            "id": "CC-BY-4.0"
+        },
+        "publication_date": "2020-06-13"
+    },
+    "kaggle_web_traffic_dataset_without_missing_values": {
+        "name": "Kaggle Wikipedia Web Traffic Daily",
+        "doi": "10.5281/zenodo.4656075",
+        "license": {
+            "id": "CC-BY-4.0"
+        },
+        "publication_date": "2020-06-13"
+    },
+    "london_smart_meters_dataset_with_missing_values": {
+        "name": "London Smart Meters",
+        "doi": "10.5281/zenodo.4656072",
+        "license": {
+            "id": "CC-BY-4.0"
+        },
+        "publication_date": "2020-06-13"
+    },
+    "elecdemand_dataset": {
+        "name": "Electricity Demand (Elecdemand)",
+        "doi": "10.5281/zenodo.4656069",
+        "license": {
+            "id": "CC-BY-4.0"
+        },
+        "publication_date": "2020-06-22"
+    },
+    "saugeenday_dataset": {
+        "name": "Saugeen River Flow (SaugeenDay)",
+        "doi": "10.5281/zenodo.4656058",
+        "license": {
+            "id": "CC-BY-4.0"
+        },
+        "publication_date": "2020-06-22"
+    },
+    "us_births_dataset": {
+        "name": "US Births",
+        "doi": "10.5281/zenodo.4656049",
+        "license": {
+            "id": "CC-BY-4.0"
+        },
+        "publication_date": "2020-06-22"
+    },
+    "cif_2016_dataset": {
+        "name": "CIF 2016",
+        "doi": "10.5281/zenodo.4656042",
+        "license": {
+            "id": "CC-BY-4.0"
+        },
+        "publication_date": "2020-06-08"
+    },
+    "wind_4_seconds_dataset": {
+        "name": "Wind Power (4 Seconds Observations)",
+        "doi": "10.5281/zenodo.4656032",
+        "license": {
+            "id": "CC-BY-4.0"
+        },
+        "publication_date": "2020-08-20"
+    },
+    "solar_4_seconds_dataset": {
+        "name": "Solar Power (4 Seconds Observations)",
+        "doi": "10.5281/zenodo.4656027",
+        "license": {
+            "id": "CC-BY-4.0"
+        },
+        "publication_date": "2020-08-20"
+    },
+    "car_parts_dataset_with_missing_values": {
+        "name": "Car Parts",
+        "doi": "10.5281/zenodo.4656022",
+        "license": {
+            "id": "CC-BY-4.0"
+        },
+        "publication_date": "2020-08-21"
+    },
+    "car_parts_dataset_without_missing_values": {
+        "name": "Car Parts",
+        "doi": "10.5281/zenodo.4656021",
+        "license": {
+            "id": "CC-BY-4.0"
+        },
+        "publication_date": "2020-08-21"
+    },
+    "hospital_dataset": {
+        "name": "Hospital",
+        "doi": "10.5281/zenodo.4656014",
+        "license": {
+            "id": "CC-BY-4.0"
+        },
+        "publication_date": "2020-08-21"
+    },
+    "covid_deaths_dataset": {
+        "name": "COVID-19 Deaths",
+        "doi": "10.5281/zenodo.4656009",
+        "license": {
+            "id": "CC-BY-4.0"
+        },
+        "publication_date": "2020-08-21"
+    },
+    "wind_farms_minutely_dataset_with_missing_values": {
+        "name": "Wind Farms",
+        "doi": "10.5281/zenodo.4654909",
+        "license": {
+            "id": "CC-BY-4.0"
+        },
+        "publication_date": "2020-08-23"
+    },
+    "wind_farms_minutely_dataset_without_missing_values": {
+        "name": "Wind Farms",
+        "doi": "10.5281/zenodo.4654858",
+        "license": {
+            "id": "CC-BY-4.0"
+        },
+        "publication_date": "2020-08-23"
+    },
+    "fred_md_dataset": {
+        "name": "FRED-MD",
+        "doi": "10.5281/zenodo.4654833",
+        "license": {
+            "id": "CC-BY-4.0"
+        },
+        "publication_date": "2020-08-27"
+    },
+    "weather_dataset": {
+        "name": "Weather",
+        "doi": "10.5281/zenodo.4654822",
+        "license": {
+            "id": "CC-BY-4.0"
+        },
+        "publication_date": "2020-08-27"
+    },
+    "dominick_dataset": {
+        "name": "Dominick",
+        "doi": "10.5281/zenodo.4654802",
+        "license": {
+            "id": "CC-BY-4.0"
+        },
+        "publication_date": "2020-08-27"
+    },
+    "sunspot_dataset_with_missing_values": {
+        "name": "Sunspot Daily",
+        "doi": "10.5281/zenodo.4654773",
+        "license": {
+            "id": "CC-BY-4.0"
+        },
+        "publication_date": "2020-06-11"
+    },
+    "sunspot_dataset_without_missing_values": {
+        "name": "Sunspot Daily",
+        "doi": "10.5281/zenodo.4654722",
+        "license": {
+            "id": "CC-BY-4.0"
+        },
+        "publication_date": "2020-06-11"
+    }
+}
