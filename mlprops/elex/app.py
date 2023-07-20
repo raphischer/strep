@@ -16,6 +16,7 @@ from mlprops.elex.graphs import create_scatter_graph, create_bar_graph, add_rati
 from mlprops.labels.label_generation import PropertyLabel
 from mlprops.unit_reformatting import CustomUnitReformater
 from mlprops.load_experiment_logs import find_sub_database
+from mlprops.util import lookup_meta
 
 
 class Visualization(dash.Dash):
@@ -133,7 +134,7 @@ class Visualization(dash.Dash):
                     else: # error during value aggregation
                         env_data[xy_axis].append(0)
             self.plot_data[env] = env_data
-        axis_names = [self.meta['properties'][self.state[ax]]['name'] for ax in ['xaxis', 'yaxis']] # TODO pretty print, use name of axis?
+        axis_names = [lookup_meta(self.meta, self.state[ax], subdict='properties') for ax in ['xaxis', 'yaxis']] # TODO pretty print, use name of axis?
         if scale_switch == 'index':
             rating_pos = [self.boundaries[self.state['xaxis']], self.boundaries[self.state['yaxis']]]
             axis_names = [name.split('[')[0].strip() + ' Index' for name in axis_names]
@@ -148,7 +149,7 @@ class Visualization(dash.Dash):
         if not only_current: # remark for making a full update when task / data set is changed
             self.state['update_on_change'] = True
         # update the data currently displayed to user
-        self.state['sub_database'], self.boundaries, self.boundaries_real, self.references = rate_database(self.state['sub_database'], self.meta['properties'], self.boundaries, self.state['indexmode'], self.references, self.unit_fmt, self.state['rating_mode'])
+        self.state['sub_database'], self.boundaries, self.boundaries_real, self.references = rate_database(self.state['sub_database'], self.meta, self.boundaries, self.state['indexmode'], self.references, self.unit_fmt, self.state['rating_mode'])
         self.database.loc[self.state['sub_database'].index] = self.state['sub_database']
 
     def update_bars_graph(self, scatter_graph=None, discard_y_axis=False):
@@ -162,7 +163,7 @@ class Visualization(dash.Dash):
             self.update_database(only_current=False)
         if calculated_boundaries is not None and 'calc' in dash.callback_context.triggered[0]['prop_id']:
             if self.state['update_on_change']: # if the indexmode was changed, it is first necessary to update all index values
-                self.database, self.boundaries, self.boundaries_real, self.references = rate_database(self.database, self.meta['properties'], self.boundaries, self.state['indexmode'], self.references, self.unit_fmt, self.state['rating_mode'])
+                self.database, self.boundaries, self.boundaries_real, self.references = rate_database(self.database, self.meta, self.boundaries, self.state['indexmode'], self.references, self.unit_fmt, self.state['rating_mode'])
                 self.state['update_on_change'] = False
             self.boundaries = calculate_optimal_boundaries(self.database, [0.8, 0.6, 0.4, 0.2])
         if self.references is not None and reference != self.references[self.state['ds']]:
@@ -191,11 +192,11 @@ class Visualization(dash.Dash):
             self.references[self.state['ds']] = find_optimal_reference(self.state['sub_database'])
             self.update_database()
         if self.state['update_on_change']:
-            self.database, self.boundaries, self.boundaries_real, self.references = rate_database(self.database, self.meta['properties'], self.boundaries, self.state['indexmode'], self.references, self.unit_fmt, self.state['rating_mode'])
+            self.database, self.boundaries, self.boundaries_real, self.references = rate_database(self.database, self.meta, self.boundaries, self.state['indexmode'], self.references, self.unit_fmt, self.state['rating_mode'])
             self.state['update_on_change'] = False
         self.state['task'] = task or self.state['task']
         avail_envs = [{"label": env, "value": env} for env in self.environments[(self.state['ds'], self.state['task'])]]
-        axis_options = [{'label': self.meta['properties'][metr]['name'], 'value': metr} for metr in self.metrics[(self.state['ds'], self.state['task'])]]
+        axis_options = [{'label': lookup_meta(self.meta, metr, subdict='properties'), 'value': metr} for metr in self.metrics[(self.state['ds'], self.state['task'])]]
         self.state['xaxis'] = self.xaxis_default[(self.state['ds'], self.state['task'])]
         self.state['yaxis'] = self.yaxis_default[(self.state['ds'], self.state['task'])]
         self.state['sub_database'] = find_sub_database(self.database, self.state['ds'], self.state['task'])
@@ -218,7 +219,10 @@ class Visualization(dash.Dash):
 
             model_table, metric_table = summary_to_html_tables(self.state['model'])
             enc_label = self.state['label'].to_encoded_image()
-            link = self.state['model']['model']['url']
+            try:
+                link = self.state['model']['model']['url']
+            except (IndexError, KeyError, TypeError):
+                link = 'https://github.com/raphischer/mlprops'
             open = False
         return model_table, metric_table,  enc_label, enc_label, link, open
 

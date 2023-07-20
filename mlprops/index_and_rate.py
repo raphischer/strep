@@ -314,28 +314,41 @@ def rate_database(database, given_meta, boundaries=None, indexmode='best', refer
 
 def find_relevant_metrics(database):
     all_metrics = {}
-    most_imp_res, most_imp_qual = {}, {}
+    x_default, y_default = {}, {}
     for ds in pd.unique(database['dataset']):
         for task in pd.unique(database[database['dataset'] == ds]['task']):
             lookup = (ds, task)
             subd = find_sub_database(database, ds, task)
-            metrics = []
+            metrics = {}
             for col in subd.columns:
                 for val in subd[col]:
                     if isinstance(val, dict):
-                        metrics.append(col)
-                        # set axis defaults for dataset / task combo
-                        if val['group'] == 'Resources' and (lookup not in most_imp_res or most_imp_res[lookup][1] < val['weight']):
-                            most_imp_res[lookup] = (col, val['weight'])
-                        if val['group'] == 'Performance' and (lookup not in most_imp_qual or most_imp_qual[lookup][1] < val['weight']):
-                            most_imp_qual[lookup] = (col, val['weight'])
+                        metrics[col] = (val['weight'], val['group']) # store for identifying the axis defaults
+                        # # set axis defaults for dataset / task combo
+                        # if val['group'] == 'Resources' and (lookup not in most_imp_res or most_imp_res[lookup][1] < val['weight']):
+                        #     most_imp_res[lookup] = (col, val['weight'])
+                        # if val['group'] == 'Performance' and (lookup not in most_imp_qual or most_imp_qual[lookup][1] < val['weight']):
+                        #     most_imp_qual[lookup] = (col, val['weight'])
                         break
+            weights, groups = zip(*list(metrics.values()))
+            argsort = np.argsort(weights)
+            groups = np.array(groups)[argsort]
+            metrics = np.array(list(metrics.keys()))[argsort]
+            # use most influential Performance property on y-axis
+            if 'Performance' not in groups:
+                raise RuntimeError(f'Could not find performance property for {lookup}!')
+            y_default[lookup] = metrics[groups == 'Performance'][0]
+            if 'Resources' in groups: # use the most influential resource property on x-axis
+                x_default[lookup] = metrics[groups == 'Resources'][0]
+            elif 'Complexity' in groups: # use most influential complexity
+                x_default[lookup] = metrics[groups == 'Complexity'][0]
+            else:
+                try:
+                    x_default[lookup] = metrics[groups == 'Performance'][1]
+                except IndexError:
+                    raise RuntimeError(f'No second Performance property and no Resources or Complexity properties were found for {lookup}!')                
             all_metrics[lookup] = metrics
-    for lookup, val in most_imp_res.items():
-        most_imp_res[lookup] = val[0]
-    for lookup, val in most_imp_qual.items():
-        most_imp_qual[lookup] = val[0]
-    return all_metrics, most_imp_res, most_imp_qual
+    return all_metrics, x_default, y_default
 
 
 if __name__ == '__main__':

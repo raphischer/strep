@@ -38,8 +38,8 @@ def summary_to_html_tables(summary):
     info_header = [
         html.Thead(html.Tr([html.Th("Task"), html.Th("Model Name"), html.Th("Environment"), html.Th("Final Rating")]))
     ]
-    
-    task = f"{summary['task']} on {summary['dataset']['name']}"
+    ds_name = summary['dataset']['name'] if isinstance(summary['dataset'], dict) else summary['dataset']
+    task = f"{summary['task']} on {ds_name}"
     mname = summary['model']['name'] if isinstance(summary['model'], dict) else summary['model']
     info_row = [html.Tbody([html.Tr([html.Td(field) for field in [task, mname, summary['environment'], final_rating]])])]
 
