@@ -1,0 +1,94 @@
+{
+    "top-1_val": {
+        "name": "Test Top1 Accuracy",
+        "shortname": "Top1",
+        "unit": "percent",
+        "group": "Performance",
+        "weight": 0.066666,
+        "independent_of_task": true
+    },
+    "top-5_val": {
+        "name": "Test Top5 Accuracy",
+        "shortname": "Top5",
+        "unit": "percent",
+        "group": "Performance",
+        "weight": 0.066666,
+        "independent_of_task": true
+    },
+    "f1_val": {
+        "name": "Test F1",
+        "shortname": "F1",
+        "unit": "percent",
+        "group": "Performance",
+        "weight": 0.066666,
+        "independent_of_task": true
+    },
+    "precisision_val": {
+        "name": "Test Precision",
+        "shortname": "Prec",
+        "unit": "percent",
+        "group": "Performance",
+        "weight": 0.066666,
+        "independent_of_task": true
+    },
+    "recall_val": {
+        "name": "Test Recall",
+        "shortname": "Recl",
+        "unit": "percent",
+        "group": "Performance",
+        "weight": 0.066666,
+        "independent_of_task": true
+    },
+    "parameters": {
+        "name": "Number of Parameters",
+        "shortname": "Params",
+        "unit": "number",
+        "group": "Complexity",
+        "weight": 0.111111,
+        "independent_of_task": true
+    },
+    "flops": {
+        "name": "Number of Float Operations",
+        "shortname": "FLOPS",
+        "unit": "number",
+        "group": "Complexity",
+        "weight": 0.111111,
+        "independent_of_task": true
+    },
+    "fsize": {
+        "name": "Model Size on Disc",
+        "shortname": "Size",
+        "unit": "byte",
+        "group": "Complexity",
+        "weight": 0.111111,
+        "independent_of_task": true
+    },
+    "train_power_draw": {
+        "name": "Training Power Draw",
+        "shortname": "T Power",
+        "unit": "wattseconds",
+        "group": "Resources",
+        "weight": 0.1
+    },
+    "train_running_time": {
+        "name": "Training Time",
+        "shortname": "T Time",
+        "unit": "seconds",
+        "group": "Resources",
+        "weight": 0.065
+    },
+    "power_draw": {
+        "name": "Power Draw per Inference",
+        "shortname": "I Power",
+        "unit": "wattseconds",
+        "group": "Resources",
+        "weight": 0.1
+    },
+    "running_time": {
+        "name": "Running Time per Inference",
+        "shortname": "I Time",
+        "unit": "seconds",
+        "group": "Resources",
+        "weight": 0.065
+    }
+}

@@ -141,7 +141,7 @@ def create_page(datasets, meta_info, indexmode, rating_mode):
         dbc.Table(id='model-table', bordered=True)
     ])
     table_metrics = html.Div(children=[
-        html.H3('Efficiency Information:'),
+        html.H3('Properties:'),
         dbc.Table(id='metric-table', bordered=True),
     ])
 

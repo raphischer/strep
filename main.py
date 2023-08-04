@@ -11,7 +11,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
 
     parser.add_argument("--mode", default='interactive', choices=['interactive'])
-    parser.add_argument("--database-dir", default="databases/imagenet_classification", help="directory with database.pkl and meta info inside")
+    parser.add_argument("--database-dir", default="databases/sklearn_openml_classification", help="directory with database.pkl and meta info inside")
     # interactive exploration params
     parser.add_argument("--host", default='localhost', type=str, help="default host") # '0.0.0.0'
     parser.add_argument("--port", default=8888, type=int, help="default port")

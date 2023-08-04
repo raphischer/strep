@@ -1,0 +1,30 @@
+{
+    "olivetti_faces":                   {
+        "name": "Olivetti faces"
+    },
+    "20newsgroups_vectorized":          {
+        "name": "20 Newsgroups"
+    },
+    "lfw_people":                       {
+        "name": "LFW People"
+    },
+    "lfw_pairs":                        {
+        "name": "LFW Pairs"
+    },
+    "covtype":                          {
+        "name": "Covertype"
+    },
+    "credit-g":                         {
+        "name": "German Credit"
+    },
+    "mnist_784":                        {
+        "name": "MNIST"
+    }, 
+    "blood-transfusion-service-center": {
+        "name": "Blood Transf. SC",
+        "url": "https://www.openml.org/search?type=data&sort=runs&id=1464&status=active"
+    },
+    "phoneme":                          {
+        "name": "Phoneme"
+    }
+}

@@ -1,6 +1,5 @@
 import os
 import json
-import shutil
 import tarfile
 import importlib
 
@@ -81,7 +80,11 @@ def aggregate_log(log, property_extractors):
                 try:
                     agg_log[key] = func(log)
                 except KeyError as e:
-                    print(f'Error in assessing {key:<15} from {log_name} - {log["config"]["model"]} on {log["config"]["dataset"]}!')
+                    try:
+                        conf = f'{log["config"]["model"]} on {log["config"]["dataset"]}'
+                    except KeyError:
+                        conf = 'n.a.'
+                    print(f'Error in assessing {key:<15} from {log_name} - {conf}!')
                     agg_log[key] = np.nan
     return agg_log
 
@@ -122,21 +125,28 @@ def aggregate_logs(logs, property_extractors_module):
     return merged_database
 
 
-def load_database(logdir_root, outout_logdir_merged=None, output_tar_dir=None, property_extractors_module=None, clean=False):
-    if clean: # remove all subdirectory contents
-        for rootdir in [outout_logdir_merged, output_tar_dir]:
-            if rootdir is not None and os.path.isdir(rootdir):
-                shutil.rmtree(rootdir)
+def assemble_database(logdir_root=None, logdir_merged=None, output_tar_dir=None, property_extractors_module=None):
     # process
     logs = []
-    for dir in sorted(os.listdir(logdir_root)):
-        log = process_directory(os.path.join(logdir_root, dir), outout_logdir_merged, output_tar_dir)
-        logs.append(log)
+    if logdir_root is not None:
+        for dir in sorted(os.listdir(logdir_root)):
+            log = process_directory(os.path.join(logdir_root, dir), logdir_merged, output_tar_dir)
+            logs.append(log)
+
+    if logdir_merged is not None:
+        if not os.path.isdir(logdir_merged):
+            raise RuntimeError(f'Invalid logdir_merged option "{logdir_merged}" (not a directory)!')
+        logs = [] # re-init and read from merged dir, to avoid duplicates
+        for fname in os.listdir(logdir_merged):
+            try:
+                logs.append( read_json(os.path.join(logdir_merged, fname)) )
+            except Exception as e:
+                print(f'Could not load log {fname}! {e}')
 
     # aggregate
-    aggregated_logs = aggregate_logs(logs, property_extractors_module)
+    database = aggregate_logs(logs, property_extractors_module)
 
-    return aggregated_logs
+    return database
 
 
 def find_sub_database(database, dataset=None, task=None, environment=None):

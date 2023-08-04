@@ -44,13 +44,12 @@ def summary_to_html_tables(summary):
     info_row = [html.Tbody([html.Tr([html.Td(field) for field in [task, mname, summary['environment'], final_rating]])])]
 
     metrics_header = [
-        html.Thead(html.Tr([html.Th("Metric"), html.Th("Value"), html.Th("Index"), html.Th("Rating")]))
+        html.Thead(html.Tr([html.Th("Metric"), html.Th("Value"), html.Th("Index"), html.Th("Rating"), html.Th("Weight")]))
     ]
     metrics_rows = []
     for key, val in summary.items():
         if isinstance(val, dict) and "value" in val:
-            value, index = val["fmt_val"], f'{val["index"]:6.4f}'[:6]
-            table_cells = [f'{val["name"]} {val["fmt_unit"]}', value, index, val["rating"]]
+            table_cells = [f'{val["name"]} {val["fmt_unit"]}', val["fmt_val"][:6], f'{val["index"]:4.2f}'[:4], val["rating"], f'{val["weight"]:3.2f}']
             metrics_rows.append(html.Tr([html.Td(field) for field in table_cells]))
 
     model = info_header + info_row

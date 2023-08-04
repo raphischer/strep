@@ -1,0 +1,6 @@
+{
+    "imagenet": {
+        "name": "ImageNet (ILSVRC2012)",
+        "url": "https://image-net.org/"
+    }
+}

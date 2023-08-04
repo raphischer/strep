@@ -240,12 +240,15 @@ def rate_database(database, given_meta, boundaries=None, indexmode='best', refer
     real_boundaries = {}
     # lookup meta information for numeric properties in database
     properties_meta = {}
-    for col in database.columns:
-        if is_numeric_dtype(database[col]):
-            meta = lookup_meta(given_meta, col, None, 'properties')
-            if not isinstance(meta, dict):
-                meta = { "name": col, "shortname": col[:4], "unit": "number", "group": "Performance", "weight": 1.0 }
-            properties_meta[col] = meta
+    if 'properties' in given_meta:
+        cols_to_rate = [ key for key in given_meta['properties'] if key in database.columns ]
+    else:
+        cols_to_rate = [ col for col in database.columns if is_numeric_dtype(database[col]) ]
+    for col in cols_to_rate:
+        meta = lookup_meta(given_meta, col, None, 'properties')
+        if not isinstance(meta, dict):
+            meta = { "name": col, "shortname": col[:4], "unit": "number", "group": "Performance", "weight": 1.0 }
+        properties_meta[col] = meta
 
     # group each dataset, task and environment combo
     database['old_index'] = database.index # store index for mapping the groups later on
