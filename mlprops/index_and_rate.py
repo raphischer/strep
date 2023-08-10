@@ -3,7 +3,6 @@ import json
 
 import numpy as np
 import pandas as pd
-from pandas.api.types import is_numeric_dtype
 
 from mlprops.unit_reformatting import CustomUnitReformater
 from mlprops.load_experiment_logs import find_sub_database
@@ -243,7 +242,7 @@ def rate_database(database, given_meta, boundaries=None, indexmode='best', refer
     if 'properties' in given_meta:
         cols_to_rate = [ key for key in given_meta['properties'] if key in database.columns ]
     else:
-        cols_to_rate = [ col for col in database.columns if is_numeric_dtype(database[col]) ]
+        cols_to_rate = database.select_dtypes('number').columns
     for col in cols_to_rate:
         meta = lookup_meta(given_meta, col, None, 'properties')
         if not isinstance(meta, dict):
