@@ -5,7 +5,7 @@ import numpy as np
 import pandas as pd
 
 from mlprops.unit_reformatting import CustomUnitReformater
-from mlprops.load_experiment_logs import find_sub_database
+from mlprops.load_experiment_logs import find_sub_db
 from mlprops.util import lookup_meta
 
 
@@ -158,7 +158,9 @@ def find_optimal_reference(database, pre_rating_use_meta=None):
     return model_names[ref_model_idx]
 
 
-def calculate_optimal_boundaries(database, quantiles):
+def calculate_optimal_boundaries(database, quantiles=None):
+    if quantiles is None:
+        quantiles = [0.8, 0.6, 0.4, 0.2]
     boundaries = {'default': [0.9, 0.8, 0.7, 0.6]}
     for col in database.columns:
         index_values = [ val['index'] for val in database[col] if isinstance(val, dict) and 'index' in val ]
@@ -320,17 +322,12 @@ def find_relevant_metrics(database):
     for ds in pd.unique(database['dataset']):
         for task in pd.unique(database[database['dataset'] == ds]['task']):
             lookup = (ds, task)
-            subd = find_sub_database(database, ds, task)
+            subd = find_sub_db(database, ds, task)
             metrics = {}
             for col in subd.columns:
                 for val in subd[col]:
                     if isinstance(val, dict):
                         metrics[col] = (val['weight'], val['group']) # store for identifying the axis defaults
-                        # # set axis defaults for dataset / task combo
-                        # if val['group'] == 'Resources' and (lookup not in most_imp_res or most_imp_res[lookup][1] < val['weight']):
-                        #     most_imp_res[lookup] = (col, val['weight'])
-                        # if val['group'] == 'Performance' and (lookup not in most_imp_qual or most_imp_qual[lookup][1] < val['weight']):
-                        #     most_imp_qual[lookup] = (col, val['weight'])
                         break
             weights, groups = zip(*list(metrics.values()))
             argsort = np.argsort(weights)

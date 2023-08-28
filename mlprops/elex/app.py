@@ -9,36 +9,31 @@ from dash.dependencies import Input, Output, State
 from dash import dcc
 import dash_bootstrap_components as dbc
 
-from mlprops.index_and_rate import rate_database, load_boundaries, save_boundaries, calculate_optimal_boundaries, save_weights, find_optimal_reference, find_relevant_metrics, update_weights
+from mlprops.index_and_rate import rate_database, load_boundaries, save_boundaries, calculate_optimal_boundaries, save_weights, find_optimal_reference, update_weights
 from mlprops.elex.pages import create_page
 from mlprops.elex.util import summary_to_html_tables, toggle_element_visibility, fill_meta
 from mlprops.elex.graphs import create_scatter_graph, create_bar_graph, add_rating_background
 from mlprops.labels.label_generation import PropertyLabel
 from mlprops.unit_reformatting import CustomUnitReformater
-from mlprops.load_experiment_logs import find_sub_database
+from mlprops.load_experiment_logs import find_sub_db
 from mlprops.util import lookup_meta
 
 
 class Visualization(dash.Dash):
 
-    def __init__(self, rated_database, boundaries, real_boundaries, meta, index_mode='best', references=None, dark_mode=True, **kwargs):
+    def __init__(self, databases, index_mode='best', dark_mode=True, **kwargs):
         self.dark_mode = dark_mode
         if dark_mode:
             kwargs['external_stylesheets'] = [dbc.themes.DARKLY]
         super().__init__(__name__, **kwargs)
-        
-        # init some values
-        self.database, self.boundaries, self.boundaries_real, self.meta, self.references = rated_database, boundaries, real_boundaries, meta, references
-        self.datasets = pd.unique(self.database['dataset'])
 
-        # init dicts to find restrictions between dataset, task and environments more easily
-        self.tasks = {ds: pd.unique(find_sub_database(self.database, ds)['task']) for ds in self.datasets}
-        self.environments = {(ds, task): pd.unique(find_sub_database(self.database, ds, task)['environment']) for ds, tasks in self.tasks.items() for task in tasks}
+        self.databases = databases
         self.unit_fmt = CustomUnitReformater()
 
         self.state = {
-            'ds': self.datasets[0],
-            'task': self.tasks[self.datasets[0]][0],
+            'db': None,
+            'ds': None,
+            'task': None,
             'sub_database': None,
             'indexmode': index_mode,
             'update_on_change': False,
@@ -46,24 +41,27 @@ class Visualization(dash.Dash):
             'model': None,
             'label': None
         }
-
-        # create a dict with all metrics for any dataset & task combination, and a map of metric unit symbols
-        self.metrics, self.xaxis_default, self.yaxis_default = find_relevant_metrics(self.database)
         
         # setup page and create callbacks
-        self.layout = create_page(self.datasets, self.meta, index_mode, self.state['rating_mode'])
+        self.layout = create_page(self.databases, index_mode, self.state['rating_mode'])
         self.callback(
             [Output('x-weight', 'value'), Output('y-weight', 'value')],
             [Input('xaxis', 'value'), Input('yaxis', 'value'), Input('weights-upload', 'contents')]
         ) (self.update_metric_fields)
+        # changing database, dataset or task
+        self.callback(
+            [Output('ds-switch', 'options'), Output('ds-switch', 'value')],
+            Input('db-switch', 'value')
+        ) (self.db_selected)
         self.callback(
             [Output('task-switch', 'options'), Output('task-switch', 'value')],
             Input('ds-switch', 'value')
-        ) (self.update_ds_changed)
+        ) (self.ds_selected)
         self.callback(
             [Output('environments', 'options'), Output('environments', 'value'), Output('xaxis', 'options'), Output('xaxis', 'value'), Output('yaxis', 'options'),  Output('yaxis', 'value'), Output('select-reference', 'options'), Output('select-reference', 'value')],
             [Input('task-switch', 'value'), Input('btn-optimize-reference', 'n_clicks')]
-        ) (self.update_task_changed)
+        ) (self.task_selected)
+        # updating boundaries and graphs
         self.callback(
             [Output(sl_id, prop) for sl_id in ['boundary-slider-x', 'boundary-slider-y'] for prop in ['min', 'max', 'value', 'marks']],
             [Input('xaxis', 'value'), Input('yaxis', 'value'), Input('boundaries-upload', 'contents'), Input('btn-calc-boundaries', 'n_clicks'), Input('select-reference', 'value')]
@@ -80,6 +78,7 @@ class Visualization(dash.Dash):
             [Output('model-table', 'children'), Output('metric-table', 'children'), Output('model-label', "src"), Output('label-modal-img', "src"), Output('btn-open-paper', "href"), Output('info-hover', 'is_open')],
             Input('graph-scatter', 'hoverData'), State('environments', 'value'), State('rating', 'value')
         ) (self.display_model)
+        # buttons for saving and loading
         self.callback(Output('save-label', 'data'), [Input('btn-save-label', 'n_clicks'), Input('btn-save-label2', 'n_clicks'), Input('btn-save-summary', 'n_clicks'), Input('btn-save-logs', 'n_clicks')]) (self.save_label)
         self.callback(Output('save-boundaries', 'data'), Input('btn-save-boundaries', 'n_clicks')) (self.save_boundaries)
         self.callback(Output('save-weights', 'data'), Input('btn-save-weights', 'n_clicks')) (self.save_weights)
@@ -122,10 +121,9 @@ class Visualization(dash.Dash):
         # assemble data for plotting
         self.plot_data = {}
         scale_switch = scale_switch or 'index'
-        env_names = self.environments[self.state['task']] if env_names is None else env_names
         for env in env_names:
             env_data = { 'ratings': [], 'x': [], 'y': [], 'index': [] }
-            for _, log in find_sub_database(self.state['sub_database'], environment=env).iterrows():
+            for _, log in find_sub_db(self.state['sub_database'], environment=env).iterrows():
                 env_data['ratings'].append(log['compound_rating'])
                 env_data['index'].append(log['compound_index'])
                 for xy_axis, metric in zip(['x', 'y'], [self.state['xaxis'], self.state['yaxis']]):
@@ -181,13 +179,19 @@ class Visualization(dash.Dash):
             marks = { val: {'label': str(val)} for val in np.round(np.linspace(min_v, max_v, 20), 3)}
             values.extend([min_v, max_v, value, marks])
         return values
+    
+    def db_selected(self, db=None):
+        self.state['db'] = db or self.state['db']
+        self.database, self.meta, self.metrics, self.xaxis_default, self.yaxis_default, self.boundaries, self.boundaries_real, self.references = self.databases[self.state['db']]
+        options = [ {'label': lookup_meta(self.meta, ds, subdict='dataset'), 'value': ds} for ds in pd.unique(self.database['dataset']) ]
+        return options, options[0]['value']
 
-    def update_ds_changed(self, ds=None):
+    def ds_selected(self, ds=None):
         self.state['ds'] = ds or self.state['ds']
-        tasks = [{"label": task.capitalize(), "value": task} for task in self.tasks[self.state['ds']]]
+        tasks = [ {"label": task.capitalize(), "value": task} for task in pd.unique(find_sub_db(self.database, self.state['ds'])['task']) ]
         return tasks, tasks[0]['value']
 
-    def update_task_changed(self, task=None, find_optimal_ref=None):
+    def task_selected(self, task=None, find_optimal_ref=None):
         if find_optimal_ref is not None:
             self.references[self.state['ds']] = find_optimal_reference(self.state['sub_database'])
             self.update_database()
@@ -195,11 +199,12 @@ class Visualization(dash.Dash):
             self.database, self.boundaries, self.boundaries_real, self.references = rate_database(self.database, self.meta, self.boundaries, self.state['indexmode'], self.references, self.unit_fmt, self.state['rating_mode'])
             self.state['update_on_change'] = False
         self.state['task'] = task or self.state['task']
-        avail_envs = [{"label": env, "value": env} for env in self.environments[(self.state['ds'], self.state['task'])]]
+
+        avail_envs = [ {"label": env, "value": env} for env in pd.unique(find_sub_db(self.database, self.state['ds'], self.state['task'])['environment']) ]
         axis_options = [{'label': lookup_meta(self.meta, metr, subdict='properties'), 'value': metr} for metr in self.metrics[(self.state['ds'], self.state['task'])]]
         self.state['xaxis'] = self.xaxis_default[(self.state['ds'], self.state['task'])]
         self.state['yaxis'] = self.yaxis_default[(self.state['ds'], self.state['task'])]
-        self.state['sub_database'] = find_sub_database(self.database, self.state['ds'], self.state['task'])
+        self.state['sub_database'] = find_sub_db(self.database, self.state['ds'], self.state['task'])
         models = self.state['sub_database']['model'].values
         ref_options = [{'label': mod, 'value': mod} for mod in models]
         curr_ref = self.references[self.state['ds']] if self.references is not None and self.state['ds'] in self.references else models[0]
@@ -213,7 +218,7 @@ class Visualization(dash.Dash):
         else:
             point = hover_data['points'][0]
             env_name = env_names[point['curveNumber']]
-            model = find_sub_database(self.state['sub_database'], environment=env_name).iloc[point['pointNumber']].to_dict()
+            model = find_sub_db(self.state['sub_database'], environment=env_name).iloc[point['pointNumber']].to_dict()
             self.state['model'] = fill_meta(model, self.meta)
             self.state['label'] = PropertyLabel(self.state['model'])
 

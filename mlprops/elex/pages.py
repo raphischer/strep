@@ -31,19 +31,23 @@ style_upload = dict({
 }, **style_btn_cfg)
 
 
-def create_page(datasets, meta_info, indexmode, rating_mode):
+def create_page(databases, indexmode, rating_mode):
 
-    if isinstance(meta_info, str) and os.path.isfile(meta_info):
-        meta_info = read_json(meta_info)
-    if not isinstance(meta_info, dict):
-        raise RuntimeError # TODO error msg
+    # if isinstance(meta_info, str) and os.path.isfile(meta_info):
+    #     meta_info = read_json(meta_info)
+    # if not isinstance(meta_info, dict):
+    #     raise RuntimeError # TODO error msg
     
     # task configuration (offcanvas)
     task_configuration = dbc.Offcanvas(
         html.Div(children=[
             html.Div(children=[
+                html.H2('Database:'),
+                dbc.Select(id='db-switch', value=list(databases.keys())[0], options=[{'label': db, 'value': db} for db in databases.keys()],)
+            ]),
+            html.Div(children=[
                 html.H2('Dataset:'),
-                dbc.Select(id='ds-switch', value=datasets[0], options=[{'label': lookup_meta(meta_info, ds, subdict='dataset'), 'value': ds} for ds in datasets],)
+                dbc.Select(id='ds-switch')
             ]),
             html.Div(children=[
                 html.H2('ML Task:'),

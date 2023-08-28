@@ -149,7 +149,7 @@ def assemble_database(logdir_root=None, logdir_merged=None, output_tar_dir=None,
     return database
 
 
-def find_sub_database(database, dataset=None, task=None, environment=None):
+def find_sub_db(database, dataset=None, task=None, environment=None):
     if dataset is not None:
         database = database[database['dataset'] == dataset]
     if task is not None:
