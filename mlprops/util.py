@@ -62,6 +62,8 @@ class PatchedJSONEncoder(json.JSONEncoder):
             return obj.tolist()
         if isinstance(obj, pd.DataFrame):
             return obj.to_json()
+        if pd.isnull(obj):
+            return None
         return json.JSONEncoder.default(self, obj)
 
 

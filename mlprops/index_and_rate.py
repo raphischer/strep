@@ -104,7 +104,7 @@ def index_to_rating(index, scale):
     return 4 # worst rating if index does not fall in boundaries
 
 
-def process_property(value, reference_value, meta, boundaries, unit_fmt):
+def process_property(value, reference_value, meta, unit_fmt):
     if isinstance(value, dict): # re-indexing
         returned_dict = value
     else:
@@ -117,7 +117,6 @@ def process_property(value, reference_value, meta, boundaries, unit_fmt):
     if 'weight' in returned_dict: # TODO is this a good indicator for indexable metrics?
         higher_better = 'maximize' in returned_dict and returned_dict['maximize']
         returned_dict['index'] = value_to_index(returned_dict['value'], reference_value, higher_better)
-        returned_dict['rating'] = index_to_rating(returned_dict['index'], boundaries)
     return returned_dict
 
 
@@ -235,10 +234,8 @@ def update_weights(database, weights):
 
 
 def rate_database(database, given_meta, boundaries=None, indexmode='best', references=None, unit_fmt=None, rating_mode='optimistic mean'):
-    # load defaults
-    boundaries = load_boundaries(boundaries)
+    assert pd.unique(database.index).size == database.shape[0], f"ERROR! Database shaped {database.shape} has only {pd.unique(database.index).size} unique indices"
     unit_fmt = unit_fmt or CustomUnitReformater()
-    real_boundaries = {}
     # lookup meta information for numeric properties in database
     properties_meta = {}
     if 'properties' in given_meta:
@@ -252,19 +249,15 @@ def rate_database(database, given_meta, boundaries=None, indexmode='best', refer
         properties_meta[col] = meta
 
     # group each dataset, task and environment combo
-    database['old_index'] = database.index # store index for mapping the groups later on
     fixed_fields = ['dataset', 'task', 'environment']
-    grouped_by = database.groupby(fixed_fields)
 
-    for group_field_vals, data in grouped_by:
-        real_boundaries[group_field_vals] = {}
+    # assess index values
+    for group_field_vals, data in database.groupby(fixed_fields):
+        # real_boundaries[group_field_vals] = {}
         ds = group_field_vals[fixed_fields.index('dataset')]
         # process per metric
         for prop, meta in properties_meta.items():
             higher_better = 'maximize' in meta and meta['maximize']
-            # extract rating boundaries per metric
-            prop_boundaries = boundaries[prop] if prop in boundaries else boundaries['default']
-            boundaries[prop] = [bound.copy() for bound in prop_boundaries] # copies not references! otherwise changing a boundary affects multiple metrics
             
             if indexmode == 'centered': # one central reference model receives index 1, everything else in relation
                 if references is None:
@@ -288,11 +281,24 @@ def rate_database(database, given_meta, boundaries=None, indexmode='best', refer
             else:
                 raise RuntimeError(f'Invalid indexmode {indexmode}!')
             # extract meta, project on index values and rate
-            data[prop] = data[prop].map( lambda value: process_property(value, ref_val, meta, prop_boundaries, unit_fmt) )
-            # calculate real boundary values
-            real_boundaries[group_field_vals][prop] = [(index_to_value(start, ref_val, higher_better), index_to_value(stop, ref_val, higher_better)) for (start, stop) in prop_boundaries]
-            # store results back to database
-            database.loc[data['old_index']] = data
+            data[prop] = data[prop].map( lambda value: process_property(value, ref_val, meta, unit_fmt) )
+            database.loc[data.index] = data
+
+    # assess ratings & boundaries
+    boundaries = calculate_optimal_boundaries(database) if boundaries is None else load_boundaries(boundaries)
+    real_boundaries = {}
+    for group_field_vals, data in database.groupby(fixed_fields):
+        real_boundaries[group_field_vals] = {}
+        # process per metric
+        for prop, meta in properties_meta.items():
+            higher_better = 'maximize' in meta and meta['maximize']
+            # extract rating boundaries per metric
+            pr_bounds = boundaries[prop] if prop in boundaries else boundaries['default']
+            boundaries[prop] = [bound.copy() for bound in pr_bounds] # copies not references! otherwise changing a boundary affects multiple metrics
+            # calculate rating and real boundary values
+            data[prop].map( lambda pr: pr.update({'rating': index_to_rating(pr['index'], pr_bounds)}) if isinstance(pr, dict) else pr )
+            real_boundaries[group_field_vals][prop] = [(index_to_value(start, ref_val, higher_better), index_to_value(stop, ref_val, higher_better)) for (start, stop) in pr_bounds]
+            database.loc[data.index] = data
 
     # make certain model metrics available across all tasks
     for prop, meta in properties_meta.items():
@@ -308,9 +314,8 @@ def rate_database(database, given_meta, boundaries=None, indexmode='best', refer
                     if valid.shape[0] > 0:
                         # multiply the available data and place in each row
                         data[prop] = [valid.values[0]] * data.shape[0]
-                        database.loc[data['old_index']] = data
+                        database.loc[data.index] = data
     
-    database.drop('old_index', axis=1, inplace=True) # drop the tmp index info
     # calculate compound ratings
     database = calculate_compound_rating(database, rating_mode)
     return database, boundaries, real_boundaries, references

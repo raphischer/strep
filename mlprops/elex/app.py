@@ -16,7 +16,7 @@ from mlprops.elex.graphs import create_scatter_graph, create_bar_graph, add_rati
 from mlprops.labels.label_generation import PropertyLabel
 from mlprops.unit_reformatting import CustomUnitReformater
 from mlprops.load_experiment_logs import find_sub_db
-from mlprops.util import lookup_meta
+from mlprops.util import lookup_meta, PatchedJSONEncoder
 
 
 class Visualization(dash.Dash):
@@ -253,11 +253,11 @@ class Visualization(dash.Dash):
     def save_label(self, lbl_clicks=None, lbl_clicks2=None, sum_clicks=None, log_clicks=None):
         if (lbl_clicks is None and lbl_clicks2 is None and sum_clicks is None and log_clicks is None) or self.state['model'] is None:
             return # callback init
-        f_id = f'{self.state["model"]["model"]["name"]}_{self.state["model"]["environment"]}'.replace(' ', '_')
+        f_id = f'{lookup_meta(self.meta, self.state["model"]["model"], subdict="model")}_{self.state["model"]["environment"]}'.replace(' ', '_')
         if 'label' in dash.callback_context.triggered[0]['prop_id']:
             return dcc.send_bytes(self.state['label'].write(), filename=f'energy_label_{f_id}.pdf')
         elif 'sum' in dash.callback_context.triggered[0]['prop_id']:
-            return dict(content=json.dumps(self.state['model'], indent=4), filename=f'energy_summary_{f_id}.json')
+            return dict(content=json.dumps(self.state['model'], indent=4, cls=PatchedJSONEncoder), filename=f'energy_summary_{f_id}.json')
         else: # full logs
             # TODO load logs
             raise NotImplementedError
