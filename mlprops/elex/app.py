@@ -1,4 +1,3 @@
-import argparse
 import base64
 import json
 
@@ -220,6 +219,9 @@ class Visualization(dash.Dash):
             env_name = env_names[point['curveNumber']]
             model = find_sub_db(self.state['sub_database'], environment=env_name).iloc[point['pointNumber']].to_dict()
             self.state['model'] = fill_meta(model, self.meta)
+            if isinstance(self.state['model']['model'], str): 
+                # make sure that model is always a dict with name field
+                self.state['model']['model'] = {'name': self.state['model']['model']}
             self.state['label'] = PropertyLabel(self.state['model'])
 
             model_table, metric_table = summary_to_html_tables(self.state['model'])
@@ -253,7 +255,7 @@ class Visualization(dash.Dash):
     def save_label(self, lbl_clicks=None, lbl_clicks2=None, sum_clicks=None, log_clicks=None):
         if (lbl_clicks is None and lbl_clicks2 is None and sum_clicks is None and log_clicks is None) or self.state['model'] is None:
             return # callback init
-        f_id = f'{lookup_meta(self.meta, self.state["model"]["model"], subdict="model")}_{self.state["model"]["environment"]}'.replace(' ', '_')
+        f_id = f'{self.state["model"]["model"]["name"]}_{self.state["model"]["environment"]}'.replace(' ', '_')
         if 'label' in dash.callback_context.triggered[0]['prop_id']:
             return dcc.send_bytes(self.state['label'].write(), filename=f'energy_label_{f_id}.pdf')
         elif 'sum' in dash.callback_context.triggered[0]['prop_id']:

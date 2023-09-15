@@ -5,6 +5,7 @@
         "unit": "percent",
         "group": "Performance",
         "weight": 0.1666666,
+        "maximize": true,
         "independent_of_task": true
     },
     "top-5_val": {
@@ -13,6 +14,7 @@
         "unit": "percent",
         "group": "Performance",
         "weight": 0.1666666,
+        "maximize": true,
         "independent_of_task": true
     },
     "parameters": {

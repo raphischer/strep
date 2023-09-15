@@ -1,7 +1,5 @@
-import json
 import os
 import base64
-import argparse
 
 from PIL import Image
 import numpy as np
