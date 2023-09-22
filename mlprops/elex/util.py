@@ -33,7 +33,8 @@ def fill_meta(summary, meta):
     return summary
 
 
-def summary_to_html_tables(summary):
+def summary_to_html_tables(summary, metrics):
+    # general info
     final_rating = f"{summary['compound_index']:5.3f} ({RATING_MEANINGS[summary['compound_rating']]})"
     info_header = [
         html.Thead(html.Tr([html.Th("Task"), html.Th("Model Name"), html.Th("Environment"), html.Th("Final Rating")]))
@@ -43,11 +44,13 @@ def summary_to_html_tables(summary):
     mname = summary['model']['name'] if isinstance(summary['model'], dict) else summary['model']
     info_row = [html.Tbody([html.Tr([html.Td(field) for field in [task, mname, summary['environment'], final_rating]])])]
 
+    # metrics
     metrics_header = [
         html.Thead(html.Tr([html.Th("Metric"), html.Th("Value"), html.Th("Index"), html.Th("Rating"), html.Th("Weight")]))
     ]
     metrics_rows = []
-    for key, val in summary.items():
+    for key in metrics:
+        val = summary[key]
         if isinstance(val, dict) and "value" in val:
             table_cells = [f'{val["name"]} {val["fmt_unit"]}', val["fmt_val"][:6], f'{val["index"]:4.2f}'[:4], val["rating"], f'{val["weight"]:3.2f}']
             metrics_rows.append(html.Tr([html.Td(field) for field in table_cells]))

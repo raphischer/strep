@@ -7,7 +7,7 @@ import pandas as pd
 import numpy as np
 
 from mlprops.monitoring import aggregate_monitoring_log
-from mlprops.util import basename, PatchedJSONEncoder, read_json, read_txt
+from mlprops.util import basename, PatchedJSONEncoder, read_json, drop_na_properties
 
 
 #############################
@@ -156,4 +156,4 @@ def find_sub_db(database, dataset=None, task=None, environment=None):
         database = database[database['task'] == task]
     if environment is not None:
         database = database[database['environment'] == environment]
-    return database
+    return drop_na_properties(database) # drop columns with full NA

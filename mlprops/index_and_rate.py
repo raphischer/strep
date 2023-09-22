@@ -6,22 +6,19 @@ import pandas as pd
 
 from mlprops.unit_reformatting import CustomUnitReformater
 from mlprops.load_experiment_logs import find_sub_db
-from mlprops.util import lookup_meta
+from mlprops.util import lookup_meta, drop_na_properties
 
 
 def calculate_compound_rating(ratings, mode='optimistic mean'):
     if isinstance(ratings, pd.DataFrame): # full database to rate
-        for idx, log in ratings.iterrows():
-            try:
-                compound = calculate_single_compound_rating(log, mode)
-                ratings.loc[idx,'compound_index'] = compound['index']
-                ratings.loc[idx,'compound_rating'] = compound['rating']
-                # print(f"{log['model']:<30} {log['dataset']:<50} {compound['index']:5.4f} {compound['rating']:<10}")
-            except RuntimeError:
-                ratings.loc[idx,'compound_index'] = -1
-                ratings.loc[idx,'compound_rating'] = -1
-        ratings['compound_rating'] = ratings['compound_rating'].astype(int)
-        return ratings
+        # group by ds & task, drop
+        compound_index = np.zeros((ratings.shape[0]))
+        compound_rating = np.zeros((ratings.shape[0]), dtype=int)
+        for i, (_, log) in enumerate(ratings.iterrows()):
+            compound = calculate_single_compound_rating(log, mode)
+            compound_index[i] = compound['index']
+            compound_rating[i] = compound['rating']
+        return compound_index, compound_rating
     return calculate_single_compound_rating(ratings, mode)
 
 
@@ -82,7 +79,9 @@ def calculate_single_compound_rating(input, mode='optimistic mean'):
 
 def value_to_index(value, ref, higher_better):
     if np.isinf(value):
-        return np.inf if higher_better else 0
+        return 1 if higher_better else 0
+    if np.isnan(value):
+        return 0
     #      i = v / r                     OR                i = r / v
     try:
         return value / ref if higher_better else ref / value
@@ -109,10 +108,11 @@ def process_property(value, reference_value, meta, unit_fmt):
         returned_dict = value
     else:
         returned_dict = meta.copy()
-        if pd.isna(value):
-            return value
         returned_dict['value'] = value
-        fmt_val, fmt_unit = unit_fmt.reformat_value(value, returned_dict['unit'])
+        if pd.isna(value):
+            fmt_val, fmt_unit = 'N.A.', returned_dict['unit']
+        else:
+            fmt_val, fmt_unit = unit_fmt.reformat_value(value, returned_dict['unit'])
         returned_dict.update({'fmt_val': fmt_val, 'fmt_unit': fmt_unit})
     if 'weight' in returned_dict: # TODO is this a good indicator for indexable metrics?
         higher_better = 'maximize' in returned_dict and returned_dict['maximize']
@@ -238,9 +238,9 @@ def rate_database(database, given_meta, boundaries=None, indexmode='best', refer
     unit_fmt = unit_fmt or CustomUnitReformater()
     # lookup meta information for numeric properties in database
     properties_meta = {}
-    if 'properties' in given_meta:
+    if 'properties' in given_meta: # assess columns defined in meta
         cols_to_rate = [ key for key in given_meta['properties'] if key in database.columns ]
-    else:
+    else: # assess all numeric columns
         cols_to_rate = database.select_dtypes('number').columns
     for col in cols_to_rate:
         meta = lookup_meta(given_meta, col, None, 'properties')
@@ -316,8 +316,13 @@ def rate_database(database, given_meta, boundaries=None, indexmode='best', refer
                         data[prop] = [valid.values[0]] * data.shape[0]
                         database.loc[data.index] = data
     
-    # calculate compound ratings
-    database = calculate_compound_rating(database, rating_mode)
+    # calculate compound ratings for each DS X TASK combo, dropping tha nan columns
+    grouped_by = database.groupby(['dataset', 'task'])
+    for group_field_vals, data in grouped_by:
+        index, rating = calculate_compound_rating(drop_na_properties(data), rating_mode)
+        database.loc[data.index,'compound_index'] = index
+        database.loc[data.index,'compound_rating'] = rating
+    database['compound_rating'] = database['compound_rating'].astype(int)
     return database, boundaries, real_boundaries, references
 
 

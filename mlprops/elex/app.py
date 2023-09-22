@@ -223,8 +223,7 @@ class Visualization(dash.Dash):
                 # make sure that model is always a dict with name field
                 self.state['model']['model'] = {'name': self.state['model']['model']}
             self.state['label'] = PropertyLabel(self.state['model'])
-
-            model_table, metric_table = summary_to_html_tables(self.state['model'])
+            model_table, metric_table = summary_to_html_tables(self.state['model'], self.metrics[(self.state['ds'], self.state['task'])])
             enc_label = self.state['label'].to_encoded_image()
             try:
                 link = self.state['model']['model']['url']
@@ -245,8 +244,12 @@ class Visualization(dash.Dash):
                 self.update_database(only_current=False)
         self.state['xaxis'] = xaxis or self.state['xaxis']
         self.state['yaxis'] = yaxis or self.state['yaxis']
-        any_summary = self.state['sub_database'].iloc[0]
-        return any_summary[self.state['xaxis']]['weight'], any_summary[self.state['yaxis']]['weight']
+        for _, row in self.state['sub_database'].iterrows():
+            try:
+                return row[self.state['xaxis']]['weight'], row[self.state['yaxis']]['weight']
+            except TypeError:
+                pass
+        raise RuntimeError('No weights found for props ')
 
     def save_weights(self, save_weights_clicks=None):
         if save_weights_clicks is not None:

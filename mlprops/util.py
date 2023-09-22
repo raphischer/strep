@@ -101,6 +101,15 @@ def create_output_dir(dir=None, prefix='', config=None):
     return dir
 
 
+def prop_dict_to_val(df):
+    return df.applymap(lambda val: val['value'] if isinstance(val, dict) and 'value' in val else val)
+
+
+def drop_na_properties(df):
+    valid_cols = prop_dict_to_val(df).dropna(how='all', axis=1).columns
+    return df[valid_cols]
+
+
 class Logger(object):
     def __init__(self, fname='logfile.txt'):
         self.terminal = sys.stdout

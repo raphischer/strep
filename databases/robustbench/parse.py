@@ -18,8 +18,8 @@ for dataset in os.listdir(model_root):
         rows = [read_json(os.path.join(dirn, fname)) for fname in json_file_names]
         df = pd.DataFrame.from_records(rows)
         df['model'] = [fname.replace('.json', '') for fname in json_file_names]
-        df['dataset'] = dataset
-        df['threat_model'] = threat_model
+        df['dataset'] = dataset # f'{dataset} ({threat_model})'
+        df = df.rename({'corruptions_acc': f'{dataset}_corr_acc'}, axis=1)
         dfs.append(df)
 
 dfs_merged = pd.concat(dfs)
@@ -30,15 +30,14 @@ dfs_merged = dfs_merged.replace('', pd.NA).convert_dtypes()
 
 # set config and env information
 dfs_merged['environment'] = 'Tesla V100 - PyTorch 1.7.1'
-dfs_merged['task'] = 'robust test'
-dfs_merged['configuration'] = dfs_merged['model'] + ' - ' + dfs_merged['threat_model']
+dfs_merged['task'] = 'robustness infer'
+dfs_merged['configuration'] = dfs_merged['model'] + ' - ' + dfs_merged['dataset']
 
 # convert numeric columns
-dfs_merged['clean_acc'] = dfs_merged['clean_acc'].astype(float)
-dfs_merged['autoattack_acc'] = dfs_merged['autoattack_acc'].astype(float)
 dfs_merged['reported'] = dfs_merged['reported'].astype(float)
-dfs_merged['corruptions_acc_3d'] = dfs_merged['corruptions_acc_3d'].astype(float)
-dfs_merged['corruptions_acc'] = dfs_merged['corruptions_acc'].astype(float)
+for col in dfs_merged.columns:
+    if 'acc' in col or 'corr' in col:
+        dfs_merged[col] = dfs_merged[col].astype(float)
 
 dfs_merged.reset_index(inplace=True)
 

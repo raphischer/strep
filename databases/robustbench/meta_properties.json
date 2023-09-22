@@ -4,7 +4,7 @@
         "shortname": "Accuracy",
         "unit": "percent",
         "group": "Performance",
-        "weight": 0.2,
+        "weight": 0.233333333333333,
         "maximize": true,
         "independent_of_task": true
     },
@@ -13,7 +13,7 @@
         "shortname": "Rep",
         "unit": "percent",
         "group": "Performance",
-        "weight": 0.2,
+        "weight": 0.1,
         "maximize": true,
         "independent_of_task": true
     },
@@ -22,16 +22,34 @@
         "shortname": "corr",
         "unit": "percent",
         "group": "Performance",
-        "weight": 0.2,
+        "weight": 0.333333333333333,
         "maximize": true,
         "independent_of_task": true
     },
-    "corruptions_acc": {
+    "cifar100_corr_acc": {
+        "name": "Cifar-100 Corr Robustness",
+        "shortname": "corr",
+        "unit": "percent",
+        "group": "Performance",
+        "weight": 0.333333333333333,
+        "maximize": true,
+        "independent_of_task": true
+    },
+    "cifar10_corr_acc": {
+        "name": "Cifar-10 Corr Robustness",
+        "shortname": "corr",
+        "unit": "percent",
+        "group": "Performance",
+        "weight": 0.333333333333333,
+        "maximize": true,
+        "independent_of_task": true
+    },
+    "imagenet_corr_acc": {
         "name": "IN-C Robustness",
         "shortname": "corr",
         "unit": "percent",
         "group": "Performance",
-        "weight": 0.2,
+        "weight": 0.166666666666666,
         "maximize": true,
         "independent_of_task": true
     },
@@ -40,7 +58,7 @@
         "shortname": "corr",
         "unit": "percent",
         "group": "Performance",
-        "weight": 0.2,
+        "weight": 0.166666666666666,
         "maximize": true,
         "independent_of_task": true
     }
