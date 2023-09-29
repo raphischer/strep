@@ -6,18 +6,19 @@ import pandas as pd
 
 from mlprops.unit_reformatting import CustomUnitReformater
 from mlprops.load_experiment_logs import find_sub_db
-from mlprops.util import lookup_meta, drop_na_properties
+from mlprops.util import lookup_meta, drop_na_properties, prop_dict_to_val
 
 
-def calculate_compound_rating(ratings, mode='optimistic mean'):
+def calculate_compound_rating(ratings, mode='optimistic mean', quantiles=None):
+    if quantiles is None:
+        quantiles = [0.8, 0.6, 0.4, 0.2]
     if isinstance(ratings, pd.DataFrame): # full database to rate
         # group by ds & task, drop
         compound_index = np.zeros((ratings.shape[0]))
-        compound_rating = np.zeros((ratings.shape[0]), dtype=int)
         for i, (_, log) in enumerate(ratings.iterrows()):
-            compound = calculate_single_compound_rating(log, mode)
-            compound_index[i] = compound['index']
-            compound_rating[i] = compound['rating']
+            compound_index[i] = calculate_single_compound_rating(log, mode)
+        rating_bounds = load_boundaries({'tmp': np.quantile(compound_index, quantiles)})['tmp'] # TODO implement this nicer
+        compound_rating = [index_to_rating(val, rating_bounds) for val in compound_index]
         return compound_index, compound_rating
     return calculate_single_compound_rating(ratings, mode)
 
@@ -38,43 +39,32 @@ def calculate_single_compound_rating(input, mode='optimistic mean'):
     if isinstance(input, pd.Series):
         input = input.to_dict()
     if isinstance(input, dict): # model summary given instead of list of ratings
-        weights, ratings, index_vals = [], [], []
+        weights, index_vals = [], []
         for val in input.values():
             if isinstance(val, dict) and 'weight' in val and val['weight'] > 0:
                 weights.append(val['weight'])
-                ratings.append(val['rating'])
                 index_vals.append(val['index'])
     elif isinstance(input, list):
         weights = [1] * len(input)
-        ratings = input
         index_vals = input
     else:
         raise NotImplementedError()
+    if len(weights) == 0:
+        return 0
     weights = [w / sum(weights) for w in weights] # normalize so that weights sum up to one
-    if len(ratings) == 0:
-        raise RuntimeError
-    # calculate compound index and rating
-    results = {}
-    for name, values in zip(['rating', 'index'], (ratings, index_vals)):
-        asort = np.argsort(values)
-        if name == 'index': # bigger index provides smaller (better) rating!
-            asort = np.flip(asort)
-        weights = np.array(weights)[asort]
-        values = np.array(values)[asort]
-        if mode == 'best':
-            results[name] = values[0]
-        if mode == 'worst':
-            results[name] = values[-1]
-        if 'median' in mode:
-            # TODO FIX weighted median rating / index error
-            results[name] = weighted_median(values, weights)
-        if 'mean' in mode:
-            results[name] = np.average(values, weights=weights)
-    if len(results) < 2:
-        raise NotImplementedError('Rating Mode not implemented!', mode)
-    round_m = np.ceil if 'pessimistic' in mode else np.floor # compound rating needs to be rounded to int depending on mode
-    results['rating'] = int(round_m(results['rating']))
-    return results
+    asort = np.flip(np.argsort(index_vals))
+    weights = np.array(weights)[asort]
+    values = np.array(index_vals)[asort]
+    if mode == 'best':
+        return values[0]
+    if mode == 'worst':
+        return values[-1]
+    if 'median' in mode:
+        # TODO FIX weighted median rating / index error
+        return weighted_median(values, weights)
+    if 'mean' in mode:
+        return np.average(values, weights=weights)
+    raise NotImplementedError('Rating Mode not implemented!', mode)
 
 
 def value_to_index(value, ref, higher_better):
@@ -233,23 +223,31 @@ def update_weights(database, weights):
     return update_db
 
 
-def rate_database(database, given_meta, boundaries=None, indexmode='best', references=None, unit_fmt=None, rating_mode='optimistic mean'):
-    assert pd.unique(database.index).size == database.shape[0], f"ERROR! Database shaped {database.shape} has only {pd.unique(database.index).size} unique indices"
-    unit_fmt = unit_fmt or CustomUnitReformater()
-    # lookup meta information for numeric properties in database
+def identify_property_meta(given_meta, database):
     properties_meta = {}
     if 'properties' in given_meta: # assess columns defined in meta
         cols_to_rate = [ key for key in given_meta['properties'] if key in database.columns ]
     else: # assess all numeric columns
         cols_to_rate = database.select_dtypes('number').columns
+    if len(cols_to_rate) < 1:
+        raise RuntimeError('No rateable properties found!')
     for col in cols_to_rate:
         meta = lookup_meta(given_meta, col, None, 'properties')
         if not isinstance(meta, dict):
             meta = { "name": col, "shortname": col[:4], "unit": "number", "group": "Performance", "weight": 1.0 }
         properties_meta[col] = meta
+    return properties_meta
+
+
+def rate_database(database, given_meta, boundaries=None, indexmode='best', references=None, unit_fmt=None, rating_mode='optimistic mean'):
+    assert pd.unique(database.index).size == database.shape[0], f"ERROR! Database shaped {database.shape} has only {pd.unique(database.index).size} unique indices"
+    unit_fmt = unit_fmt or CustomUnitReformater()
+    properties_meta = identify_property_meta(given_meta, database)
 
     # group each dataset, task and environment combo
-    fixed_fields = ['dataset', 'task', 'environment']
+    fixed_fields = ['dataset', 'task']
+    if pd.unique(database['environment']).size > 1:
+        fixed_fields.append('environment')
 
     # assess index values
     for group_field_vals, data in database.groupby(fixed_fields):
@@ -303,12 +301,14 @@ def rate_database(database, given_meta, boundaries=None, indexmode='best', refer
     # make certain model metrics available across all tasks
     for prop, meta in properties_meta.items():
         if 'independent_of_task' in meta and meta['independent_of_task']:
-            fixed_fields = ['dataset', 'environment', 'model']
+            fixed_fields = ['dataset', 'model']
+            if pd.unique(database['environment']).size > 1:
+                fixed_fields.append('environment')
             grouped_by = database.groupby(fixed_fields)
             for group_field_vals, data in grouped_by:
-                valid = data[prop].dropna()
+                valid = data.loc[prop_dict_to_val(data)[prop].dropna().index,prop]
                 # check if there even are nan rows in the database (otherwise metrics maybe have been made available already)
-                if valid.shape[0] != data[prop].shape[0]:
+                if valid.size != data[prop].size:
                     if valid.shape[0] != 1:
                         print(f'{valid.shape[0]} not-NA values found for {prop} across all tasks on {group_field_vals}!')
                     if valid.shape[0] > 0:
@@ -326,38 +326,71 @@ def rate_database(database, given_meta, boundaries=None, indexmode='best', refer
     return database, boundaries, real_boundaries, references
 
 
-def find_relevant_metrics(database):
+def find_relevant_metrics(database, meta):
     all_metrics = {}
     x_default, y_default = {}, {}
+    to_delete = []
+    properties_meta = identify_property_meta(meta, database)
     for ds in pd.unique(database['dataset']):
         for task in pd.unique(database[database['dataset'] == ds]['task']):
             lookup = (ds, task)
             subd = find_sub_db(database, ds, task)
             metrics = {}
             for col in subd.columns:
-                for val in subd[col]:
-                    if isinstance(val, dict):
-                        metrics[col] = (val['weight'], val['group']) # store for identifying the axis defaults
-                        break
-            weights, groups = zip(*list(metrics.values()))
-            argsort = np.argsort(weights)
-            groups = np.array(groups)[argsort]
-            metrics = np.array(list(metrics.keys()))[argsort]
-            # use most influential Performance property on y-axis
-            if 'Performance' not in groups:
-                raise RuntimeError(f'Could not find performance property for {lookup}!')
-            y_default[lookup] = metrics[groups == 'Performance'][0]
-            if 'Resources' in groups: # use the most influential resource property on x-axis
-                x_default[lookup] = metrics[groups == 'Resources'][0]
-            elif 'Complexity' in groups: # use most influential complexity
-                x_default[lookup] = metrics[groups == 'Complexity'][0]
+                if col in properties_meta:
+                    val = properties_meta[col]
+                    metrics[col] = (val['weight'], val['group']) # weight is used for identifying the axis defaults
+            if len(metrics) < 2:
+                to_delete.append(lookup)
             else:
-                try:
-                    x_default[lookup] = metrics[groups == 'Performance'][1]
-                except IndexError:
-                    raise RuntimeError(f'No second Performance property and no Resources or Complexity properties were found for {lookup}!')                
-            all_metrics[lookup] = metrics
-    return all_metrics, x_default, y_default
+                weights, groups = zip(*list(metrics.values()))
+                argsort = np.argsort(weights)
+                groups = np.array(groups)[argsort]
+                metrics = np.array(list(metrics.keys()))[argsort]
+                # use most influential Performance property on y-axis
+                if 'Performance' not in groups:
+                    raise RuntimeError(f'Could not find performance property for {lookup}!')
+                y_default[lookup] = metrics[groups == 'Performance'][0]
+                if 'Resources' in groups: # use the most influential resource property on x-axis
+                    x_default[lookup] = metrics[groups == 'Resources'][0]
+                elif 'Complexity' in groups: # use most influential complexity
+                    x_default[lookup] = metrics[groups == 'Complexity'][0]
+                else:
+                    try:
+                        x_default[lookup] = metrics[groups == 'Performance'][1]
+                    except IndexError:
+                        print(f'No second Performance property and no Resources or Complexity properties were found for {lookup}!')
+                        to_delete.append(lookup)
+                all_metrics[lookup] = metrics
+    drop_rows = []
+    for (ds, task) in to_delete:
+        print(f'Not enough numerical properties found for {task} on {ds}!')
+        try:
+            del(all_metrics[(ds, task)])
+            del(x_default[(ds, task)])
+            del(y_default[(ds, task)])
+        except KeyError:
+            pass
+        drop_rows.extend( find_sub_db(database, ds, task).index.to_list() )
+    database = database.drop(drop_rows)
+    database = database.reset_index()
+    return database, all_metrics, x_default, y_default
+
+
+def load_database(fname):
+    database = pd.read_pickle(fname)
+    if hasattr(database, 'sparse'): # convert sparse databases to regular ones
+        old_shape = database.shape
+        database = database.sparse.to_dense()
+        assert old_shape == database.shape
+        for col in database.columns:
+            try:    
+                assert np.all(database[col].dropna() == database[col].dropna().astype(float).astype(str))
+                database[col] = database[col].astype(float)
+            except Exception:
+                pass
+        database['environment'] = 'unknown'
+    return database
 
 
 if __name__ == '__main__':

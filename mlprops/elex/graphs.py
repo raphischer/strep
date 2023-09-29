@@ -9,7 +9,7 @@ from mlprops.elex.util import RATING_COLORS, ENV_SYMBOLS, PATTERNS, RATING_COLOR
 def add_rating_background(fig, rating_pos, mode, dark_mode):
     for xi, (x0, x1) in enumerate(rating_pos[0]):
         for yi, (y0, y1) in enumerate(rating_pos[1]):
-            color = RATING_COLORS[calculate_compound_rating([xi, yi], mode)['rating']]
+            color = RATING_COLORS[int(calculate_compound_rating([xi, yi], mode))]
             if dark_mode:
                 fig.add_shape(type="rect", layer='below', line=dict(color='#0c122b'), fillcolor=color, x0=x0, x1=x1, y0=y0, y1=y1, opacity=.8)
             else:

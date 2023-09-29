@@ -136,7 +136,7 @@ class Visualization(dash.Dash):
             rating_pos = [self.boundaries[self.state['xaxis']], self.boundaries[self.state['yaxis']]]
             axis_names = [name.split('[')[0].strip() + ' Index' for name in axis_names]
         else:
-            current = (self.state['ds'], self.state['task'], env_names[0])
+            current = (self.state['ds'], self.state['ds_task'][1], env_names[0])
             rating_pos = [self.boundaries_real[current][self.state['xaxis']], self.boundaries_real[current][self.state['yaxis']]]
         scatter = create_scatter_graph(self.plot_data, axis_names, dark_mode=self.dark_mode)
         add_rating_background(scatter, rating_pos, self.state['rating_mode'], dark_mode=self.dark_mode)
@@ -197,13 +197,13 @@ class Visualization(dash.Dash):
         if self.state['update_on_change']:
             self.database, self.boundaries, self.boundaries_real, self.references = rate_database(self.database, self.meta, self.boundaries, self.state['indexmode'], self.references, self.unit_fmt, self.state['rating_mode'])
             self.state['update_on_change'] = False
-        self.state['task'] = task or self.state['task']
+        self.state['ds_task'] = (self.state['ds'], task) or (self.state['ds'], self.state['task'])
 
-        avail_envs = [ {"label": env, "value": env} for env in pd.unique(find_sub_db(self.database, self.state['ds'], self.state['task'])['environment']) ]
-        axis_options = [{'label': lookup_meta(self.meta, metr, subdict='properties'), 'value': metr} for metr in self.metrics[(self.state['ds'], self.state['task'])]]
-        self.state['xaxis'] = self.xaxis_default[(self.state['ds'], self.state['task'])]
-        self.state['yaxis'] = self.yaxis_default[(self.state['ds'], self.state['task'])]
-        self.state['sub_database'] = find_sub_db(self.database, self.state['ds'], self.state['task'])
+        avail_envs = [ {"label": env, "value": env} for env in pd.unique(find_sub_db(self.database, self.state['ds'], self.state['ds_task'][1])['environment']) ]
+        axis_options = [{'label': lookup_meta(self.meta, metr, subdict='properties'), 'value': metr} for metr in self.metrics[self.state['ds_task']]]
+        self.state['xaxis'] = self.xaxis_default[self.state['ds_task']]
+        self.state['yaxis'] = self.yaxis_default[self.state['ds_task']]
+        self.state['sub_database'] = find_sub_db(self.database, self.state['ds'], self.state['ds_task'][1])
         models = self.state['sub_database']['model'].values
         ref_options = [{'label': mod, 'value': mod} for mod in models]
         curr_ref = self.references[self.state['ds']] if self.references is not None and self.state['ds'] in self.references else models[0]
@@ -223,7 +223,7 @@ class Visualization(dash.Dash):
                 # make sure that model is always a dict with name field
                 self.state['model']['model'] = {'name': self.state['model']['model']}
             self.state['label'] = PropertyLabel(self.state['model'])
-            model_table, metric_table = summary_to_html_tables(self.state['model'], self.metrics[(self.state['ds'], self.state['task'])])
+            model_table, metric_table = summary_to_html_tables(self.state['model'], self.metrics[self.state['ds_task']])
             enc_label = self.state['label'].to_encoded_image()
             try:
                 link = self.state['model']['model']['url']
