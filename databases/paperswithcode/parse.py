@@ -1,6 +1,7 @@
 import os
 import math
 import json
+import re
 
 import numpy as np
 from paperswithcode import PapersWithCodeClient
@@ -21,73 +22,109 @@ def collect_evaluation_meta(client):
     return evals_meta
 
 
+def uniform_metric(key):
+    return key.lower().strip().replace('-', '_').replace(' ', '_')
+
+
+def remove_digit_group_separator(value):
+    if isinstance(value, str) and ('.' in value or ',' in value):
+        # variant: 1.000.000,15
+        match = re.match(r'([\d\.]+),?(\d*)', value)
+        if match:
+            return value.replace('.', '').replace(',', '.')
+        # variant: 1 000 000,15
+        match = re.match(r'([\d\s]+),?(\d*)', value)
+        if match:
+            return value.replace(' ', '').replace(',', '.')
+        # variant: 1,000,000.15
+        match = re.match(r'([\d\,]+).?(\d*)', value)
+        if match:
+            return value.replace(',', '')
+    return value
+
+
+
 def collect_eval_metrics(client, eval_id, eval_meta):
     init_list = client.evaluation_result_list(evaluation_id=eval_id)
     metrics = set(['methodology', 'paper', 'evaluated_on'])
     for res in init_list.results:
         metrics = metrics.union(set(list(res.metrics.keys())))
     other_stats = {'n_results': init_list.count, 'n_metrics': len(metrics)}
-    df = None
 
-    if init_list.count > 9:
-        eval_metrics = []
-        n_pages = math.ceil(init_list.count / len(init_list.results))
-        for page in range(n_pages):
-            if page > 0: # first page already loaded
-                res_list = client.evaluation_result_list(evaluation_id=eval_id, page=page+1)
-            else:
-                res_list = init_list
-            for res in res_list.results:
-                if len(res.metrics) > 0:
-                    metrics = res.metrics
-                    metrics['methodology'] = res.methodology
-                    metrics['paper'] = res.paper
-                    metrics['evaluated_on'] = res.evaluated_on
-                    eval_metrics.append(metrics)
-        df = pd.DataFrame(eval_metrics)
-
-        possible_numerics = [col for col in df.columns if col not in ['methodology', 'paper', 'evaluated_on']]
-
-        for col in possible_numerics:
-            try:
-                df[col] = df[col].map(lambda val: str(val).replace(',', '')).astype(float)
-            except Exception:
-                pass
-        
-        # filter for numeric cols with at least 20% of valid entries
-        num_cols = [col for col in df.select_dtypes('number').columns if df[col].dropna().size / df[col].size > 0.2]
-        df_num = df[num_cols]
-        # check if there are at least 3 metrics and 10 results
-        if df_num.columns.size > 2 and df_num.dropna(how='all').shape[0] > 9:
-            df['dataset'] = eval_meta[0]
-            df['task'] = eval_meta[1]
-            if df_num.shape != df_num.dropna(how='all').shape:
-                df = df.loc[df_num.dropna(how='all').index]
-            df = df.rename(columns={col: col.lower().strip().replace('-', '_') for col in df})
-            df = df.reset_index(drop=True)
+    eval_metrics = []
+    if init_list.count < 1:
+        return None, other_stats
+    n_pages = math.ceil(init_list.count / len(init_list.results))
+    for page in range(n_pages):
+        if page > 0: # first page already loaded
+            res_list = client.evaluation_result_list(evaluation_id=eval_id, page=page+1)
         else:
-            df = None
+            res_list = init_list
+        for res in res_list.results:
+            if len(res.metrics) > 0:
+                # uniformly rename metrics and remove , in values (sometimes used as digit group separator)
+                metrics = {uniform_metric(key): remove_digit_group_separator(val) for key, val in res.metrics.items() if val}
+                metrics['methodology'] = res.methodology
+                metrics['paper'] = res.paper
+                metrics['evaluated_on'] = res.evaluated_on
+                eval_metrics.append(metrics)
+    df = pd.DataFrame(eval_metrics)
+    
+    changed = True
+    count = 0
+    while changed: # drop until no more changes
+        old_shape = df.shape
+        df = df.loc[df.dropna(how='all').index, df.dropna(how='all',axis=1).columns] # drop complete nan rows and cols
+        changed = df.shape != old_shape
+        count += 1
+    df['dataset'] = eval_meta[0]
+    df['task'] = eval_meta[1]
+    df = df.reset_index(drop=True)
     return df, other_stats
+
+
+def filter_min_rows(df, min_rows=10):
+    keep = []
+    for _, data in tqdm(df.groupby(['dataset', 'task'])):
+        if data.shape[0] > min_rows - 1:
+            keep.extend(data.index.to_list())
+    return keep
+
+
+def filter_min_props(df, min_props=3, populated=0.0):
+    keep = []
+    for _, data in tqdm(df.groupby(['dataset', 'task'])):
+        data = data.dropna(how='all', axis=1)
+        if populated > 0:
+            sparse_populated_cols = [col for col in data.columns if data[col].dropna().size / data.shape[0] < 0.25]
+            data = data.drop(columns=sparse_populated_cols)
+        if data.shape[1] >= min_props + 8: # added 8 info columns that are not properties
+            keep.extend(data.index.to_list())
+    return keep
 
 
 if __name__ == '__main__':
     FDIR = os.path.dirname(__file__)
-    MERGED = os.path.join(FDIR, 'database_new.pkl')
+    COMPLETE = os.path.join(FDIR, 'pwc_complete.pkl')
+    FILTERED = os.path.join(FDIR, 'database.pkl')
     OTHER = os.path.join(FDIR, 'other_stats.json')
+    FILTER_STATS = os.path.join(FDIR, 'filterstats.json')
 
     client = PapersWithCodeClient()
 
-    if os.path.isfile(MERGED):
-        merged = pd.read_pickle(MERGED)
+    # loading all evaluations
+    if os.path.isfile(COMPLETE):
+        merged = pd.read_pickle(COMPLETE)
     else:
         evals_meta = collect_evaluation_meta(client)
         evals_metrics, other_stats = {}, {}
+
         for eval_id, eval_meta in tqdm(evals_meta.items(), total=len(evals_meta), desc='assessing evaluation metrics'):
             df, other = collect_eval_metrics(client, eval_id, eval_meta)
             other_stats[eval_id] = other
             if df is not None:
+                df.to_pickle(f'results/{eval_id}.pkl')
                 evals_metrics[eval_id] = df
-
         with open(OTHER, 'w') as jf:
             json.dump(other_stats, jf)
         merged = pd.concat(list(evals_metrics.values())).reset_index(drop=True)
@@ -96,9 +133,30 @@ if __name__ == '__main__':
         merged['environment'] = 'unknown'
         merged['configuration'] = merged[['task', 'dataset', 'model']].apply(lambda val: '{} on {} via {}'.format(*val.astype(str)), axis=1, raw=True)
         merged = merged.astype(pd.SparseDtype("str", np.nan))
-        merged.to_pickle(MERGED)
+        merged.to_pickle(COMPLETE)
 
-    print(merged.shape)
+
+    # filtering for relevant evaluations
+    filters = {
+        'At least 10 results': filter_min_rows,
+        'At least 3 properties': filter_min_props,
+        'At least 25% populated properties': lambda df: filter_min_props(df, populated=0.25),
+    }
+
+    shapes = { 'Complete database': merged.shape }
+
+    for filter, func in filters.items():
+        keep = func(merged)
+        merged = merged.loc[keep]
+        merged = merged.dropna(how='all', axis=1) # drop all nan cols (might be redundant now)
+        shapes[filter] = merged.shape
+        print(filter, shapes[filter])
+
+    merged.to_pickle(FILTERED)
+
+    with open(FILTER_STATS, 'w') as jf:
+        json.dump(shapes, jf)
+    
     for gr, data in merged.groupby(['dataset']):
         data = data.dropna(how='all', axis=1)
         n_tasks, n_papers, m_methods = pd.unique(data['task']).size, pd.unique(data['paper']).size, pd.unique(data['methodology']).size
