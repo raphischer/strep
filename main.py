@@ -1,15 +1,14 @@
 import argparse
 import os
-import pandas as pd
 
 from mlprops.index_and_rate import rate_database, find_relevant_metrics, load_database
 from mlprops.util import load_meta
 
 DATABASES = {
-    'Papers With Code': 'databases/paperswithcode/database.pkl',
+    # 'Papers With Code': 'databases/paperswithcode/database.pkl',
     # 'DNN Forecasting': 'databases/dnn_forecasting/database.pkl',
     # 'ImageNet Classification': 'databases/imagenet_classification/database.pkl',
-    # 'RobustBench': 'databases/robustbench/database.pkl',
+    'RobustBench': 'databases/robustbench/database.pkl',
     # 'Sklearn Classification': 'databases/sklearn_openml_classification/database.pkl'
 }
 
@@ -27,6 +26,7 @@ if __name__ == '__main__':
 
     databases = {}
     for name, fname in DATABASES.items():
+        print('LOADING', name)
         if not os.path.isfile(fname):
             raise RuntimeError('Could not find', fname)
         # load database
@@ -37,7 +37,7 @@ if __name__ == '__main__':
         database, metrics, xaxis_default, yaxis_default = find_relevant_metrics(database, meta)
         rated_database, boundaries, real_boundaries, references = rate_database(database, meta)
 
-        print(f'Database {name} has {rated_database.shape} entries')
+        print(f'    database {name} has {rated_database.shape} entries')
         databases[name] = ( rated_database, meta, metrics, xaxis_default, yaxis_default, boundaries, real_boundaries, references )
 
     if args.mode == 'interactive':

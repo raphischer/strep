@@ -250,54 +250,58 @@ def rate_database(database, given_meta, boundaries=None, indexmode='best', refer
         fixed_fields.append('environment')
 
     # assess index values
+    print('    assessing index values')
     for group_field_vals, data in database.groupby(fixed_fields):
-        # real_boundaries[group_field_vals] = {}
+        data = drop_na_properties(data)
         ds = group_field_vals[fixed_fields.index('dataset')]
         # process per metric
         for prop, meta in properties_meta.items():
-            higher_better = 'maximize' in meta and meta['maximize']
-            
-            if indexmode == 'centered': # one central reference model receives index 1, everything else in relation
-                if references is None:
-                    references = {}
-                reference_name = references[ds] if ds in references else find_optimal_reference(data, properties_meta)
-                references[ds] = reference_name # if using optimal, store this info for later use
-                reference = data[data['model'] == reference_name]
-                assert reference.shape[0] == 1, f'Found multiple results for reference {reference_name} in {group_field_vals} results!'
-                ref_val = reference[prop].values[0]
-                # if database was already processed before, take the value from the dict
-                if isinstance(ref_val, dict):
-                    ref_val = ref_val['value']
+            if prop in data.columns:
+                higher_better = 'maximize' in meta and meta['maximize']
+                
+                if indexmode == 'centered': # one central reference model receives index 1, everything else in relation
+                    if references is None:
+                        references = {}
+                    reference_name = references[ds] if ds in references else find_optimal_reference(data, properties_meta)
+                    references[ds] = reference_name # if using optimal, store this info for later use
+                    reference = data[data['model'] == reference_name]
+                    assert reference.shape[0] == 1, f'Found multiple results for reference {reference_name} in {group_field_vals} results!'
+                    ref_val = reference[prop].values[0]
+                    # if database was already processed before, take the value from the dict
+                    if isinstance(ref_val, dict):
+                        ref_val = ref_val['value']
 
-            elif indexmode == 'best': # the best perfoming model receives index 1, everything else in relation
-                # extract from dict when already processed before
-                all_values = [val['value'] if isinstance(val, dict) else val for val in data[prop].dropna()]
-                if len(all_values) == 0:
-                    ref_val = data[prop].iloc[0]
+                elif indexmode == 'best': # the best perfoming model receives index 1, everything else in relation
+                    # extract from dict when already processed before
+                    all_values = [val['value'] if isinstance(val, dict) else val for val in data[prop].dropna()]
+                    if len(all_values) == 0:
+                        ref_val = data[prop].iloc[0]
+                    else:
+                        ref_val = max(all_values) if higher_better else min(all_values)
                 else:
-                    ref_val = max(all_values) if higher_better else min(all_values)
-            else:
-                raise RuntimeError(f'Invalid indexmode {indexmode}!')
-            # extract meta, project on index values and rate
-            data[prop] = data[prop].map( lambda value: process_property(value, ref_val, meta, unit_fmt) )
-            database.loc[data.index] = data
+                    raise RuntimeError(f'Invalid indexmode {indexmode}!')
+                # extract meta, project on index values and rate
+                database.loc[data.index,prop] = data.loc[data.index,prop].map( lambda value: process_property(value, ref_val, meta, unit_fmt) )
 
+    print('    assessing ratings')
     # assess ratings & boundaries
     boundaries = calculate_optimal_boundaries(database) if boundaries is None else load_boundaries(boundaries)
     real_boundaries = {}
     for group_field_vals, data in database.groupby(fixed_fields):
+        data = drop_na_properties(data)
         real_boundaries[group_field_vals] = {}
         # process per metric
         for prop, meta in properties_meta.items():
-            higher_better = 'maximize' in meta and meta['maximize']
-            # extract rating boundaries per metric
-            pr_bounds = boundaries[prop] if prop in boundaries else boundaries['default']
-            boundaries[prop] = [bound.copy() for bound in pr_bounds] # copies not references! otherwise changing a boundary affects multiple metrics
-            # calculate rating and real boundary values
-            data[prop].map( lambda pr: pr.update({'rating': index_to_rating(pr['index'], pr_bounds)}) if isinstance(pr, dict) else pr )
-            real_boundaries[group_field_vals][prop] = [(index_to_value(start, ref_val, higher_better), index_to_value(stop, ref_val, higher_better)) for (start, stop) in pr_bounds]
-            database.loc[data.index] = data
-
+            if prop in data.columns:
+                higher_better = 'maximize' in meta and meta['maximize']
+                # extract rating boundaries per metric
+                pr_bounds = boundaries[prop] if prop in boundaries else boundaries['default']
+                boundaries[prop] = [bound.copy() for bound in pr_bounds] # copies not references! otherwise changing a boundary affects multiple metrics
+                # calculate rating and real boundary values
+                data[prop].map( lambda pr: pr.update({'rating': index_to_rating(pr['index'], pr_bounds)}) if isinstance(pr, dict) else pr )
+                real_boundaries[group_field_vals][prop] = [(index_to_value(start, ref_val, higher_better), index_to_value(stop, ref_val, higher_better)) for (start, stop) in pr_bounds]
+        database.loc[data.index,data.columns] = data
+    
     # make certain model metrics available across all tasks
     for prop, meta in properties_meta.items():
         if 'independent_of_task' in meta and meta['independent_of_task']:
@@ -306,19 +310,22 @@ def rate_database(database, given_meta, boundaries=None, indexmode='best', refer
                 fixed_fields.append('environment')
             grouped_by = database.groupby(fixed_fields)
             for group_field_vals, data in grouped_by:
-                valid = data.loc[prop_dict_to_val(data)[prop].dropna().index,prop]
-                # check if there even are nan rows in the database (otherwise metrics maybe have been made available already)
-                if valid.size != data[prop].size:
-                    if valid.shape[0] != 1:
-                        print(f'{valid.shape[0]} not-NA values found for {prop} across all tasks on {group_field_vals}!')
-                    if valid.shape[0] > 0:
-                        # multiply the available data and place in each row
-                        data[prop] = [valid.values[0]] * data.shape[0]
-                        database.loc[data.index] = data
+                data = drop_na_properties(data)
+                if prop in data.columns:
+                    valid = data.loc[prop_dict_to_val(data)[prop].dropna().index,prop]
+                    # check if there even are nan rows in the database (otherwise metrics maybe have been made available already)
+                    if valid.size != data[prop].size:
+                        if valid.shape[0] != 1:
+                            print(f'{valid.shape[0]} not-NA values found for {prop} across all tasks on {group_field_vals}!')
+                        if valid.shape[0] > 0:
+                            # replicate the available data and place in each row
+                            database.loc[data.index,prop] = [valid.values[0]] * data.shape[0]
     
+    print('    calculating compound ratings')
     # calculate compound ratings for each DS X TASK combo, dropping tha nan columns
     grouped_by = database.groupby(['dataset', 'task'])
     for group_field_vals, data in grouped_by:
+        data = drop_na_properties(data)
         index, rating = calculate_compound_rating(drop_na_properties(data), rating_mode)
         database.loc[data.index,'compound_index'] = index
         database.loc[data.index,'compound_rating'] = rating
@@ -327,17 +334,19 @@ def rate_database(database, given_meta, boundaries=None, indexmode='best', refer
 
 
 def find_relevant_metrics(database, meta):
+    print('    search relevant metrics')
     all_metrics = {}
     x_default, y_default = {}, {}
     to_delete = []
     properties_meta = identify_property_meta(meta, database)
     for ds in pd.unique(database['dataset']):
+        subds = find_sub_db(database, ds)
         for task in pd.unique(database[database['dataset'] == ds]['task']):
             lookup = (ds, task)
-            subd = find_sub_db(database, ds, task)
+            subd = find_sub_db(subds, ds, task)
             metrics = {}
-            for col in subd.columns:
-                if col in properties_meta:
+            for col, meta in properties_meta.items():
+                if col in subd.columns or ('independent_of_task' in meta and meta['independent_of_task'] and col in subds.columns):
                     val = properties_meta[col]
                     metrics[col] = (val['weight'], val['group']) # weight is used for identifying the axis defaults
             if len(metrics) < 2:
@@ -373,7 +382,7 @@ def find_relevant_metrics(database, meta):
             pass
         drop_rows.extend( find_sub_db(database, ds, task).index.to_list() )
     database = database.drop(drop_rows)
-    database = database.reset_index()
+    database = database.reset_index(drop=True)
     return database, all_metrics, x_default, y_default
 
 
@@ -384,10 +393,10 @@ def load_database(fname):
         database = database.sparse.to_dense()
         assert old_shape == database.shape
         for col in database.columns:
-            try:    
-                assert np.all(database[col].dropna() == database[col].dropna().astype(float).astype(str))
-                database[col] = database[col].astype(float)
-            except Exception:
+            try:
+                fl = database[col].astype(float)
+                database[col] = fl
+            except Exception as e:
                 pass
         database['environment'] = 'unknown'
     return database
