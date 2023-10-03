@@ -5,8 +5,7 @@
         "unit": "percent",
         "group": "Performance",
         "weight": 0.233333333333333,
-        "maximize": true,
-        "independent_of_task": true
+        "maximize": true
     },
     "reported": {
         "name": "Reported Robustness",
@@ -14,8 +13,7 @@
         "unit": "percent",
         "group": "Performance",
         "weight": 0.1,
-        "maximize": true,
-        "independent_of_task": true
+        "maximize": true
     },
     "autoattack_acc": {
         "name": "AuttoAttack Robustness",
@@ -23,8 +21,7 @@
         "unit": "percent",
         "group": "Performance",
         "weight": 0.333333333333333,
-        "maximize": true,
-        "independent_of_task": true
+        "maximize": true
     },
     "cifar100_corr_acc": {
         "name": "Cifar-100 Corr Robustness",
@@ -32,8 +29,7 @@
         "unit": "percent",
         "group": "Performance",
         "weight": 0.333333333333333,
-        "maximize": true,
-        "independent_of_task": true
+        "maximize": true
     },
     "cifar10_corr_acc": {
         "name": "Cifar-10 Corr Robustness",
@@ -41,8 +37,7 @@
         "unit": "percent",
         "group": "Performance",
         "weight": 0.333333333333333,
-        "maximize": true,
-        "independent_of_task": true
+        "maximize": true
     },
     "imagenet_corr_acc": {
         "name": "IN-C Robustness",
@@ -50,8 +45,7 @@
         "unit": "percent",
         "group": "Performance",
         "weight": 0.166666666666666,
-        "maximize": true,
-        "independent_of_task": true
+        "maximize": true
     },
     "corruptions_acc_3d": {
         "name": "IN-3DCC Robustness",
@@ -59,7 +53,6 @@
         "unit": "percent",
         "group": "Performance",
         "weight": 0.166666666666666,
-        "maximize": true,
-        "independent_of_task": true
+        "maximize": true
     }
 }
