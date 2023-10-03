@@ -106,7 +106,7 @@ def filter_min_props(df, min_props=3, populated=0.0):
             except Exception:
                 pass
 
-        if len(props) >= min_props: # added 8 info columns that are not properties
+        if len(props) >= min_props:
             keep.extend(data.index.to_list())
     return keep
 
@@ -116,6 +116,7 @@ if __name__ == '__main__':
     COMPLETE = os.path.join(FDIR, 'pwc_complete.pkl')
     FILTERED = os.path.join(FDIR, 'database.pkl')
     OTHER = os.path.join(FDIR, 'other_stats.json')
+    PROPS = os.path.join(FDIR, 'meta_properties.json')
     FILTER_STATS = os.path.join(FDIR, 'filterstats.json')
 
     client = PapersWithCodeClient()
@@ -123,6 +124,8 @@ if __name__ == '__main__':
     # loading all evaluations
     if os.path.isfile(COMPLETE):
         merged = pd.read_pickle(COMPLETE)
+        with open(OTHER, 'r') as jf:
+            other_stats = json.load(jf)
     else:
         evals_meta = collect_evaluation_meta(client)
         evals_metrics, other_stats = {}, {}
@@ -143,12 +146,11 @@ if __name__ == '__main__':
         merged = merged.astype(pd.SparseDtype("str", np.nan))
         merged.to_pickle(COMPLETE)
 
-
     # filtering for relevant evaluations
     filters = {
         'At least 10 results': filter_min_rows,
         'At least 3 properties': filter_min_props,
-        'At least 25% populated properties': lambda df: filter_min_props(df, populated=0.25),
+        'At least 50% populated properties': lambda df: filter_min_props(df, populated=0.5),
     }
 
     shapes = { 'Complete database': merged.shape }
@@ -160,10 +162,32 @@ if __name__ == '__main__':
         shapes[filter] = merged.shape
         print(filter, shapes[filter])
 
-    merged.to_pickle(FILTERED)
-
+    merged.to_pickle(FILTERED)    
+    
+    # write filter stats
     with open(FILTER_STATS, 'w') as jf:
         json.dump(shapes, jf)
+
+    # create properties json
+    res_metrics = ['time', 'param', 'size', 'flops']
+    properties = {}
+    for task in tqdm(pd.unique(merged['task'])):
+        eval_list = client.task_evaluation_list(task)
+        for eval in eval_list.results:
+            metrics = client.evaluation_metric_list(eval.id)
+            for metr in metrics.results:
+                metr_name = uniform_metric(metr.name)
+                group = 'Resources' if any([key in metr_name for key in res_metrics]) else 'Performance'
+                properties[metr_name] =  {
+                    "name": metr.description if len(metr.description) > 0 else metr.name,
+                    "shortname": metr.name,
+                    "unit": "number",
+                    "group": group,
+                    "weight": 1,
+                    "maximize": not metr.is_loss,
+                }
+    with open(PROPS, 'w') as jf:
+        json.dump(properties, jf)
     
     for gr, data in merged.groupby(['dataset']):
         data = data.dropna(how='all', axis=1)
