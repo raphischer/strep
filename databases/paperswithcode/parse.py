@@ -96,9 +96,17 @@ def filter_min_props(df, min_props=3, populated=0.0):
     for _, data in tqdm(df.groupby(['dataset', 'task'])):
         data = data.dropna(how='all', axis=1)
         if populated > 0:
-            sparse_populated_cols = [col for col in data.columns if data[col].dropna().size / data.shape[0] < 0.25]
+            sparse_populated_cols = [col for col in data.columns if data[col].dropna().size / data.shape[0] < populated]
             data = data.drop(columns=sparse_populated_cols)
-        if data.shape[1] >= min_props + 8: # added 8 info columns that are not properties
+        props = []
+        for col in data.columns:
+            try:
+                cf = data[col].astype(float)
+                props.append(col)
+            except Exception:
+                pass
+
+        if len(props) >= min_props: # added 8 info columns that are not properties
             keep.extend(data.index.to_list())
     return keep
 
