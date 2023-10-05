@@ -1,4 +1,5 @@
 from datetime import datetime
+import itertools
 import json
 import os
 import random as python_random
@@ -8,8 +9,32 @@ import re
 
 import numpy as np
 import pandas as pd
+from scipy.stats.stats import pearsonr
 
 from mlprops.monitoring import log_system_info
+
+
+def identify_all_correlations(db, all_metrics, scale='index'):
+    corr = {}
+    for ds_task, data in db.groupby(['dataset', 'task']):
+        metrics = all_metrics[ds_task]
+        corr[ds_task] = (np.full((metrics.size, metrics.size), fill_value=np.nan), metrics)
+        np.fill_diagonal(corr[ds_task][0], 1)
+        props = prop_dict_to_val(data[metrics], scale)
+        for idx_a, idx_b in itertools.combinations(np.arange(metrics.size), 2):
+            cols = props.iloc[:, [idx_a, idx_b]].dropna().values
+            if cols.size > 4:
+                corr[ds_task][0][idx_a, idx_b] = pearsonr(cols[:,0], cols[:,1])[0]
+                corr[ds_task][0][idx_b, idx_a] = corr[ds_task][0][idx_a, idx_b]
+    return corr
+
+
+def identify_correlation(db):
+    correlation = np.zeros((len(db.columns), len(db.columns)))
+    for col_a, col_b in itertools.combinations(np.arange(len(db.columns)), 2):
+        correlation[col_a, col_b] = pearsonr(db.iloc[:, col_a], db.iloc[:, col_b])[0]
+        correlation[col_b, col_a] = correlation[col_a, col_b]
+    return correlation, db.columns.tolist()
 
 
 def load_meta(directory=None):
@@ -101,8 +126,8 @@ def create_output_dir(dir=None, prefix='', config=None):
     return dir
 
 
-def prop_dict_to_val(df):
-    return df.applymap(lambda val: val['value'] if isinstance(val, dict) and 'value' in val else val)
+def prop_dict_to_val(df, key='value'):
+    return df.applymap(lambda val: val[key] if isinstance(val, dict) and key in val else val)
 
 
 def drop_na_properties(df):

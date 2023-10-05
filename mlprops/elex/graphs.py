@@ -2,8 +2,29 @@ import numpy as np
 import plotly.graph_objects as go
 from plotly.express.colors import sample_colorscale
 
-from mlprops.index_and_rate import calculate_compound_rating
+from mlprops.util import lookup_meta
+from mlprops.index_and_rate import calculate_compound_rating, find_sub_db
 from mlprops.elex.util import RATING_COLORS, ENV_SYMBOLS, PATTERNS, RATING_COLOR_SCALE
+
+
+def assemble_scatter_data(env_names, db, scale_switch, xaxis, yaxis, meta, boundaries):
+    plot_data = {}
+    for env in env_names:
+        env_data = { 'ratings': [], 'x': [], 'y': [], 'index': [] }
+        for _, log in find_sub_db(db, environment=env).iterrows():
+            env_data['ratings'].append(log['compound_rating'])
+            env_data['index'].append(log['compound_index'])
+            for xy_axis, metric in zip(['x', 'y'], [xaxis, yaxis]):
+                if isinstance(log[metric], dict): # either take the value or the index of the metric
+                    env_data[xy_axis].append(log[metric][scale_switch])
+                else: # error during value aggregation
+                    env_data[xy_axis].append(0)
+        plot_data[env] = env_data
+    axis_names = [lookup_meta(meta, ax, subdict='properties') for ax in [xaxis, yaxis]]
+    if scale_switch == 'index':
+        axis_names = [name.split('[')[0].strip() + ' Index' for name in axis_names]
+    rating_pos = [boundaries[xaxis], boundaries[yaxis]]
+    return plot_data, axis_names, rating_pos
 
 
 def add_rating_background(fig, rating_pos, mode, dark_mode):

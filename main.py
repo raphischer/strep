@@ -5,11 +5,10 @@ from mlprops.index_and_rate import rate_database, find_relevant_metrics, load_da
 from mlprops.util import load_meta
 
 DATABASES = {
-    # 'Papers With Code': 'databases/paperswithcode/database.pkl',
-    # 'DNN Forecasting': 'databases/dnn_forecasting/database.pkl',
-    # 'ImageNet Classification': 'databases/imagenet_classification/database.pkl',
+    'ImageNet Efficiency': 'databases/imagenet_classification/database.pkl',
     'RobustBench': 'databases/robustbench/database.pkl',
-    # 'Sklearn Classification': 'databases/sklearn_openml_classification/database.pkl'
+    'DNN Forecasting': 'databases/dnn_forecasting/database.pkl',
+    'Papers With Code': 'databases/paperswithcode/database.pkl',
 }
 
 if __name__ == '__main__':

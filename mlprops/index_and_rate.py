@@ -226,7 +226,7 @@ def update_weights(database, weights):
 def identify_property_meta(given_meta, database):
     properties_meta = {}
     if 'properties' in given_meta: # assess columns defined in meta
-        cols_to_rate = [ key for key in given_meta['properties'] if key in database.columns ]
+        cols_to_rate = [ key for key in given_meta['properties'] if key in database.select_dtypes('number').columns ]
     else: # assess all numeric columns
         cols_to_rate = database.select_dtypes('number').columns
     if len(cols_to_rate) < 1:

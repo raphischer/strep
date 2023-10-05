@@ -11,7 +11,7 @@ import dash_bootstrap_components as dbc
 from mlprops.index_and_rate import rate_database, load_boundaries, save_boundaries, calculate_optimal_boundaries, save_weights, find_optimal_reference, update_weights
 from mlprops.elex.pages import create_page
 from mlprops.elex.util import summary_to_html_tables, toggle_element_visibility, fill_meta
-from mlprops.elex.graphs import create_scatter_graph, create_bar_graph, add_rating_background
+from mlprops.elex.graphs import assemble_scatter_data, create_scatter_graph, create_bar_graph, add_rating_background
 from mlprops.labels.label_generation import PropertyLabel
 from mlprops.unit_reformatting import CustomUnitReformater
 from mlprops.load_experiment_logs import find_sub_db
@@ -118,26 +118,10 @@ class Visualization(dash.Dash):
         if update_db:
             self.update_database(only_current=False)
         # assemble data for plotting
-        self.plot_data = {}
-        scale_switch = scale_switch or 'index'
-        for env in env_names:
-            env_data = { 'ratings': [], 'x': [], 'y': [], 'index': [] }
-            for _, log in find_sub_db(self.state['sub_database'], environment=env).iterrows():
-                env_data['ratings'].append(log['compound_rating'])
-                env_data['index'].append(log['compound_index'])
-                for xy_axis, metric in zip(['x', 'y'], [self.state['xaxis'], self.state['yaxis']]):
-                    if isinstance(log[metric], dict): # either take the value or the index of the metric
-                        env_data[xy_axis].append(log[metric][scale_switch])
-                    else: # error during value aggregation
-                        env_data[xy_axis].append(0)
-            self.plot_data[env] = env_data
-        axis_names = [lookup_meta(self.meta, self.state[ax], subdict='properties') for ax in ['xaxis', 'yaxis']] # TODO pretty print, use name of axis?
-        if scale_switch == 'index':
-            rating_pos = [self.boundaries[self.state['xaxis']], self.boundaries[self.state['yaxis']]]
-            axis_names = [name.split('[')[0].strip() + ' Index' for name in axis_names]
-        else:
-            current = (self.state['ds'], self.state['ds_task'][1], env_names[0])
-            rating_pos = [self.boundaries_real[current][self.state['xaxis']], self.boundaries_real[current][self.state['yaxis']]]
+        scale = scale_switch or 'index'
+        db, xaxis, yaxis = self.state['sub_database'], self.state['xaxis'], self.state['yaxis']
+        bounds = self.boundaries if scale == 'index' else self.boundaries_real[(self.state['ds'], self.state['ds_task'][1], env_names[0])]
+        self.plot_data, axis_names, rating_pos = assemble_scatter_data(env_names, db, scale, xaxis, yaxis, self.meta, bounds)
         scatter = create_scatter_graph(self.plot_data, axis_names, dark_mode=self.dark_mode)
         add_rating_background(scatter, rating_pos, self.state['rating_mode'], dark_mode=self.dark_mode)
         return scatter, reference_select_disabled, reference_select_disabled
