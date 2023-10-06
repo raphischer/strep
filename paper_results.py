@@ -42,6 +42,11 @@ def create_all(databases):
     pwc_stats = read_json('databases/paperswithcode/other_stats.json')
     os.chdir('paper_results')
 
+    # COMPUTE CORRELATIONS
+    correlations = {}
+    for name, (database, _, metrics, _, _, _, _, _) in databases.items():
+        correlations[name] = {  field: identify_all_correlations(database, metrics, field) for field in ['index', 'value'] }
+
     # database stat table
     rows = [r'Database & Data sets & Tasks & Methods & Environments & Properties (resources) & Evaluations & Incompleteness \\' + '\n' + r'        \midrule']
     for name, (db, meta, metrics, _, _, _, _, _) in databases.items():
@@ -67,11 +72,28 @@ def create_all(databases):
     time.sleep(0.5)
     os.remove("dummy.pdf")
 
-    # imagenet results
-    correlations = {}
-    for name, (database, _, metrics, _, _, _, _, _) in databases.items():
-        correlations[name] = {  field: identify_all_correlations(database, metrics, field) for field in ['index', 'value'] }
-    
+    # PWC results  - correlation violins with and without resources
+    # db, meta, metrics, xdef, ydef, bounds, _, _ = databases['Papers With Code']
+    # vals_with_res, vals_wo_res = [], []
+    # fig = go.Figure()
+    # for _, (corr, props) in correlations['Papers With Code']['index'].items():
+    #     has_res = False
+    #     for prop in props:
+    #         if lookup_meta(meta, prop, 'group', 'properties') == 'Resources':
+    #             has_res = True
+    #             break
+    #     if has_res:
+    #         vals_with_res = vals_with_res + [c for c in corr[0].flatten() if not np.isnan(c)]
+    #     else:
+    #         vals_wo_res = vals_wo_res + [c for c in corr[0].flatten() if not np.isnan(c)]
+    # fig.add_trace( go.Violin(y=vals_with_res, name=f'With resources (N={len(vals_with_res)})', box_visible=True, meanline_visible=True) )
+    # fig.add_trace( go.Violin(y=vals_wo_res, name=f'Without resources (N={len(vals_wo_res)})', box_visible=True, meanline_visible=True) )
+    # fig.update_layout(width=PLOT_WIDTH / 2, height=PLOT_HEIGHT, xaxis={'visible': False, 'showticklabels': False},
+    #             legend=dict(orientation="h", yanchor="bottom", y=1.0, xanchor="center", x=0.5),
+    #             margin={'l': 0, 'r': 0, 'b': 0, 't': 0} )
+    # fig.write_image(f'pwc_corr.pdf')
+
+    # imagenet results    
     db, meta, metrics, xdef, ydef, bounds, _, _ = databases['ImageNet Efficiency']
 
     # imagenet infer metric correlation
@@ -89,12 +111,12 @@ def create_all(databases):
         subdb = db[(db['environment'] == env) & (db['task'] == 'infer')]
         avail_models = set(subdb['model'].tolist())
         traces[env] = [subdb[subdb['model'] == mod]['compound_index'].iloc[0] if mod in avail_models else None for mod in models]
-        
+    model_names = [f'{mod[:3]}..{mod[-5:]}' if len(mod) > 10 else mod for mod in models]
     fig = go.Figure(
         layout={'width': PLOT_WIDTH, 'height': PLOT_HEIGHT, 'margin': {'l': 0, 'r': 0, 'b': 0, 't': 0},
-                'xaxis':{'title': 'Model'}, 'yaxis':{'title': 'Compound score'}},
+                'yaxis':{'title': 'Compound score'}},
         data=[
-            go.Scatter(x=models, y=vals, name=env, mode='markers',
+            go.Scatter(x=model_names, y=vals, name=env, mode='markers',
             marker=dict(
                 color=COLORS[i],
                 symbol=ENV_SYMBOLS[i]
