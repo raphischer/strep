@@ -4,8 +4,9 @@ from dash import html
 
 
 ENV_SYMBOLS = [SymbolValidator().values[i] for i in range(0, len(SymbolValidator().values), 12)]
-RATING_COLOR_SCALE = colors.make_colorscale(['rgb(99,155,48)', 'rgb(184,172,43)', 'rgb(248,184,48)', 'rgb(239,125,41)', 'rgb(229,36,33)'])
 RATING_COLORS = ['rgb(99,155,48)', 'rgb(184,172,43)', 'rgb(248,184,48)', 'rgb(239,125,41)', 'rgb(229,36,33)', 'rgb(36,36,36)']
+RATING_COLOR_SCALE = colors.make_colorscale([RATING_COLORS[idx] for idx in range(5)])
+RATING_COLOR_SCALE_REV = colors.make_colorscale([RATING_COLORS[4-idx] for idx in range(5)])
 PATTERNS = ["", "/", ".", "x", "-", "\\", "|", "+", "."]
 RATING_MEANINGS = 'ABCDE'
 

@@ -1,16 +1,16 @@
 import os
 import time
-import itertools
 
 import numpy as np
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
+from scipy.stats import spearmanr, kendalltau
 
 from mlprops.util import read_json, lookup_meta, identify_all_correlations
 from mlprops.index_and_rate import prop_dict_to_val
 from mlprops.load_experiment_logs import find_sub_db
-from mlprops.elex.util import ENV_SYMBOLS, RATING_COLORS
+from mlprops.elex.util import ENV_SYMBOLS, RATING_COLORS, RATING_COLOR_SCALE, RATING_COLOR_SCALE_REV
 from mlprops.elex.graphs import assemble_scatter_data, create_scatter_graph, add_rating_background
 
 
@@ -72,26 +72,44 @@ def create_all(databases):
     time.sleep(0.5)
     os.remove("dummy.pdf")
 
-    # PWC results  - correlation violins with and without resources
-    # db, meta, metrics, xdef, ydef, bounds, _, _ = databases['Papers With Code']
-    # vals_with_res, vals_wo_res = [], []
-    # fig = go.Figure()
-    # for _, (corr, props) in correlations['Papers With Code']['index'].items():
-    #     has_res = False
-    #     for prop in props:
-    #         if lookup_meta(meta, prop, 'group', 'properties') == 'Resources':
-    #             has_res = True
-    #             break
-    #     if has_res:
-    #         vals_with_res = vals_with_res + [c for c in corr[0].flatten() if not np.isnan(c)]
-    #     else:
-    #         vals_wo_res = vals_wo_res + [c for c in corr[0].flatten() if not np.isnan(c)]
-    # fig.add_trace( go.Violin(y=vals_with_res, name=f'With resources (N={len(vals_with_res)})', box_visible=True, meanline_visible=True) )
-    # fig.add_trace( go.Violin(y=vals_wo_res, name=f'Without resources (N={len(vals_wo_res)})', box_visible=True, meanline_visible=True) )
-    # fig.update_layout(width=PLOT_WIDTH / 2, height=PLOT_HEIGHT, xaxis={'visible': False, 'showticklabels': False},
-    #             legend=dict(orientation="h", yanchor="bottom", y=1.0, xanchor="center", x=0.5),
-    #             margin={'l': 0, 'r': 0, 'b': 0, 't': 0} )
-    # fig.write_image(f'pwc_corr.pdf')
+    # PWC results  - weighting difference
+    db, meta, metrics, xdef, ydef, bounds, _, _ = databases['Papers With Code']
+
+    corr_spearmen, corr_ken = [], []
+    for ds_task, data in db.groupby(['dataset', 'task']):
+        data_val = prop_dict_to_val(data[metrics[ds_task]])
+        data_ind = prop_dict_to_val(data[metrics[ds_task]], 'index')
+        if np.all(data_ind.min() >= 0) and np.all(data_ind.max() <= 1): # TODO remove this hotfix after final fix of index scaling
+            prop_pop = [data_val[col].dropna().size for col in metrics[ds_task]]
+            most_pop = data_ind.iloc[:,np.argmax(prop_pop)]
+            equally = data_ind.mean(axis=1)
+            corr_ken.append(kendalltau(most_pop.values, equally.values)[0])
+            corr_spearmen.append(spearmanr(most_pop.values, equally.values)[0])
+
+    fig = go.Figure()
+    fig.add_trace( go.Violin(y=corr_spearmen, spanmode='hard', name="Spearman's p", line={'color': RATING_COLORS[0]}, box_visible=True, meanline_visible=True) )
+    fig.add_trace( go.Violin(y=corr_ken, spanmode='hard', name="Kendall's t", line={'color': RATING_COLORS[0]}, box_visible=True, meanline_visible=True) )
+    
+    fig.update_layout(width=PLOT_WIDTH / 2, height=PLOT_HEIGHT, showlegend=False, margin={'l': 0, 'r': 0, 'b': 0, 't': 0} )
+    fig.write_image(f'pwc_comp_impact.pdf')
+    
+    # correlation violins with and without resources
+    vals_with_res, vals_wo_res = [], []
+    fig = go.Figure()
+    for _, (corr, props) in correlations['Papers With Code']['index'].items():
+        has_res = False
+        for prop in props:
+            if lookup_meta(meta, prop, 'group', 'properties') == 'Resources':
+                has_res = True
+                break
+        if has_res:
+            vals_with_res = vals_with_res + [c for c in corr[0].flatten() if not np.isnan(c)]
+        else:
+            vals_wo_res = vals_wo_res + [c for c in corr[0].flatten() if not np.isnan(c)]
+    fig.add_trace( go.Violin(y=vals_with_res, spanmode='hard', name=f'With resources (N={len(vals_with_res)})', line={'color': RATING_COLORS[0]}, box_visible=True, meanline_visible=True) )
+    fig.add_trace( go.Violin(y=vals_wo_res, spanmode='hard', name=f'Without resources (N={len(vals_wo_res)})', line={'color': RATING_COLORS[4]}, box_visible=True, meanline_visible=True) )
+    fig.update_layout(width=PLOT_WIDTH / 2, height=PLOT_HEIGHT, showlegend=False, margin={'l': 0, 'r': 0, 'b': 0, 't': 0})
+    fig.write_image(f'pwc_corr.pdf')
 
     # imagenet results    
     db, meta, metrics, xdef, ydef, bounds, _, _ = databases['ImageNet Efficiency']
@@ -99,7 +117,7 @@ def create_all(databases):
     # imagenet infer metric correlation
     corr, props = correlations['ImageNet Efficiency']['index'][('imagenet', 'infer')]
     prop_names = [lookup_meta(meta, prop, 'shortname', 'properties') for prop in props]
-    fig = px.imshow(corr, x=prop_names, y=prop_names, labels=dict(x="Properties", y="Properties", color="Correlation"))
+    fig = px.imshow(corr, x=prop_names, y=prop_names, labels=dict(x="Properties", y="Properties", color="Correlation"), color_continuous_scale=RATING_COLOR_SCALE_REV)
     fig.update_layout({'width': PLOT_WIDTH / 2, 'height': PLOT_HEIGHT, 'margin': {'l': 0, 'r': 0, 'b': 0, 't': 0}})
     fig.write_image(f'imagenet_correlation.pdf')
 
@@ -118,10 +136,11 @@ def create_all(databases):
         data=[
             go.Scatter(x=model_names, y=vals, name=env, mode='markers',
             marker=dict(
-                color=COLORS[i],
+                color=RATING_COLORS[i],
                 symbol=ENV_SYMBOLS[i]
             ),) for i, (env, vals) in enumerate(traces.items())
-        ])
+        ]
+    )
 
     fig.update_layout( legend=dict(orientation="h", yanchor="bottom", y=1.0, xanchor="center", x=0.5) )
     fig.write_image(f'environment_changes.pdf')
@@ -150,7 +169,7 @@ def create_all(databases):
     pwc_stats['log_count'] = np.log(pwc_stats['count'])
     pwc_stats['log_n_results'] = np.log(pwc_stats['n_results'])
     pwc_stats.loc[(pwc_stats['n_results'] == 0),'log_n_results'] = -0.5
-    fig = px.scatter(data_frame=pwc_stats, x='log_n_results', y='n_metrics', color='log_count')
+    fig = px.scatter(data_frame=pwc_stats, x='log_n_results', y='n_metrics', color='log_count', color_continuous_scale=RATING_COLOR_SCALE)
     fig.update_layout(
         width=PLOT_WIDTH / 2, height=PLOT_HEIGHT, coloraxis_colorbar_title='Cases',
         coloraxis_colorbar_tickvals=[0, np.log(10), np.log(100), np.log(1000)], coloraxis_colorbar_ticktext=[1, 10, 100, 1000],
@@ -181,7 +200,7 @@ def create_all(databases):
         rating_pos[0][0][0] = scatter.layout.xaxis.range[1]
         rating_pos[1][0][0] = scatter.layout.yaxis.range[1]
         add_rating_background(scatter, rating_pos, 'optimistic mean', dark_mode=False)
-        scatter.update_layout(width=PLOT_WIDTH / 2, height=PLOT_HEIGHT, margin={'l': 0, 'r': 0, 'b': 0, 't': 20}, title_y=1.0, title_x=0.5, title_text=f'{name} - {ds_name}')
+        scatter.update_layout(width=PLOT_WIDTH / 2, height=PLOT_HEIGHT, margin={'l': 0, 'r': 0, 'b': 0, 't': 25}, title_y=0.99, title_x=0.5, title_text=f'{name} - {ds_name}')
         scatter.write_image(f"scatter_{name}.pdf")
 
         # star plot
@@ -204,12 +223,15 @@ def create_all(databases):
 
     # property correlations
     fig = go.Figure()
-    for key, (db, meta, metrics, xdef, ydef, bounds, _, _) in databases.items():
+    opacities = {'value': .5, 'index': 1.0}
+    for idx, (key, (db, meta, metrics, xdef, ydef, bounds, _, _)) in enumerate(databases.items()):
         for scale, corrs in correlations[key].items():
             all_corr = []
             for _, corr in corrs.items():
                 all_corr = all_corr + [c for c in corr[0].flatten() if not np.isnan(c)]
-            fig.add_trace( go.Violin(y=all_corr, name=f'{key} ({scale.capitalize()})', box_visible=True, meanline_visible=True, legendgroup=key) )
+            fig.add_trace( go.Violin(y=all_corr, spanmode='hard', name=f'{key} ({scale.capitalize()})',
+                                     box_visible=True, meanline_visible=True, legendgroup=key,
+                                     line={'color': RATING_COLORS[idx]}, opacity=opacities[scale]) )
             fig.update_layout(width=PLOT_WIDTH, height=PLOT_HEIGHT, xaxis={'visible': False, 'showticklabels': False},
                       legend=dict(orientation="h", yanchor="bottom", y=1.0, xanchor="center", x=0.5),
                       margin={'l': 0, 'r': 0, 'b': 0, 't': 0} )

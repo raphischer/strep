@@ -107,6 +107,7 @@ def process_property(value, reference_value, meta, unit_fmt):
     if 'weight' in returned_dict: # TODO is this a good indicator for indexable metrics?
         higher_better = 'maximize' in returned_dict and returned_dict['maximize']
         returned_dict['index'] = value_to_index(returned_dict['value'], reference_value, higher_better)
+        # TODO THIS FAILS WITH NEG VALUES!
     return returned_dict
 
 
