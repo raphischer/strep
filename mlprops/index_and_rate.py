@@ -104,10 +104,14 @@ def process_property(value, reference_value, meta, unit_fmt):
         else:
             fmt_val, fmt_unit = unit_fmt.reformat_value(value, returned_dict['unit'])
         returned_dict.update({'fmt_val': fmt_val, 'fmt_unit': fmt_unit})
-    if 'weight' in returned_dict: # TODO is this a good indicator for indexable metrics?
+    if 'weight' in returned_dict:
         higher_better = 'maximize' in returned_dict and returned_dict['maximize']
-        returned_dict['index'] = value_to_index(returned_dict['value'], reference_value, higher_better)
-        # TODO THIS FAILS WITH NEG VALUES!
+        val = returned_dict['value']
+        if not higher_better and reference_value < 0: # shift both value to positive range for calculating the correct index
+            val, reference_value = reference_value * -1 + 1 + val, 1
+        returned_dict['index'] = value_to_index(val, reference_value, higher_better)
+        if returned_dict['index'] < 0 or returned_dict['index'] > 1:
+            print(f'Invalid index occured! {returned_dict["index"]} for value {val}, reference {reference_value}')
     return returned_dict
 
 
@@ -282,7 +286,7 @@ def rate_database(database, given_meta, boundaries=None, indexmode='best', refer
                 else:
                     raise RuntimeError(f'Invalid indexmode {indexmode}!')
                 # extract meta, project on index values and rate
-                database.loc[data.index,prop] = data.loc[data.index,prop].map( lambda value: process_property(value, ref_val, meta, unit_fmt) )
+                database.loc[data.index,prop] = data.loc[:,prop].map( lambda value: process_property(value, ref_val, meta, unit_fmt) )
 
     print('    assessing ratings')
     # assess ratings & boundaries
