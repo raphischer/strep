@@ -89,3 +89,8 @@ def create_bar_graph(plot_data, dark_mode, discard_y_axis):
     if dark_mode:
         fig.update_layout(template='plotly_dark', paper_bgcolor="#0c122b", plot_bgcolor="#0c122b")
     return fig
+
+
+def create_star_plot(summary, metrics):
+    print(1)
+    

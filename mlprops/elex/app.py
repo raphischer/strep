@@ -11,7 +11,7 @@ import dash_bootstrap_components as dbc
 from mlprops.index_and_rate import rate_database, load_boundaries, save_boundaries, calculate_optimal_boundaries, save_weights, find_optimal_reference, update_weights
 from mlprops.elex.pages import create_page
 from mlprops.elex.util import summary_to_html_tables, toggle_element_visibility, fill_meta
-from mlprops.elex.graphs import assemble_scatter_data, create_scatter_graph, create_bar_graph, add_rating_background
+from mlprops.elex.graphs import assemble_scatter_data, create_scatter_graph, create_bar_graph, add_rating_background, create_star_plot
 from mlprops.labels.label_generation import PropertyLabel
 from mlprops.unit_reformatting import CustomUnitReformater
 from mlprops.load_experiment_logs import find_sub_db
@@ -208,6 +208,7 @@ class Visualization(dash.Dash):
                 self.state['model']['model'] = {'name': self.state['model']['model']}
             self.state['label'] = PropertyLabel(self.state['model'])
             model_table, metric_table = summary_to_html_tables(self.state['model'], self.metrics[self.state['ds_task']])
+            starplot = create_star_plot(self.state['model'], self.metrics[self.state['ds_task']])
             enc_label = self.state['label'].to_encoded_image()
             try:
                 link = self.state['model']['model']['url']

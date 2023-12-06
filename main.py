@@ -5,9 +5,9 @@ from mlprops.index_and_rate import rate_database, find_relevant_metrics, load_da
 from mlprops.util import load_meta
 
 DATABASES = {
-    'ImageNet Efficiency': 'databases/imagenet_classification/database.pkl',
+    'ImageNetEff': 'databases/imagenet_classification/database.pkl',
     'RobustBench': 'databases/robustbench/database.pkl',
-    'DNN Forecasting': 'databases/dnn_forecasting/database.pkl',
+    'Forecasting': 'databases/dnn_forecasting/database.pkl',
     'Papers With Code': 'databases/paperswithcode/database.pkl',
 }
 

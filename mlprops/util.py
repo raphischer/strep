@@ -17,11 +17,15 @@ from mlprops.monitoring import log_system_info
 def identify_all_correlations(db, all_metrics, scale='index'):
     corr = {}
     for ds_task, data in db.groupby(['dataset', 'task']):
+        # init correlation table
         metrics = all_metrics[ds_task]
         corr[ds_task] = (np.full((metrics.size, metrics.size), fill_value=np.nan), metrics)
         np.fill_diagonal(corr[ds_task][0], 1)
+        # assess correlation between properties
         props = prop_dict_to_val(data[metrics], scale)
         for idx_a, idx_b in itertools.combinations(np.arange(metrics.size), 2):
+            if scale == 'index': # these originally were nan values!
+                props[props == 0] = np.nan
             cols = props.iloc[:, [idx_a, idx_b]].dropna().values
             if cols.size > 4:
                 corr[ds_task][0][idx_a, idx_b] = pearsonr(cols[:,0], cols[:,1])[0]
