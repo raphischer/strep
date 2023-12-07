@@ -8,11 +8,11 @@ import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 from scipy.stats import spearmanr
 
-from mlprops.util import read_json, lookup_meta, identify_all_correlations
-from mlprops.index_and_rate import prop_dict_to_val
-from mlprops.load_experiment_logs import find_sub_db
-from mlprops.elex.util import ENV_SYMBOLS, RATING_COLORS, RATING_COLOR_SCALE, RATING_COLOR_SCALE_REV
-from mlprops.elex.graphs import assemble_scatter_data, create_scatter_graph, add_rating_background
+from strep.util import read_json, lookup_meta, identify_all_correlations
+from strep.index_and_rate import prop_dict_to_val
+from strep.load_experiment_logs import find_sub_db
+from strep.elex.util import ENV_SYMBOLS, RATING_COLORS, RATING_COLOR_SCALE, RATING_COLOR_SCALE_REV
+from strep.elex.graphs import assemble_scatter_data, create_scatter_graph, add_rating_background
 
 
 PLOT_WIDTH = 1000

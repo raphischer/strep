@@ -4,9 +4,9 @@ import json
 import numpy as np
 import pandas as pd
 
-from mlprops.unit_reformatting import CustomUnitReformater
-from mlprops.load_experiment_logs import find_sub_db
-from mlprops.util import lookup_meta, drop_na_properties, prop_dict_to_val
+from strep.unit_reformatting import CustomUnitReformater
+from strep.load_experiment_logs import find_sub_db
+from strep.util import lookup_meta, drop_na_properties, prop_dict_to_val
 
 
 def calculate_compound_rating(ratings, mode='optimistic mean', quantiles=None):

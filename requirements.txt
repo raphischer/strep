@@ -1,0 +1,9 @@
+pandas
+scipy
+dash
+plotly
+dash-bootstrap-components
+reportlab
+PyMuPDF
+qrcode
+pint

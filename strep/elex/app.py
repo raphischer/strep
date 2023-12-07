@@ -8,14 +8,14 @@ from dash.dependencies import Input, Output, State
 from dash import dcc
 import dash_bootstrap_components as dbc
 
-from mlprops.index_and_rate import rate_database, load_boundaries, save_boundaries, calculate_optimal_boundaries, save_weights, find_optimal_reference, update_weights
-from mlprops.elex.pages import create_page
-from mlprops.elex.util import summary_to_html_tables, toggle_element_visibility, fill_meta
-from mlprops.elex.graphs import assemble_scatter_data, create_scatter_graph, create_bar_graph, add_rating_background, create_star_plot
-from mlprops.labels.label_generation import PropertyLabel
-from mlprops.unit_reformatting import CustomUnitReformater
-from mlprops.load_experiment_logs import find_sub_db
-from mlprops.util import lookup_meta, PatchedJSONEncoder
+from strep.index_and_rate import rate_database, load_boundaries, save_boundaries, calculate_optimal_boundaries, save_weights, find_optimal_reference, update_weights
+from strep.elex.pages import create_page
+from strep.elex.util import summary_to_html_tables, toggle_element_visibility, fill_meta
+from strep.elex.graphs import assemble_scatter_data, create_scatter_graph, create_bar_graph, add_rating_background, create_star_plot
+from strep.labels.label_generation import PropertyLabel
+from strep.unit_reformatting import CustomUnitReformater
+from strep.load_experiment_logs import find_sub_db
+from strep.util import lookup_meta, PatchedJSONEncoder
 
 
 class Visualization(dash.Dash):
@@ -213,7 +213,7 @@ class Visualization(dash.Dash):
             try:
                 link = self.state['model']['model']['url']
             except (IndexError, KeyError, TypeError):
-                link = 'https://github.com/raphischer/mlprops'
+                link = 'https://github.com/raphischer/strep'
             open = False
         return model_table, metric_table,  enc_label, enc_label, link, open
 

@@ -3,7 +3,7 @@ import os
 from dash import html, dcc
 import dash_bootstrap_components as dbc
 
-from mlprops.util import read_json, lookup_meta
+from strep.util import read_json, lookup_meta
 
 def create_axis_option(x=True):
     xy = 'x' if x else 'y'

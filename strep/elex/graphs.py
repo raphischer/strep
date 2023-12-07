@@ -2,9 +2,9 @@ import numpy as np
 import plotly.graph_objects as go
 from plotly.express.colors import sample_colorscale
 
-from mlprops.util import lookup_meta
-from mlprops.index_and_rate import calculate_compound_rating, find_sub_db
-from mlprops.elex.util import RATING_COLORS, ENV_SYMBOLS, PATTERNS, RATING_COLOR_SCALE
+from strep.util import lookup_meta
+from strep.index_and_rate import calculate_compound_rating, find_sub_db
+from strep.elex.util import RATING_COLORS, ENV_SYMBOLS, PATTERNS, RATING_COLOR_SCALE
 
 
 def assemble_scatter_data(env_names, db, scale_switch, xaxis, yaxis, meta, boundaries):

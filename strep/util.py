@@ -11,7 +11,7 @@ import numpy as np
 import pandas as pd
 from scipy.stats.stats import pearsonr
 
-from mlprops.monitoring import log_system_info
+from strep.monitoring import log_system_info
 
 
 def identify_all_correlations(db, all_metrics, scale='index'):

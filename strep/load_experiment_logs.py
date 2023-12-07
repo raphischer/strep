@@ -6,8 +6,8 @@ import importlib
 import pandas as pd
 import numpy as np
 
-from mlprops.monitoring import aggregate_monitoring_log
-from mlprops.util import basename, PatchedJSONEncoder, read_json, drop_na_properties
+from strep.monitoring import aggregate_monitoring_log
+from strep.util import basename, PatchedJSONEncoder, read_json, drop_na_properties
 
 
 #############################

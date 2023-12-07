@@ -1,4 +1,4 @@
-# git clone https://github.com/RobustBench/robustbench
+# FIRST! (locally) git clone https://github.com/RobustBench/robustbench
 
 import os
 import json

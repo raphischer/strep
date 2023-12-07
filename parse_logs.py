@@ -1,7 +1,7 @@
 import argparse
 import os
 
-from mlprops.load_experiment_logs import assemble_database
+from strep.load_experiment_logs import assemble_database
 
 
 if __name__ == '__main__':
