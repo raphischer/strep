@@ -98,7 +98,6 @@ class Visualization(dash.Dash):
         # check if axis weight were updated
         if any([xweight, yweight]) and 'weight' in triggered_prop:
             update_db = update_db or update_weights(self.database, {axis: weight})
-            
         # check if sliders were updated
         if any(slider_args) and 'slider' in triggered_prop:
             for sl_idx, sl_val in enumerate(slider_values):

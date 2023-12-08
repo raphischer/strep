@@ -53,6 +53,8 @@ def load_meta(directory=None):
 
 
 def lookup_meta(meta, element_name, key='name', subdict=None):
+    if key == 'name' and '_index' in element_name:
+        return f'{element_name.replace("_index", "").capitalize()} Index'
     try:
         if subdict is not None and subdict in meta:
             found = meta[subdict][element_name]

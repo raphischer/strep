@@ -3,7 +3,7 @@ import plotly.graph_objects as go
 from plotly.express.colors import sample_colorscale
 
 from strep.util import lookup_meta
-from strep.index_and_rate import calculate_compound_rating, find_sub_db
+from strep.index_and_rate import calculate_single_compound_rating, find_sub_db
 from strep.elex.util import RATING_COLORS, ENV_SYMBOLS, PATTERNS, RATING_COLOR_SCALE
 
 
@@ -17,6 +17,10 @@ def assemble_scatter_data(env_names, db, scale_switch, xaxis, yaxis, meta, bound
             for xy_axis, metric in zip(['x', 'y'], [xaxis, yaxis]):
                 if isinstance(log[metric], dict): # either take the value or the index of the metric
                     env_data[xy_axis].append(log[metric][scale_switch])
+                elif isinstance(log[metric], float):
+                    if scale_switch != 'index':
+                        print(f'WARNING: Only index values found for displaying {metric}!')
+                    env_data[xy_axis].append(log[metric])
                 else: # error during value aggregation
                     env_data[xy_axis].append(0)
         plot_data[env] = env_data
@@ -30,7 +34,7 @@ def assemble_scatter_data(env_names, db, scale_switch, xaxis, yaxis, meta, bound
 def add_rating_background(fig, rating_pos, mode, dark_mode):
     for xi, (x0, x1) in enumerate(rating_pos[0]):
         for yi, (y0, y1) in enumerate(rating_pos[1]):
-            color = RATING_COLORS[int(calculate_compound_rating([xi, yi], mode))]
+            color = RATING_COLORS[int(calculate_single_compound_rating([xi, yi], mode))]
             if dark_mode:
                 fig.add_shape(type="rect", layer='below', line=dict(color='#0c122b'), fillcolor=color, x0=x0, x1=x1, y0=y0, y1=y1, opacity=.8)
             else:

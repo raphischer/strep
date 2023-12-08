@@ -9,18 +9,35 @@ from strep.load_experiment_logs import find_sub_db
 from strep.util import lookup_meta, drop_na_properties, prop_dict_to_val
 
 
-def calculate_compound_rating(ratings, mode='optimistic mean', quantiles=None):
+def filter_properties(data, groups, inverse=False):
+    if not isinstance(groups, list):
+        groups = [groups]
+    sel = [ prop for prop in data.index if isinstance(data[prop], dict) and ((data[prop]['group'] in groups) != inverse) ]
+    if len(sel) == 0:
+        raise RuntimeError('Filtering properties results in no properties!')
+    return data[sel]
+
+
+def score_performances(database, mode='optimistic mean', quantiles=None):
     if quantiles is None:
         quantiles = [0.8, 0.6, 0.4, 0.2]
-    if isinstance(ratings, pd.DataFrame): # full database to rate
-        # group by ds & task, drop
-        compound_index = np.zeros((ratings.shape[0]))
-        for i, (_, log) in enumerate(ratings.iterrows()):
-            compound_index[i] = calculate_single_compound_rating(log, mode)
-        rating_bounds = load_boundaries({'tmp': np.quantile(compound_index, quantiles)})['tmp'] # TODO implement this nicer
-        compound_rating = [index_to_rating(val, rating_bounds) for val in compound_index]
-        return compound_index, compound_rating
-    return calculate_single_compound_rating(ratings, mode)
+    results = {
+        'compound_index': [],
+        'resource_index': [],
+        'quality_index': []
+    }
+    for i, (_, log) in enumerate(database.iterrows()):
+        results['compound_index'].append( calculate_single_compound_rating(log, mode) )
+        results['quality_index'].append( calculate_single_compound_rating(filter_properties(log, 'Performance'), mode) )
+        results['resource_index'].append( calculate_single_compound_rating(filter_properties(log, 'Performance', True), mode) )
+
+    ratings = {}
+    for key, values in results.items():
+        rating_bounds = load_boundaries({'tmp': np.quantile(values, quantiles)})['tmp'] # TODO implement this nicer
+        ratings[key.replace('index', 'rating')] = [index_to_rating(val, rating_bounds) for val in values]
+    results.update(ratings)
+
+    return results
 
 
 def weighted_median(values, weights):
@@ -331,10 +348,13 @@ def rate_database(database, given_meta, boundaries=None, indexmode='best', refer
     grouped_by = database.groupby(['dataset', 'task'])
     for group_field_vals, data in grouped_by:
         data = drop_na_properties(data)
-        index, rating = calculate_compound_rating(drop_na_properties(data), rating_mode)
-        database.loc[data.index,'compound_index'] = index
-        database.loc[data.index,'compound_rating'] = rating
+        scoring = score_performances(drop_na_properties(data), rating_mode)
+        for key, values in scoring.items():
+            database.loc[data.index,key] = values
+    
     database['compound_rating'] = database['compound_rating'].astype(int)
+    database['resource_rating'] = database['compound_rating'].astype(int)
+    database['quality_rating'] = database['quality_rating'].astype(int)
     return database, boundaries, real_boundaries, references
 
 
@@ -357,21 +377,26 @@ def find_relevant_metrics(database, meta):
             if len(metrics) < 2:
                 to_delete.append(lookup)
             else:
+                # TODO later add this, such that it can be visualized
+                # metrics['resource_index'] = {sum([weight for (weight, group) in metrics.values() if group != 'Performance']), 'Resource'}
+                # metrics['quality_index'] = {sum([weight for (weight, group) in metrics.values() if group == 'Performance']), 'Performance'}
+                # metrics['compound_index'] = {1.0, 'n.a.'}
                 weights, groups = zip(*list(metrics.values()))
+
                 argsort = np.argsort(weights)
                 groups = np.array(groups)[argsort]
                 metrics = np.array(list(metrics.keys()))[argsort]
                 # use most influential Performance property on y-axis
                 if 'Performance' not in groups:
-                    raise RuntimeError(f'Could not find performance property for {lookup}!')
-                y_default[lookup] = metrics[groups == 'Performance'][0]
+                    raise RuntimeError(f'Could not find quality property for {lookup}!')
+                y_default[lookup] = metrics[groups == 'Performance'][-1]
                 if 'Resources' in groups: # use the most influential resource property on x-axis
-                    x_default[lookup] = metrics[groups == 'Resources'][0]
+                    x_default[lookup] = metrics[groups == 'Resources'][-1]
                 elif 'Complexity' in groups: # use most influential complexity
-                    x_default[lookup] = metrics[groups == 'Complexity'][0]
+                    x_default[lookup] = metrics[groups == 'Complexity'][-1]
                 else:
                     try:
-                        x_default[lookup] = metrics[groups == 'Performance'][1]
+                        x_default[lookup] = metrics[groups == 'Performance'][-2]
                     except IndexError:
                         print(f'No second Performance property and no Resources or Complexity properties were found for {lookup}!')
                         to_delete.append(lookup)
