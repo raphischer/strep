@@ -28,8 +28,14 @@ def score_performances(database, mode='optimistic mean', quantiles=None):
     }
     for i, (_, log) in enumerate(database.iterrows()):
         results['compound_index'].append( calculate_single_compound_rating(log, mode) )
-        results['quality_index'].append( calculate_single_compound_rating(filter_properties(log, 'Performance'), mode) )
-        results['resource_index'].append( calculate_single_compound_rating(filter_properties(log, 'Performance', True), mode) )
+        try:
+            results['quality_index'].append( calculate_single_compound_rating(filter_properties(log, 'Performance'), mode) )
+        except RuntimeError:
+            results['quality_index'].append(0)
+        try:
+            results['resource_index'].append( calculate_single_compound_rating(filter_properties(log, 'Performance', True), mode) )
+        except RuntimeError:
+            results['resource_index'].append(0)
 
     ratings = {}
     for key, values in results.items():
@@ -195,18 +201,20 @@ def load_boundaries(content=None):
             content = json.load(file)
     else:
         raise RuntimeError('Invalid boundary input', content)
-
-    # Convert boundaries to dictionary
-    min_value, max_value = -100, 100000
+    
     boundary_intervals = {}
     for key, boundaries in content.items():
-        intervals = [[max_value, boundaries[0]]]
-        for i in range(len(boundaries)-1):
-            intervals.append([boundaries[i], boundaries[i+1]])
-        intervals.append([boundaries[-1], min_value])
-        boundary_intervals[key] = intervals
-
+        boundary_intervals[key] = convert_boundaries_to_intervals(boundaries)
     return boundary_intervals
+
+
+def convert_boundaries_to_intervals(boundaries, min_value=-100, max_value=100000):
+    # Convert boundaries to dictionary
+    intervals = [[max_value, boundaries[0]]]
+    for i in range(len(boundaries)-1):
+        intervals.append([boundaries[i], boundaries[i+1]])
+    intervals.append([boundaries[-1], min_value])
+    return intervals
 
 
 def save_boundaries(boundary_intervals, output="boundaries.json"):
@@ -254,7 +262,7 @@ def identify_property_meta(given_meta, database):
     if len(cols_to_rate) < 1:
         raise RuntimeError('No rateable properties found!')
     for col in cols_to_rate:
-        meta = lookup_meta(given_meta, col, None, 'properties')
+        meta = lookup_meta(given_meta, col, '', 'properties')
         if not isinstance(meta, dict):
             meta = { "name": col, "shortname": col[:4], "unit": "number", "group": "Performance", "weight": 1.0 }
         properties_meta[col] = meta
@@ -321,6 +329,10 @@ def rate_database(database, given_meta, boundaries=None, indexmode='best', refer
                 boundaries[prop] = [bound.copy() for bound in pr_bounds] # copies not references! otherwise changing a boundary affects multiple metrics
                 # calculate rating and real boundary values
                 data[prop].map( lambda pr: pr.update({'rating': index_to_rating(pr['index'], pr_bounds)}) if isinstance(pr, dict) else pr )
+                if indexmode == 'centered':
+                    raise NotImplementedError() # but should be the value with index val 1
+                else: # indexmode == 'best'
+                    ref_val = sorted([(entry['index'], entry['value']) for entry in data[prop]])[-1][1]
                 real_boundaries[group_field_vals][prop] = [(index_to_value(start, ref_val, higher_better), index_to_value(stop, ref_val, higher_better)) for (start, stop) in pr_bounds]
         database.loc[data.index,data.columns] = data
     
@@ -344,16 +356,16 @@ def rate_database(database, given_meta, boundaries=None, indexmode='best', refer
                             database.loc[data.index,prop] = [valid.values[0]] * data.shape[0]
     
     print('    calculating compound ratings')
-    # calculate compound ratings for each DS X TASK combo, dropping tha nan columns
-    grouped_by = database.groupby(['dataset', 'task'])
-    for group_field_vals, data in grouped_by:
-        data = drop_na_properties(data)
+    # calculate compound index and ratings for each DS X TASK X ENVIRONMENT combo
+    for group_field_vals, data in database.groupby(['dataset', 'task', 'environment']):
+        # drop nan columns
         scoring = score_performances(drop_na_properties(data), rating_mode)
         for key, values in scoring.items():
             database.loc[data.index,key] = values
-    
+    for key in [col for col in database.columns if '_index' in col]:
+        boundaries[key] = convert_boundaries_to_intervals(np.quantile(database[key], np.array([0.8, 0.6, 0.4, 0.2]))) # TODO improve the boundary handling
     database['compound_rating'] = database['compound_rating'].astype(int)
-    database['resource_rating'] = database['compound_rating'].astype(int)
+    database['resource_rating'] = database['resource_rating'].astype(int)
     database['quality_rating'] = database['quality_rating'].astype(int)
     return database, boundaries, real_boundaries, references
 
@@ -430,9 +442,3 @@ def load_database(fname):
                 pass
         database['environment'] = 'unknown'
     return database
-
-
-if __name__ == '__main__':
-
-    experiment_database = pd.read_pickle('database.pkl')
-    rate_database(experiment_database)

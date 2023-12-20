@@ -199,7 +199,7 @@ class Visualization(dash.Dash):
             model_table, metric_table,  enc_label, link, open = None, None, None, "/", True
         else:
             point = hover_data['points'][0]
-            env_name = env_names[point['curveNumber']]
+            env_name = env_names[point['curveNumber']] if len(env_names) < 2 else env_names[point['curveNumber'] - 1]
             model = find_sub_db(self.state['sub_database'], environment=env_name).iloc[point['pointNumber']].to_dict()
             self.state['model'] = fill_meta(model, self.meta)
             if isinstance(self.state['model']['model'], str): 

@@ -10,10 +10,11 @@ from strep.elex.util import RATING_COLORS, ENV_SYMBOLS, PATTERNS, RATING_COLOR_S
 def assemble_scatter_data(env_names, db, scale_switch, xaxis, yaxis, meta, boundaries):
     plot_data = {}
     for env in env_names:
-        env_data = { 'ratings': [], 'x': [], 'y': [], 'index': [] }
+        env_data = { 'ratings': [], 'x': [], 'y': [], 'index': [], 'names': [] }
         for _, log in find_sub_db(db, environment=env).iterrows():
             env_data['ratings'].append(log['compound_rating'])
             env_data['index'].append(log['compound_index'])
+            env_data['names'].append(log['model']) # TODO lookup meta?
             for xy_axis, metric in zip(['x', 'y'], [xaxis, yaxis]):
                 if isinstance(log[metric], dict): # either take the value or the index of the metric
                     env_data[xy_axis].append(log[metric][scale_switch])
@@ -26,14 +27,22 @@ def assemble_scatter_data(env_names, db, scale_switch, xaxis, yaxis, meta, bound
         plot_data[env] = env_data
     axis_names = [lookup_meta(meta, ax, subdict='properties') for ax in [xaxis, yaxis]]
     if scale_switch == 'index':
-        axis_names = [name.split('[')[0].strip() + ' Index' for name in axis_names]
+        axis_names = [name.split('[')[0].strip() + ' Index' if 'Index' not in name else name for name in axis_names]
     rating_pos = [boundaries[xaxis], boundaries[yaxis]]
     return plot_data, axis_names, rating_pos
 
 
 def add_rating_background(fig, rating_pos, mode, dark_mode):
     for xi, (x0, x1) in enumerate(rating_pos[0]):
+        if xi == 0:
+            x0 = fig.layout.xaxis.range[1]
+        if xi == len(rating_pos[0]) - 1:
+            x1 = fig.layout.xaxis.range[0]
         for yi, (y0, y1) in enumerate(rating_pos[1]):
+            if yi == 0:
+                y0 = fig.layout.yaxis.range[1]
+            if yi == len(rating_pos[1]) - 1:
+                y1 = fig.layout.yaxis.range[0]
             color = RATING_COLORS[int(calculate_single_compound_rating([xi, yi], mode))]
             if dark_mode:
                 fig.add_shape(type="rect", layer='below', line=dict(color='#0c122b'), fillcolor=color, x0=x0, x1=x1, y0=y0, y1=y1, opacity=.8)
@@ -43,17 +52,33 @@ def add_rating_background(fig, rating_pos, mode, dark_mode):
 
 def create_scatter_graph(plot_data, axis_title, dark_mode, ax_border=0.1, marker_width=15, norm_colors=True):
     fig = go.Figure()
-    for env, data in plot_data.items():
-        if 'names' not in data:
-            plot_data[env]['names'] = ['' for _ in range(len(data['x']))]
     i_min, i_max = min([min(vals['index']) for vals in plot_data.values()]), max([max(vals['index']) for vals in plot_data.values()])
+     # link model scatter points across multiple environment
+    if len(plot_data) > 1:
+        models = set.union(*[set(data['names']) for data in plot_data.values()])
+        x, y, text = [], [], []
+        for model in models:
+            avail = 0
+            for d_idx, data in enumerate(plot_data.values()):
+                try:
+                    idx = data['names'].index(model)
+                    avail += 1
+                    x.append(data['x'][idx])
+                    y.append(data['y'][idx])
+                except ValueError:
+                    pass
+            model_text = ['' if i != (avail - 1) // 2 else model for i in range(avail + 1)]
+            text = text + model_text # place text near most middle node
+            x.append(None)
+            y.append(None)
+        fig.add_trace(go.Scatter(x=x, y=y, text=text, mode='lines+text', line={'color': 'black'}, showlegend=False))
     for env_i, (env_name, data) in enumerate(plot_data.items()):
         # scale to vals between 0 and 1?
         index_vals = (np.array(data['index']) - i_min) / (i_max - i_min) if norm_colors else data['index']
         node_col = sample_colorscale(RATING_COLOR_SCALE, [1-val for val in index_vals])
-
+        text = [''] * len(data['x']) if 'names' not in data or len(plot_data) > 1 else data['names']
         fig.add_trace(go.Scatter(
-            x=data['x'], y=data['y'], name=env_name, text=data['names'],
+            x=data['x'], y=data['y'], name=env_name, text=text,
             mode='markers+text', marker_symbol=ENV_SYMBOLS[env_i],
             legendgroup=env_name, marker=dict(color=node_col, size=marker_width),
             marker_line=dict(width=marker_width / 5, color='black'))
@@ -96,5 +121,5 @@ def create_bar_graph(plot_data, dark_mode, discard_y_axis):
 
 
 def create_star_plot(summary, metrics):
-    print(1)
+    print('TODO')
     

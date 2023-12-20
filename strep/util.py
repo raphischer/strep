@@ -60,7 +60,7 @@ def lookup_meta(meta, element_name, key='name', subdict=None):
             found = meta[subdict][element_name]
         else:
             found = meta[element_name]
-        if key is not None:
+        if len(key) > 0:
             return found[key]
         return found
     except KeyError:
