@@ -79,7 +79,7 @@ def create_page(databases, indexmode, rating_mode):
                 dbc.RadioItems(
                     id='indexmode-switch', value=indexmode,
                     options=[
-                        {'label': 'Centered', 'value': 'centered'},
+                        {'label': 'Centered', 'value': 'centered', 'disabled': True},
                         {'label': 'Best', 'value': 'best'}
                     ],
                 ),

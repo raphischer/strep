@@ -89,7 +89,8 @@ class Visualization(dash.Dash):
 
     def update_scatter_graph(self, env_names=None, scale_switch=None, indexmode_switch=None, rating_mode=None, xweight=None, yweight=None, *slider_args):
         update_db = False
-        triggered_prop = dash.callback_context.triggered[0]['prop_id']
+        triggered_prop = self.triggered_graph_prop or dash.callback_context.triggered[0]['prop_id']
+        self.triggered_graph_prop = None
         # most input triggers affect one of the two axis
         if 'x' in triggered_prop:
             axis, slider_values, weight = self.state['xaxis'],  slider_args[0],  xweight
@@ -137,6 +138,7 @@ class Visualization(dash.Dash):
         return bars
 
     def update_boundary_sliders(self, xaxis=None, yaxis=None, uploaded_boundaries=None, calculated_boundaries=None, reference=None):
+        self.triggered_graph_prop = dash.callback_context.triggered[0]['prop_id']
         if uploaded_boundaries is not None:
             boundaries_dict = json.loads(base64.b64decode(uploaded_boundaries.split(',')[-1]))
             self.boundaries = load_boundaries(boundaries_dict)
