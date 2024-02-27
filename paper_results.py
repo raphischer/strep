@@ -8,14 +8,15 @@ import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 from scipy.stats import spearmanr
 
-from strep.util import read_json, lookup_meta, identify_all_correlations
+from strep.util import read_json, lookup_meta, identify_all_correlations, fill_meta
 from strep.index_and_rate import prop_dict_to_val
 from strep.load_experiment_logs import find_sub_db
 from strep.elex.util import ENV_SYMBOLS, RATING_COLORS, RATING_COLOR_SCALE, RATING_COLOR_SCALE_REV
 from strep.elex.graphs import assemble_scatter_data, create_scatter_graph, add_rating_background
+from strep.labels.label_generation import PropertyLabel
 
 
-PLOT_WIDTH = 1000
+PLOT_WIDTH = 900
 PLOT_HEIGHT = PLOT_WIDTH // 3
 COLORS = ['#009ee3', '#983082', '#ffbc29', '#35cdb4', '#e82e82', '#59bdf7', '#ec6469', '#706f6f', '#4a4ad8', '#0c122b', '#ffffff']
 
@@ -24,7 +25,7 @@ SEL_DS_TASK = {
     'ImageNetEff': ('imagenet', 'infer'),
     'Forecasting': ('electricity_weekly_dataset', 'Train and Test'),
     'Papers With Code': ('kitti-depth-completion', 'depth-completion'),
-    'RobustBench': ('cifar100', 'robustness infer'),
+    'RobustBench': ('cifar100', 'Robustness Test'),
 }
 
 TEX_TABLE_GENERAL = r'''
@@ -85,6 +86,28 @@ def create_all(databases):
     time.sleep(0.5)
     os.remove("dummy.pdf")
 
+    # labels
+    labels_to_generate = {
+        'Forecasting': lambda db: db[(db['model'] == 'feedforward') & (db['dataset'] == 'electricity_weekly_dataset')],
+        'ImageNetEff': lambda db: db[(db['model'] == 'MobileNetV3Small') & (db['environment'] == 'A100 x8 - TensorFlow 2.8.0') & (db['task'] == 'infer')],
+        'RobustBench': lambda db: db[(db['model'] == 'Addepalli2022Efficient_WRN_34_10')],
+        'Papers With Code': lambda db: db[(db['task'] == 'depth-completion') & (db['methodology'] == 'KBNet')]
+    }
+    for name, mod_extraction in labels_to_generate.items():
+        db, meta, _, _, _, _, _, _ = databases[name]
+        model = fill_meta(mod_extraction(db).iloc[0].to_dict(), meta)
+        # brush up the aesthetic
+        if name == 'ImageNetEff':
+            model['task'] = 'Inference'
+        if name == 'RobustBench':
+            model['model']['name'] = model['model']['name'].replace('NeurIPS 2022', 'NeurIPS 22')
+        if name == 'Papers With Code':
+            model['model'] = {'name': 'KBNet (Wong & Soatto 21)', 'url': 'https://arxiv.org/abs/2108.10531'}
+            model['dataset'] = {'name': 'KITTY'}
+            model['task'] = 'Depth Completion'
+        label = PropertyLabel(model, custom=meta['meta_dir'])
+        label.save(f'label_{name.replace(" ", "_")}.pdf')
+
     # PWC filtering
     fig = go.Figure(layout={
         'width': PLOT_WIDTH / 2, 'height': PLOT_HEIGHT, 'margin': {'l': 0, 'r': 0, 'b': 0, 't': 0},
@@ -128,7 +151,7 @@ def create_all(databases):
         xaxis, yaxis = xdef[(ds, task)], ydef[(ds, task)]
         db = find_sub_db(db, dataset=ds, task=task)
         plot_data, axis_names, rating_pos = assemble_scatter_data([db['environment'].iloc[0]], db, 'index', xaxis, yaxis, meta, bounds)
-        scatter = create_scatter_graph(plot_data, axis_names, dark_mode=False)
+        scatter = create_scatter_graph(plot_data, axis_names, dark_mode=False, display_text=False)
         rating_pos[0][0][0] = scatter.layout.xaxis.range[1]
         rating_pos[1][0][0] = scatter.layout.yaxis.range[1]
         add_rating_background(scatter, rating_pos, 'optimistic mean', dark_mode=False)
@@ -139,6 +162,7 @@ def create_all(databases):
         db = prop_dict_to_val(db, 'index')
         worst = db.sort_values('compound_index').iloc[0]
         best = db.sort_values('compound_index').iloc[-1]
+        # np.linalg.norm(best[metrics[(ds, task)]] - worst[metrics[(ds, task)]].values)
         fig = go.Figure()
         for model, col, m_str in zip([best, worst], [RATING_COLORS[0], RATING_COLORS[4]], ['Best', 'Worst']):
             mod_name = lookup_meta(meta, model['model'], 'short', 'model')[:18]
@@ -156,16 +180,13 @@ def create_all(databases):
     # property correlations
     fig_prop_corr = go.Figure()
     fig_pwc_comp_impact = go.Figure()
-    opacities = {'value': .5, 'index': 1.0}
     for idx, (key, (db, meta, metrics, xdef, ydef, bounds, _, _)) in enumerate(databases.items()):
         # assess property correlation
         for scale, corrs in correlations[key].items():
             all_corr = []
             for _, corr in corrs.items():
                 all_corr = all_corr + corr[0].flatten().tolist()
-            fig_prop_corr.add_trace( go.Violin(y=all_corr, spanmode='hard', name=f'{key} {scale.capitalize()} (N={len(all_corr)})',
-                                     box_visible=True, meanline_visible=True, legendgroup=key,
-                                     line={'color': RATING_COLORS[idx]}, opacity=opacities[scale]) )
+            fig_prop_corr.add_trace( go.Violin(y=all_corr, x=[f'{idx}_{scale.capitalize()}'] * len(all_corr), spanmode='hard', name=f'{key} (N={len(all_corr)})', box_visible=True, meanline_visible=True, legendgroup=key, showlegend=scale=='index', line={'color': RATING_COLORS[idx]}) )
             
         # assess difference of using weighted compound or single property
         corr_spearmen = []
@@ -180,27 +201,19 @@ def create_all(databases):
                 corr_spearmen.append(spearmanr(most_pop.values, equally.values)[0])
         fig_pwc_comp_impact.add_trace( go.Violin(y=corr_spearmen, spanmode='hard', name=f'{key} (N={len(corr_spearmen)})', line={'color': RATING_COLORS[idx]}, box_visible=True, meanline_visible=True) )
     # write images
-    fig_prop_corr.update_layout(width=PLOT_WIDTH, height=PLOT_HEIGHT, xaxis={'visible': False, 'showticklabels': False},
-                      legend=dict(orientation="h", yanchor="bottom", y=0.0, xanchor="center", x=0.5),
-                      margin={'l': 0, 'r': 0, 'b': 0, 't': 0} )
+    fig_prop_corr.update_layout(width=PLOT_WIDTH, height=PLOT_HEIGHT, legend=dict(orientation="h", yanchor="bottom", y=-0.2, xanchor="center", x=0.5), margin={'l': 0, 'r': 0, 'b': 0, 't': 0}, xaxis={'tickmode': 'array', 'tickvals': [0, 1, 2, 3, 4, 5, 6, 7], 'ticktext': ['Index-scaled', 'Original values'] * 4})
     fig_prop_corr.write_image('prop_corr.pdf')
     fig_pwc_comp_impact.update_layout(width=PLOT_WIDTH / 2, height=PLOT_HEIGHT, xaxis={'visible': False, 'showticklabels': False},
                       legend=dict(orientation="h", yanchor="bottom", y=0.0, xanchor="center", x=0.5), margin={'l': 0, 'r': 0, 'b': 0, 't': 0} )
     fig_pwc_comp_impact.write_image('pwc_comp_impact.pdf')
 
     # forecasting & imagenet metric correlation
-
     corr_res = []
     for db_name in ['ImageNetEff', 'Forecasting']:
         db, meta, metrics, xdef, ydef, bounds, _, _ = databases[db_name]
         corr, props = correlations[db_name]['index'][SEL_DS_TASK[db_name]]
         prop_names = [lookup_meta(meta, prop, 'shortname', 'properties') for prop in props]
         corr_res.append( (db_name, corr, prop_names) )
-        # fig = px.imshow(corr, x=prop_names, y=prop_names, labels=dict(x="Properties", y="Properties", color="Pearson Corr"), color_continuous_scale=RATING_COLOR_SCALE_REV)
-        # fig.update_layout({'width': PLOT_WIDTH / 2, 'height': PLOT_HEIGHT, 'margin': {'l': 0, 'r': 0, 'b': 0, 't': 0}})
-        # fig.write_image(f'fc_correlation.pdf')
-
-    
     fig = make_subplots(rows=1, cols=2, subplot_titles=([res[0] for res in corr_res]))
     for col, (_, corr, prop_names) in enumerate(corr_res):
         fig.add_trace(
@@ -209,19 +222,9 @@ def create_all(databases):
         )
     fig.update_layout(coloraxis = {'colorscale': RATING_COLOR_SCALE_REV, 'colorbar': {'title': 'Pearson Corr'}})
     fig.update_layout({'width': PLOT_WIDTH, 'height': PLOT_HEIGHT, 'margin': {'l': 0, 'r': 0, 'b': 0, 't': 20}})
-
     # colorbar={"title": 'Pearson Corr'}
     fig.show()
     fig.write_image(f'correlation_imagenet_fc.pdf')
-
-    # imagenet infer metric correlation
-    # db, meta, metrics, xdef, ydef, bounds, _, _ = databases['ImageNetEff']
-    # corr, props = correlations['ImageNetEff']['index'][SEL_DS_TASK['ImageNetEff']]
-    # prop_names = [lookup_meta(meta, prop, 'shortname', 'properties') for prop in props]
-    # fig = px.imshow(corr, x=prop_names, y=prop_names, labels=dict(x="Properties", y="Properties", color="Pearson Corr"), color_continuous_scale=RATING_COLOR_SCALE_REV)
-    # fig.update_layout({'width': PLOT_WIDTH / 2, 'height': PLOT_HEIGHT, 'margin': {'l': 0, 'r': 0, 'b': 0, 't': 0}})
-    # fig.update(layout_coloraxis_showscale=False)
-    # fig.write_image(f'imagenet_correlation.pdf')
 
     # imagenet env trades
     db, meta, metrics, xdef, ydef, bounds, _, _ = databases['ImageNetEff']
@@ -232,12 +235,12 @@ def create_all(databases):
         subdb = db[(db['environment'] == env) & (db['task'] == 'infer')]
         avail_models = set(subdb['model'].tolist())
         traces[env] = [subdb[subdb['model'] == mod]['compound_index'].iloc[0] if mod in avail_models else None for mod in models]
-    model_names = [f'{mod[:3]}..{mod[-5:]}' if len(mod) > 10 else mod for mod in models]
+    # model_names = [f'{mod[:3]}..{mod[-5:]}' if len(mod) > 10 else mod for mod in models]
     fig = go.Figure(
         layout={'width': PLOT_WIDTH, 'height': PLOT_HEIGHT, 'margin': {'l': 0, 'r': 0, 'b': 0, 't': 0},
                 'yaxis':{'title': 'Compound score'}},
         data=[
-            go.Scatter(x=model_names, y=vals, name=env, mode='markers',
+            go.Scatter(x=models, y=vals, name=env.replace('+cu113', ''), mode='markers',
             marker=dict(
                 color=RATING_COLORS[i],
                 symbol=ENV_SYMBOLS[i]
@@ -254,7 +257,6 @@ def create_all(databases):
     for _, (corr, props) in correlations['Papers With Code']['index'].items():
         has_res = False
         for prop in props:
-            print(prop, lookup_meta(meta, prop, 'group', 'properties'))
             if lookup_meta(meta, prop, 'group', 'properties') == 'Resources':
                 has_res = True
                 break

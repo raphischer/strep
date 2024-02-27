@@ -11,7 +11,7 @@ def assemble_scatter_data(env_names, db, scale_switch, xaxis, yaxis, meta, bound
     plot_data = {}
     for env in env_names:
         env_data = { 'ratings': [], 'x': [], 'y': [], 'index': [], 'names': [] }
-        for _, log in find_sub_db(db, environment=env).iterrows():
+        for l_idx, log in find_sub_db(db, environment=env).iterrows():
             env_data['ratings'].append(log['compound_rating'])
             env_data['index'].append(log['compound_index'])
             env_data['names'].append(lookup_meta(meta, log['model'], key='short', subdict='model'))
@@ -50,7 +50,7 @@ def add_rating_background(fig, rating_pos, mode, dark_mode):
                 fig.add_shape(type="rect", layer='below', fillcolor=color, x0=x0, x1=x1, y0=y0, y1=y1, opacity=.8)
 
 
-def create_scatter_graph(plot_data, axis_title, dark_mode, ax_border=0.1, marker_width=15, norm_colors=True):
+def create_scatter_graph(plot_data, axis_title, dark_mode, ax_border=0.1, marker_width=15, norm_colors=True, display_text=True):
     fig = go.Figure()
     i_min, i_max = min([min(vals['index']) for vals in plot_data.values()]), max([max(vals['index']) for vals in plot_data.values()])
      # link model scatter points across multiple environment
@@ -76,7 +76,7 @@ def create_scatter_graph(plot_data, axis_title, dark_mode, ax_border=0.1, marker
         # scale to vals between 0 and 1?
         index_vals = (np.array(data['index']) - i_min) / (i_max - i_min) if norm_colors else data['index']
         node_col = sample_colorscale(RATING_COLOR_SCALE, [1-val for val in index_vals])
-        text = [''] * len(data['x']) if 'names' not in data or len(plot_data) > 1 else data['names']
+        text = [''] * len(data['x']) if (not display_text) or ('names' not in data) or (len(plot_data) > 1) else data['names']
         fig.add_trace(go.Scatter(
             x=data['x'], y=data['y'], name=env_name, text=text,
             mode='markers+text', marker_symbol=ENV_SYMBOLS[env_i],

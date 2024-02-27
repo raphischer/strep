@@ -1,0 +1,14 @@
+{
+    "cifar10": {
+        "name": "CIFAR-10",
+        "url": "https://www.cs.toronto.edu/~kriz/cifar.html"
+    },
+    "cifar100": {
+        "name": "CIFAR-100",
+        "url": "https://www.cs.toronto.edu/~kriz/cifar.html"
+    },
+    "imagenet": {
+        "name": "ImageNet (ILSVRC2012)",
+        "url": "https://image-net.org/"
+    }
+}

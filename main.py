@@ -21,7 +21,6 @@ def preprocess_database(fname):
     # rate database
     database, metrics, xaxis_default, yaxis_default = find_relevant_metrics(database, meta)
     rated_database, boundaries, real_boundaries, references = rate_database(database, meta)
-
     print(f'    database {name} has {rated_database.shape} entries')
     return rated_database, meta, metrics, xaxis_default, yaxis_default, boundaries, real_boundaries, references
 
@@ -45,6 +44,11 @@ if __name__ == '__main__':
     for name, fname in DATABASES.items():
         print('LOADING', fname)
         databases[name] = preprocess_database(fname)
+        # override defaults for robustbench
+        if 'robustbench' in fname:
+            for ds_task in databases[name][2].keys():
+                databases[name][3][ds_task] = 'clean_acc' # x axis
+                databases[name][4][ds_task] = 'autoattack_acc' # y axis
         
     if args.mode == 'interactive':
         from strep.elex.app import Visualization

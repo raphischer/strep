@@ -85,7 +85,7 @@ with open(os.path.join(os.path.dirname(__file__), 'meta_model.json'), 'w') as jf
 
 # set config and env information
 dfs_merged['environment'] = 'Tesla V100 - PyTorch 1.7.1'
-dfs_merged['task'] = 'robustness infer'
+dfs_merged['task'] = 'Robustness Test'
 dfs_merged['configuration'] = dfs_merged['model'] + ' - ' + dfs_merged['dataset']
 
 # convert numeric columns
