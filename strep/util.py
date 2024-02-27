@@ -49,6 +49,7 @@ def load_meta(directory=None):
         re_match = re.match('meta_(.*).json', fname)
         if re_match:
             meta[re_match.group(1)] = read_json(os.path.join(directory, fname))
+    meta['meta_dir'] = os.path.abspath(directory)
     return meta
 
 
@@ -65,6 +66,15 @@ def lookup_meta(meta, element_name, key='name', subdict=None):
         return found
     except KeyError:
         return element_name
+    
+
+def fill_meta(summary, meta):
+    for property, value in list(summary.items()):
+        try:
+            summary[property] = meta[property][value]
+        except KeyError:
+            pass
+    return summary
 
 
 def basename(directory):
@@ -133,9 +143,10 @@ def create_output_dir(dir=None, prefix='', config=None):
 
 
 def prop_dict_to_val(df, key='value'):
-    if hasattr(df, "map"): # for newer pandas versions
+    try:
         return df.map(lambda val: val[key] if isinstance(val, dict) and key in val else val)
-    return df.applymap(lambda val: val[key] if isinstance(val, dict) and key in val else val)
+    except (AttributeError, TypeError):
+        return df.applymap(lambda val: val[key] if isinstance(val, dict) and key in val else val)
 
 
 def drop_na_properties(df):

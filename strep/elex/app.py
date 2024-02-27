@@ -10,12 +10,12 @@ import dash_bootstrap_components as dbc
 
 from strep.index_and_rate import rate_database, load_boundaries, save_boundaries, calculate_optimal_boundaries, save_weights, find_optimal_reference, update_weights
 from strep.elex.pages import create_page
-from strep.elex.util import summary_to_html_tables, toggle_element_visibility, fill_meta
+from strep.elex.util import summary_to_html_tables, toggle_element_visibility
 from strep.elex.graphs import assemble_scatter_data, create_scatter_graph, create_bar_graph, add_rating_background, create_star_plot
 from strep.labels.label_generation import PropertyLabel
 from strep.unit_reformatting import CustomUnitReformater
 from strep.load_experiment_logs import find_sub_db
-from strep.util import lookup_meta, PatchedJSONEncoder
+from strep.util import lookup_meta, PatchedJSONEncoder, fill_meta
 
 
 class Visualization(dash.Dash):
@@ -207,7 +207,7 @@ class Visualization(dash.Dash):
             if isinstance(self.state['model']['model'], str): 
                 # make sure that model is always a dict with name field
                 self.state['model']['model'] = {'name': self.state['model']['model']}
-            self.state['label'] = PropertyLabel(self.state['model'])
+            self.state['label'] = PropertyLabel(self.state['model'], custom=self.meta['meta_dir'])
             model_table, metric_table = summary_to_html_tables(self.state['model'], self.metrics[self.state['ds_task']])
             starplot = create_star_plot(self.state['model'], self.metrics[self.state['ds_task']])
             enc_label = self.state['label'].to_encoded_image()

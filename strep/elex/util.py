@@ -25,15 +25,6 @@ RATING_MEANINGS = 'ABCDE'
 #     return full_str
 
 
-def fill_meta(summary, meta):
-    for property, value in list(summary.items()):
-        try:
-            summary[property] = meta[property][value]
-        except KeyError:
-            pass
-    return summary
-
-
 def summary_to_html_tables(summary, metrics):
     # general info
     final_rating = f"{summary['compound_index']:5.3f} ({RATING_MEANINGS[summary['compound_rating']]})"

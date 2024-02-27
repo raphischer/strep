@@ -1,5 +1,7 @@
 import os
 import base64
+import datetime
+import json
 
 from PIL import Image
 import numpy as np
@@ -38,7 +40,6 @@ POS_METRICS = {
 PARTS_DIR = os.path.join(os.path.dirname(__file__), "label_design", "graphic_parts")
 
 ICONS = { f.split('_0.png')[0]: os.path.join(PARTS_DIR, f.replace('_0.', '_$.')) for f in os.listdir(PARTS_DIR) if f.endswith('_0.png') }
-
 
 def place_relatively(canvas, rel_x, rel_y, draw_method, content, fontstyle='', font_size=None):
     image = 'Image' in draw_method
@@ -84,7 +85,11 @@ def draw_qr(canvas, qr, x, y, width):
         canvas.rect(x + (i * width), y + int(width * qr_pix.shape[0]) - ((j + 1) * width), width, width, fill=1, stroke=0)
 
 
-def find_icon(metric_key, metric_group, icons):
+def find_icon(metric_key, metric, icons):
+    metric_group = metric['group'].lower()
+    # check for icon info in meta
+    if 'icon' in metric and metric['icon'] in icons:
+        return icons[metric['icon']]
     # check for exact name match
     for key, path in icons.items():
         if key == metric_key:
@@ -107,24 +112,44 @@ def find_icon(metric_key, metric_group, icons):
 
 class PropertyLabel(fitz.Document):
 
-    def __init__(self, summary, metric_map=None, custom_icons=None):
-        if metric_map is None: # display highest weighted metrics
-            weights = {prop: vals['weight'] for prop, vals in summary.items() if isinstance(vals, dict) and 'weight' in vals}
-            met_by_weight = list(reversed(sorted(weights, key=weights.get)))
-            metric_map = { pos: met_by_weight[idx] for idx, pos in enumerate(POS_METRICS.keys()) if idx < len(met_by_weight)}
-        if custom_icons is None:
-            custom_icons = {}
-        custom_icons.update(ICONS)
+    def __init__(self, summary, custom=None):
+        # check if custom badge positions are wanted
+        try:
+            with open(os.path.join(custom, 'label_map.json'), 'r') as jf:
+                metric_map = json.load(jf)
+        except Exception:
+            metric_map = {}
+        # apart from customs, per default display most important (highest weighted) properties
+        weights = {prop: vals['weight'] for prop, vals in summary.items() if isinstance(vals, dict) and 'weight' in vals and prop not in metric_map.values()}
+        met_by_weight = list(reversed(sorted(weights, key=weights.get)))
+        idx = 0
+        for pos in POS_METRICS.keys():
+            if pos not in metric_map and idx < len(met_by_weight):
+                metric_map[pos] = met_by_weight[idx]
+                idx += 1        
+
+        icons = ICONS.copy()
+        bg = os.path.join(PARTS_DIR, "bg.png")
+        # check for custom icons and background
+        if custom is not None:
+            for fname in os.listdir(custom):
+                if '_0.png' in fname:
+                    icons[fname.split('_0.png')[0]] = os.path.join(custom, fname.replace('_0.png', '_$.png'))
+            if os.path.isfile(os.path.join(custom, "bg.png")):
+                bg = os.path.join(custom, "bg.png")
         canvas = Canvas("result.pdf", pagesize=C_SIZE)
         # background
-        place_relatively(canvas, 0.5, 0.5, 'drawInlineImage', os.path.join(PARTS_DIR, f"bg.png"))
-        # rating & QR
+        place_relatively(canvas, 0.5, 0.5, 'drawInlineImage', bg)
+        # rating
         frate = 'ABCDE'[summary['compound_rating']]
         pos = POS_RATINGS[frate]
         place_relatively(canvas, pos[0], pos[1], 'drawInlineImage', os.path.join(PARTS_DIR, f"rating_{frate}.png"))
+        # qr codes
         if 'url' in summary['model']:
             qr = create_qr(summary['model']['url'])
-            draw_qr(canvas, qr, 0.84 * C_SIZE[0], 0.896 * C_SIZE[1], 175)
+            draw_qr(canvas, qr, 0.84 * C_SIZE[0], 0.725 * C_SIZE[1], 175)
+        qr_strep = create_qr('https://github.com/raphischer/strep')
+        draw_qr(canvas, qr_strep, 0.84 * C_SIZE[0], 0.896 * C_SIZE[1], 175)
 
         # Add stroke to make stronger letters
         canvas.setFillColor(black)
@@ -137,6 +162,10 @@ class PropertyLabel(fitz.Document):
         # general text
         for key, (rel_x, rel_y, draw_method, fsize, style) in POS_GENERAL.items():
             place_relatively(canvas, rel_x, rel_y, draw_method, summary[key], style, fsize)
+        today = datetime.date.today()
+        place_relatively(canvas, .95,  .87, 'drawRightString', f"Issued {today.strftime('%B')[:3]} '{today.strftime('%Y')[-2:]}", '', 56)
+        if 'url' in summary['model']:
+            place_relatively(canvas, .82,  .776, 'drawRightString', f'Scan for further information', '', 56)
 
         # rated pictograms & values
         for location, positions in POS_METRICS.items():
@@ -144,14 +173,14 @@ class PropertyLabel(fitz.Document):
                 metric_key = metric_map[location]
                 metric = summary[metric_key]
                 # print icon
-                icon = find_icon(metric_key, metric['group'].lower(), custom_icons)
+                icon = find_icon(metric_key, metric, icons)
                 rating = metric['rating']
                 icon = icon.replace('_$.', f'_{rating}.')
                 rel_x, rel_y = positions['icon']
-                place_relatively(canvas, rel_x, rel_y, 'drawInlineImage', icon)
                 # print texts
                 # TODO improve this by looking at the absolute height of the placed icon
-                place_relatively(canvas, rel_x, rel_y - 0.08, 'drawCentredString', metric['fmt_val'] + '_' + metric['fmt_unit'], '', 56)
+                place_relatively(canvas, rel_x, rel_y, 'drawInlineImage', icon)
+                place_relatively(canvas, rel_x, rel_y - 0.08, 'drawCentredString', f"{metric['fmt_val']} {metric['fmt_unit']}", '', 56)
                 place_relatively(canvas, rel_x, rel_y - 0.11, 'drawCentredString', metric['name'], '', 56)
         
         super().__init__(stream=canvas.getpdfdata(), filetype='pdf')

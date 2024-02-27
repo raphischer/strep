@@ -14,7 +14,7 @@ def assemble_scatter_data(env_names, db, scale_switch, xaxis, yaxis, meta, bound
         for _, log in find_sub_db(db, environment=env).iterrows():
             env_data['ratings'].append(log['compound_rating'])
             env_data['index'].append(log['compound_index'])
-            env_data['names'].append(log['model']) # TODO lookup meta?
+            env_data['names'].append(lookup_meta(meta, log['model'], key='short', subdict='model'))
             for xy_axis, metric in zip(['x', 'y'], [xaxis, yaxis]):
                 if isinstance(log[metric], dict): # either take the value or the index of the metric
                     env_data[xy_axis].append(log[metric][scale_switch])
@@ -121,5 +121,5 @@ def create_bar_graph(plot_data, dark_mode, discard_y_axis):
 
 
 def create_star_plot(summary, metrics):
-    print('TODO')
+    pass # TODO
     
