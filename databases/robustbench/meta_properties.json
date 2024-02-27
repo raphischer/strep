@@ -1,58 +1,82 @@
 {
     "clean_acc": {
-        "name": "Standard Accuracy",
-        "shortname": "Accuracy",
-        "unit": "percent",
+        "name": "Clean Accuracy",
+        "shortname": "ACC",
+        "weight": 0.2,
         "group": "Performance",
-        "weight": 0.233333333333333,
+        "unit": "percent",
         "maximize": true
     },
-    "reported": {
-        "name": "Reported Robustness",
-        "shortname": "Rep",
-        "unit": "percent",
+    "corruptions_reported": {
+        "name": "Reported Corruption Robustness",
+        "shortname": "CorRep",
+        "weight": 0.2,
         "group": "Performance",
-        "weight": 0.1,
-        "maximize": true
+        "unit": "percent",
+        "maximize": true,
+        "icon": "robustness"
+    },
+    "corruptions_acc": {
+        "name": "Acc Corruption Robustness",
+        "shortname": "AccRob",
+        "weight": 0.2,
+        "group": "Performance",
+        "unit": "percent",
+        "maximize": true,
+        "icon": "robustness"
+    },
+    "L2_reported": {
+        "name": "Reported L2 Robustness",
+        "shortname": "L2Rep",
+        "weight": 0.2,
+        "group": "Performance",
+        "unit": "percent",
+        "maximize": true,
+        "icon": "robustness"
     },
     "autoattack_acc": {
-        "name": "AuttoAttack Robustness",
-        "shortname": "corr",
-        "unit": "percent",
+        "name": "AutoAttack Robustness",
+        "shortname": "AARob",
+        "weight": 0.2,
         "group": "Performance",
-        "weight": 0.333333333333333,
-        "maximize": true
+        "unit": "percent",
+        "maximize": true,
+        "icon": "robustness"
     },
-    "cifar100_corr_acc": {
-        "name": "Cifar-100 Corr Robustness",
-        "shortname": "corr",
-        "unit": "percent",
+    "Linf_reported": {
+        "name": "Reported Linf Robustness",
+        "shortname": "LinRep",
+        "weight": 0.2,
         "group": "Performance",
-        "weight": 0.333333333333333,
-        "maximize": true
-    },
-    "cifar10_corr_acc": {
-        "name": "Cifar-10 Corr Robustness",
-        "shortname": "corr",
         "unit": "percent",
-        "group": "Performance",
-        "weight": 0.333333333333333,
-        "maximize": true
-    },
-    "imagenet_corr_acc": {
-        "name": "IN-C Robustness",
-        "shortname": "corr",
-        "unit": "percent",
-        "group": "Performance",
-        "weight": 0.166666666666666,
-        "maximize": true
+        "maximize": true,
+        "icon": "robustness"
     },
     "corruptions_acc_3d": {
-        "name": "IN-3DCC Robustness",
-        "shortname": "corr",
-        "unit": "percent",
+        "name": "Acc 3d Corruption Robustness",
+        "shortname": "Acc 3dRob",
+        "weight": 0.2,
         "group": "Performance",
-        "weight": 0.166666666666666,
-        "maximize": true
+        "unit": "percent",
+        "maximize": true,
+        "icon": "robustness"
+    },
+    "corruptions_mce_3d": {
+        "name": "Mce 3d Corruption Robustness",
+        "shortname": "Mce 3dRob",
+        "weight": 0.2,
+        "group": "Performance",
+        "unit": "percent",
+        "maximize": true,
+        "icon": "robustness"
+    },
+    "corruptions_mce": {
+        "name": "Mce Corruption Robustness",
+        "shortname": "MceRob",
+        "weight": 0.2,
+        "group": "Performance",
+        "unit": "percent",
+        "maximize": true,
+        "icon": "robustness"
     }
 }
