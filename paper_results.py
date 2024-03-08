@@ -24,7 +24,7 @@ COLORS = ['#009ee3', '#983082', '#ffbc29', '#35cdb4', '#e82e82', '#59bdf7', '#ec
 SEL_DS_TASK = {
     'ImageNetEff': ('imagenet', 'infer'),
     'Forecasting': ('electricity_weekly_dataset', 'Train and Test'),
-    'Papers With Code': ('kitti-depth-completion', 'depth-completion'),
+    'Papers With Code': ('KITTI', 'depth-completion'),
     'RobustBench': ('cifar100', 'Robustness Test'),
 }
 
@@ -48,6 +48,7 @@ TEX_TABLE_GENERAL = r'''
 
 
 def create_all(databases):
+    databases['ImageNetEff']
     filterstats = read_json('databases/paperswithcode/filterstats.json')
     pwc_stats = read_json('databases/paperswithcode/other_stats.json')
     os.chdir('paper_results')
@@ -103,7 +104,6 @@ def create_all(databases):
             model['model']['name'] = model['model']['name'].replace('NeurIPS 2022', 'NeurIPS 22')
         if name == 'Papers With Code':
             model['model'] = {'name': 'KBNet (Wong & Soatto 21)', 'url': 'https://arxiv.org/abs/2108.10531'}
-            model['dataset'] = {'name': 'KITTY'}
             model['task'] = 'Depth Completion'
         label = PropertyLabel(model, custom=meta['meta_dir'])
         label.save(f'label_{name.replace(" ", "_")}.pdf')
@@ -144,19 +144,39 @@ def create_all(databases):
 
 
     # PLOTS FOR ALL DATABASES
-    for name, (db, meta, metrics, xdef, ydef, bounds, _, _) in databases.items():
-        # scatter plot
+    for name, (db, meta, metrics, xdef, ydef, bounds, real_bounds, _) in databases.items():
+        # scatter plots
         ds, task = SEL_DS_TASK[name]
         ds_name = lookup_meta(meta, ds, subdict='dataset')
         xaxis, yaxis = xdef[(ds, task)], ydef[(ds, task)]
         db = find_sub_db(db, dataset=ds, task=task)
-        plot_data, axis_names, rating_pos = assemble_scatter_data([db['environment'].iloc[0]], db, 'index', xaxis, yaxis, meta, bounds)
-        scatter = create_scatter_graph(plot_data, axis_names, dark_mode=False, display_text=False)
-        rating_pos[0][0][0] = scatter.layout.xaxis.range[1]
-        rating_pos[1][0][0] = scatter.layout.yaxis.range[1]
-        add_rating_background(scatter, rating_pos, 'optimistic mean', dark_mode=False)
-        scatter.update_layout(width=PLOT_WIDTH / 2, height=PLOT_HEIGHT, margin={'l': 0, 'r': 0, 'b': 0, 't': 25}, title_y=0.99, title_x=0.5, title_text=f'{name} - {ds_name}')
-        scatter.write_image(f"scatter_{name}.pdf")
+        if name == 'ImageNetEff': # big figure mit value and index scales side by side
+            scatter = make_subplots(rows=1, cols=2, horizontal_spacing=.05, subplot_titles=['Real measurements', 'Index scaled values'])
+            for idx, (scale, x_title, y_title, plot_bounds) in enumerate(zip(['value', 'index'], ['Power Draw per Inference [Ws]', 'Power Draw per Inference Index'], ['Accuracy [%]', 'Accuracy Index'], [real_bounds, bounds])):
+                plot_data, axis_names, rating_pos = assemble_scatter_data(pd.unique(db['environment'])[:2], db, scale, xaxis, yaxis, meta, plot_bounds)
+                traces = create_scatter_graph(plot_data, axis_names, dark_mode=False, display_text=False, marker_width=8, return_traces=True)
+                scatter.add_traces(traces, rows=[1]*len(traces), cols=[idx+1]*len(traces))
+                min_x, max_x = np.min([min(data['x']) for data in plot_data.values()]), np.max([max(data['x']) for data in plot_data.values()])
+                min_y, max_y = np.min([min(data['y']) for data in plot_data.values()]), np.max([max(data['y']) for data in plot_data.values()])
+                diff_x, diff_y = max_x - min_x, max_y - min_y
+                scatter.update_xaxes(range=[min_x-0.1*diff_x, max_x+0.1*diff_x], showgrid=False, title=x_title, row=1, col=idx+1)
+                scatter.update_yaxes(range=[min_y-0.1*diff_y, max_y+0.1*diff_y], showgrid=False, title=y_title, row=1, col=idx+1)
+                add_rating_background(scatter, rating_pos, 'optimistic mean', dark_mode=False, col=(idx+1))
+            for idx in [1, 2]:
+                scatter.data[idx]['showlegend'] = False
+            scatter.update_yaxes(side='right', row=1, col=2)
+            scatter.update_layout(width=PLOT_WIDTH, height=PLOT_HEIGHT, margin={'l': 0, 'r': 0, 'b': 0, 't': 25},
+                                  legend=dict(x=.5, y=0.05, orientation="h", xanchor="center", yanchor="bottom"))
+            scatter.show()
+            scatter.write_image(f"scatter_{name}.pdf")
+        else:
+            plot_data, axis_names, rating_pos = assemble_scatter_data([db['environment'].iloc[0]], db, 'index', xaxis, yaxis, meta, bounds)
+            scatter = create_scatter_graph(plot_data, axis_names, dark_mode=False, display_text=False, marker_width=8)
+            rating_pos[0][0][0] = scatter.layout.xaxis.range[1]
+            rating_pos[1][0][0] = scatter.layout.yaxis.range[1]
+            add_rating_background(scatter, rating_pos, 'optimistic mean', dark_mode=False)
+            scatter.update_layout(width=PLOT_WIDTH / 3, height=PLOT_HEIGHT, margin={'l': 0, 'r': 0, 'b': 0, 't': 25}, title_y=0.99, title_x=0.5, title_text=f'{name} - {ds_name}')
+            scatter.write_image(f"scatter_{name}.pdf")
 
         # star plot
         db = prop_dict_to_val(db, 'index')
@@ -172,8 +192,8 @@ def create_all(databases):
                 theta=metr_names, fill='toself', name=f'{mod_name} ({m_str}): {model["compound_index"]:4.2f}'
             ))
         fig.update_layout(
-            polar=dict(radialaxis=dict(visible=True)), width=PLOT_WIDTH*0.25, height=PLOT_HEIGHT, title_y=1.0, title_x=0.5, title_text=ds_name,
-            legend=dict( yanchor="bottom", y=1.06, xanchor="center", x=0.5), margin={'l': 30, 'r': 30, 'b': 15, 't': 70}
+            polar=dict(radialaxis=dict(visible=True)), width=PLOT_WIDTH*0.25, height=PLOT_HEIGHT, title_y=0.98, title_x=0.5, title_text=ds_name,
+            legend=dict( yanchor="bottom", y=0.78, xanchor="center", x=0.5), margin={'l': 50, 'r': 50, 'b': 0, 't': 0}
         )
         fig.write_image(f'true_best_{name}.pdf')
 

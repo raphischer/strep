@@ -11,6 +11,11 @@ PATTERNS = ["", "/", ".", "x", "-", "\\", "|", "+", "."]
 RATING_MEANINGS = 'ABCDE'
 
 
+
+def rgb_to_rgba(rgb, alpha):
+    return rgb.replace('rgb', 'rgba').replace(')', f',{alpha:3.1f})')
+
+
 # def summary_to_str(summary, rating_mode):
 #     environment = f"({summary['environment']} Environment)"
 #     ret_str = [f'Name: {summary["name"]:17} {environment:<34} - Final Rating {final_rating}']

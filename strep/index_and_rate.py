@@ -103,8 +103,8 @@ def value_to_index(value, ref, higher_better):
 
 
 def index_to_value(index, ref, higher_better):
-    if index == 0:
-        index = 10e-4
+    if index <= 0:
+        index = 10e-3
     #      v = i * r                            OR         v = r / i
     return index * ref  if higher_better else ref / index
 

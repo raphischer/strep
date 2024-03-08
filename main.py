@@ -16,6 +16,8 @@ def preprocess_database(fname):
         raise RuntimeError('Could not find', fname)
     # load database
     database = load_database(fname)
+    if 'paperswithcode' in fname:
+        database['dataset'] = database['dataset'].map(lambda val: 'KITTI' if val == 'kitti-depth-completion' else val)
     # load meta infotmation
     meta = load_meta(os.path.dirname(fname))
     # rate database

@@ -120,7 +120,7 @@ class Visualization(dash.Dash):
         # assemble data for plotting
         scale = scale_switch or 'index'
         db, xaxis, yaxis = self.state['sub_database'], self.state['xaxis'], self.state['yaxis']
-        bounds = self.boundaries if scale == 'index' else self.boundaries_real[(self.state['ds'], self.state['ds_task'][1], env_names[0])]
+        bounds = self.boundaries if scale == 'index' else self.boundaries_real
         self.plot_data, axis_names, rating_pos = assemble_scatter_data(env_names, db, scale, xaxis, yaxis, self.meta, bounds)
         scatter = create_scatter_graph(self.plot_data, axis_names, dark_mode=self.dark_mode)
         add_rating_background(scatter, rating_pos, self.state['rating_mode'], dark_mode=self.dark_mode)
