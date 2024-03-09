@@ -5,9 +5,9 @@ from strep.index_and_rate import rate_database, find_relevant_metrics, load_data
 from strep.util import load_meta
 
 DATABASES = {
-    'Forecasting': 'databases/dnn_forecasting/database.pkl',
     'ImageNetEff': 'databases/imagenet_classification/database.pkl',
     'RobustBench': 'databases/robustbench/database.pkl',
+    'Forecasting': 'databases/dnn_forecasting/database.pkl',
     'Papers With Code': 'databases/paperswithcode/database.pkl',
 }
 
