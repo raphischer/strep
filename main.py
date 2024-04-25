@@ -6,9 +6,9 @@ from strep.util import load_meta
 
 DATABASES = {
     'ImageNetEff': 'databases/imagenet_classification/database.pkl',
-    # 'RobustBench': 'databases/robustbench/database.pkl',
-    # 'Forecasting': 'databases/dnn_forecasting/database.pkl',
-    # 'Papers With Code': 'databases/paperswithcode/database.pkl',
+    'RobustBench': 'databases/robustbench/database.pkl',
+    'Forecasting': 'databases/dnn_forecasting/database.pkl',
+    'Papers With Code': 'databases/paperswithcode/database.pkl',
 }
 
 def preprocess_database(fname):
