@@ -7,3 +7,4 @@ reportlab
 PyMuPDF
 qrcode
 pint
+gunicorn

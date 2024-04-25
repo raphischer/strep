@@ -6,9 +6,9 @@ from strep.util import load_meta
 
 DATABASES = {
     'ImageNetEff': 'databases/imagenet_classification/database.pkl',
-    'RobustBench': 'databases/robustbench/database.pkl',
-    'Forecasting': 'databases/dnn_forecasting/database.pkl',
-    'Papers With Code': 'databases/paperswithcode/database.pkl',
+    # 'RobustBench': 'databases/robustbench/database.pkl',
+    # 'Forecasting': 'databases/dnn_forecasting/database.pkl',
+    # 'Papers With Code': 'databases/paperswithcode/database.pkl',
 }
 
 def preprocess_database(fname):
@@ -55,7 +55,8 @@ if __name__ == '__main__':
     if args.mode == 'interactive':
         from strep.elex.app import Visualization
         app = Visualization(databases)
-        app.run_server(debug=args.debug, host=args.host, port=args.port)
+        server = app.server
+        app.run_server(debug=False)
 
     if args.mode == 'paper_results':
         from paper_results import create_all
