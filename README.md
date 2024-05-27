@@ -1,6 +1,8 @@
 # STREP - Sustainable and Trustworthy Reporting for ML
 
-Software repository for more sustainable and trustworthy reporting of ML results - associated research paper currently under review. To investigate the results you can use our publicly available [Exploration tool](http://167.99.254.41/), so no code needs to be run on your machine (note that results might slightly differ from the submitted paper, which we will update upon acceptance).
+Software repository for more sustainable and trustworthy reporting of ML results - associated research paper published in [Data Mining and Knowledge Discovery](https://link.springer.com/article/10.1007/s10618-024-01020-3). To investigate the results you can use our publicly available [Exploration tool](http://167.99.254.41/), so no code needs to be run on your machine (note that results might slightly differ from the submitted paper, which we will update upon acceptance).
+
+![Framework Overview](./paper_results/framework.png)
 
 ## Installation
 Simply install required packages via `pip install -r requirements.txt` (tested on Python 3.10).
@@ -17,4 +19,4 @@ All `paper_results` can be found in the respective folder, and can be re-generat
 `parse_logs.py` allows to generate a database file from multiple log directories (documentation to follow).
 
 ## Terms of Use
-Copyright (c) 2023 Raphael Fischer
+Copyright (c) 2024 Raphael Fischer
