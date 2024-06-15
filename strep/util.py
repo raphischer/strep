@@ -6,6 +6,7 @@ import random as python_random
 import sys
 import pkg_resources
 import re
+import pathlib
 
 import numpy as np
 import pandas as pd
@@ -83,6 +84,13 @@ def basename(directory):
     return os.path.basename(directory)
 
 
+def write_json(filepath, dict):
+    if not os.path.isdir(os.path.dirname(filepath)):
+        os.makedirs(os.path.dirname(filepath))
+    with open(filepath, 'w') as outfile:
+        json.dump(dict, outfile, indent=4, cls=PatchedJSONEncoder)
+
+
 def read_json(filepath):
     with open(filepath, 'r') as logf:
         return json.load(logf)
@@ -91,6 +99,11 @@ def read_json(filepath):
 def read_txt(filepath):
     with open(filepath, 'r') as reqf:
         return [line.strip() for line in reqf.readlines()]
+    
+
+def read_csv(filepath):
+    # use dumps and loads to make sure the log can be used with json (all keys in dict should be strings!)
+    return json.loads(json.dumps(pd.read_csv(filepath).to_dict()))
 
 
 class PatchedJSONEncoder(json.JSONEncoder):
@@ -105,6 +118,8 @@ class PatchedJSONEncoder(json.JSONEncoder):
             return obj.to_json()
         if pd.isnull(obj):
             return None
+        if isinstance(obj, pathlib.PosixPath):
+            return str(obj)
         return json.JSONEncoder.default(self, obj)
 
 
@@ -172,3 +187,31 @@ class Logger(object):
     def close(self):
         self.log.close()
         sys.stdout = self.terminal
+
+
+def format_software(backend, requirements):
+    backend_version = 'n.a.'
+    for req in requirements:
+        if req.split('==')[0].replace('-', '_').lower() == backend.replace('-', '_').lower():
+            backend_version = req.split('==')[1]
+            break
+    return f'{backend} {backend_version}'
+
+
+def format_hardware(cpu, gpu=None):
+    if gpu is not None:
+        raise NotImplementedError
+    else:
+        cpu_regex = [
+            r'.*(Intel)\(R\) \S* (\S*).*', # Intel
+            r'\S* (AMD) \S* (\S*) .*', # AMD
+            r'(ARM\S+) Processor (.*)' # ARM
+        ]
+        hardware_short = cpu[:13] + '..'
+        for regex in cpu_regex:
+            try:
+                hardware_short =  ' '.join(re.match(regex, cpu).groups())
+                break
+            except AttributeError:
+                pass
+    return hardware_short

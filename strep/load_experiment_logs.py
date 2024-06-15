@@ -6,22 +6,12 @@ import importlib
 import pandas as pd
 import numpy as np
 
-from strep.monitoring import aggregate_monitoring_log
-from strep.util import basename, PatchedJSONEncoder, read_json, drop_na_properties
+from strep.util import basename, PatchedJSONEncoder, read_json, read_txt, read_csv, drop_na_properties
 
 
 #############################
 ####     log loading     ####
 #############################
-
-
-def read_monitoring(filepath):
-    return aggregate_monitoring_log(filepath)
-
-
-def read_csv(filepath):
-    # use dumps and loads to make sure the log can be used with json (all keys in dict should be strings!)
-    return json.loads(json.dumps(pd.read_csv(filepath).to_dict()))
 
 
 def read_log_directory(directory):
@@ -79,7 +69,7 @@ def aggregate_log(log, property_extractors):
             for key, func in extractors.items():
                 try:
                     agg_log[key] = func(log)
-                except KeyError as e:
+                except (KeyError, TypeError) as e:
                     try:
                         conf = f'{log["config"]["model"]} on {log["config"]["dataset"]}'
                     except KeyError:
@@ -94,7 +84,7 @@ def merge_database(database):
     database['environment'] = database.aggregate(lambda row: ' - '.join([str(row['architecture']), str(row['software'])]), axis=1)
     grouped = database.groupby(['configuration', 'environment'])
     grouped_results = grouped.first() # take first occurence as a start
-    mean_values = grouped.mean()
+    mean_values = grouped.mean(numeric_only=True)
     grouped_results.update(mean_values) # TODO also merge the individual log directories into list
     grouped_results['n_results'] = grouped.size()
     return grouped_results.reset_index()
@@ -104,10 +94,15 @@ def aggregate_logs(logs, property_extractors_module):
     # import extractors
     if property_extractors_module is None:
         property_extractors_module = 'properties'
-    try:
-        property_extractors = importlib.import_module(property_extractors_module).PROPERTIES
-    except (AttributeError, ImportError) as e:
-        raise RuntimeError(f'Error when trying to import aggregators from {property_extractors_module} module!')
+    if isinstance(property_extractors_module, str):
+        try:
+            property_extractors = importlib.import_module(property_extractors_module).PROPERTIES
+        except (AttributeError, ImportError) as e:
+            raise RuntimeError(f'Error when trying to import aggregators from {property_extractors_module} module!')
+    else:
+        if not isinstance(property_extractors_module, dict):
+            raise RuntimeError('Please pass either a dict, or a module to import property extractors from (should provide them as global PROPERTIES dict)!')
+        property_extractors = property_extractors_module
 
     if not isinstance(logs, list):
         # directory given instead of logs

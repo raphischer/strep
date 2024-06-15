@@ -15,7 +15,9 @@ class CustomUnitReformater(pint.UnitRegistry):
         self.define('number = 1 = NUMBER')
         self.define('percent = 1 = PERCENT')
 
-    def reformat_value(self, value, unit_from=None, unit_to=None):
+    def reformat_value(self, value, unit_from=None, unit_to=None, as_str=True):
+        if isinstance(unit_to, str):
+            unit_to = unit_to.replace('[', '').replace(']', '')
         symbol = ''
         for unit, short_unit in SPECIAL_SYMBOLS.items(): # remap num and percent units
             if short_unit == unit_from:
@@ -35,10 +37,12 @@ class CustomUnitReformater(pint.UnitRegistry):
             except pint.errors.UndefinedUnitError as e:
                 print(e)
         # string formatting
+        if not as_str:
+            return value
         if value < 1000 and value >= 0.0001:
-            value = f'{value:8.6f}'[:8]
+            value = f'{value:7.6f}'[:7]
         else:
-            value = f'{value:.2e}'
+            value = f'{value:.2e}'.replace('e+0', 'e+').replace('e-0', 'e-')
         return value, symbol
 
     def get_unit_symbol(self, input, with_brackets=True):

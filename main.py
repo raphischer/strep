@@ -3,6 +3,7 @@ import os
 
 from strep.index_and_rate import rate_database, find_relevant_metrics, load_database
 from strep.util import load_meta
+from strep.elex.app import Visualization
 
 DATABASES = {
     'ImageNetEff': 'databases/imagenet_classification/database.pkl',
@@ -26,20 +27,33 @@ def preprocess_database(fname):
     print(f'    database {name} has {rated_database.shape} entries')
     return rated_database, meta, metrics, xaxis_default, yaxis_default, boundaries, real_boundaries, references
 
-databases = {}
-
-for name, fname in DATABASES.items():
-    print('LOADING', fname)
-    databases[name] = preprocess_database(fname)
-    # override defaults for robustbench
-    if 'robustbench' in fname:
-        for ds_task in databases[name][2].keys():
-            databases[name][3][ds_task] = 'clean_acc' # x axis
-            databases[name][4][ds_task] = 'autoattack_acc' # y axis
-
-from strep.elex.app import Visualization
-app = Visualization(databases)
-server = app.server
-
 if __name__ == '__main__':    
-    app.run_server(debug=False)
+
+    parser = argparse.ArgumentParser()
+
+    parser.add_argument("--mode", default='interactive', choices=['interactive', 'paper_results'])
+    parser.add_argument("--database", default=None)
+    # interactive exploration params
+    parser.add_argument("--host", default='localhost', type=str, help="default host") # '0.0.0.0'
+    parser.add_argument("--port", default=8888, type=int, help="default port")
+    parser.add_argument("--debug", default=False, type=bool, help="debugging")
+
+    args = parser.parse_args()
+
+    if args.database is not None:
+        DATABASES = {'CUSTOM': args.database}
+
+    databases = {}
+    for name, fname in DATABASES.items():
+        print('LOADING', fname)
+        databases[name] = preprocess_database(fname)
+        # override defaults for robustbench
+        if 'robustbench' in fname:
+            for ds_task in databases[name][2].keys():
+                databases[name][3][ds_task] = 'clean_acc' # x axis
+                databases[name][4][ds_task] = 'autoattack_acc' # y axis
+
+    app = Visualization(databases)
+    server = app.server
+        
+    app.run_server(debug=args.debug, host=args.host, port=args.port)
