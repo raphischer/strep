@@ -23,9 +23,9 @@ if __name__ == '__main__':
         os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
     from util import load_data_and_model, CPU_SIZES, GPU_SIZES
     batch_size = CPU_SIZES[args.model] if args.nogpu else GPU_SIZES[args.model]
-    model, ds, info = load_data_and_model('/data/d1/fischer_diss/imagenet', args.model, batch_size)
+    model, ds, info = load_data_and_model('/data/d1/fischer_diss/imagenet', args.model, batch_size=batch_size)
 
-    # evaluate
+    # evaluate on validation
     emissions = 'emissions.csv'
     tracker = OfflineEmissionsTracker(measure_power_secs=args.measure_power_secs, log_level='warning', country_iso_code="DEU")
     tracker.start()
@@ -38,3 +38,9 @@ if __name__ == '__main__':
     mlflow.log_metric('parameters', model.count_params())
     mlflow.log_artifact(emissions)
     os.remove(emissions)
+
+    # evaluate robustness
+    _, ds, info = load_data_and_model('/data/d1/fischer_diss/imagenet', args.model, variant='corrupted_sample', batch_size=batch_size)
+    corr_res = model.evaluate(ds, return_dict=True)
+    for key, val in corr_res.items():
+        mlflow.log_metric('corr_' + key.replace('sparse_', '').replace('categorical_', '').replace('top_k', 'top_5'), val)
