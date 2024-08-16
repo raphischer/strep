@@ -1,20 +1,23 @@
 import inspect
 import os
 from itertools import product
+import platform
+import re
+import subprocess
+import time
 
-from tqdm import tqdm
 import numpy as np
 import tensorflow as tf
 import tensorflow_datasets as tfds
-from PIL import Image
 
 KERAS_BUILTINS = [e for e in tf.keras.applications.__dict__.values() if inspect.ismodule(e) and hasattr(e, 'preprocess_input')]
 KERAS_MODELS = {n: e for mod in KERAS_BUILTINS for n, e in mod.__dict__.items() if callable(e) and n[0].isupper()}
+KERAS_MODELS['MobileNetV3Large'] = tf.keras.applications.MobileNetV3Large
+KERAS_MODELS['MobileNetV3Small'] = tf.keras.applications.MobileNetV3Small
 KERAS_PREPR = {n: mod.preprocess_input for mod in KERAS_BUILTINS for n, e in mod.__dict__.items() if callable(e) and n[0].isupper()}
+KERAS_PREPR['MobileNetV3Large'] = tf.keras.applications.mobilenet_v3.preprocess_input
+KERAS_PREPR['MobileNetV3Small'] = tf.keras.applications.mobilenet_v3.preprocess_input
 
-INCEPTION_INPUT = {
-    mname: (299, 299) for mname in KERAS_MODELS if 'ception' in mname
-}
 EFFICIENT_INPUT = {
     'EfficientNetB1': (240, 240),
     'EfficientNetB2': (260, 260),
@@ -34,133 +37,26 @@ EFFICIENT_INPUT = {
     'EfficientNetV2M': (480, 480),
     'EfficientNetV2S': (384, 384)
 }
-NASNET_INPUT = {
-    'NASNetLarge': (331, 331)
-}
+NASNET_INPUT = { 'NASNetLarge': (331, 331) }
+INCEPTION_INPUT = { mname: (299, 299) for mname in KERAS_MODELS if 'ception' in mname }
 MODEL_CUSTOM_INPUT = {**INCEPTION_INPUT, **EFFICIENT_INPUT, **NASNET_INPUT}
 
-GPU_SIZES = {
-    "ConvNeXtBase": 64,
-    "ConvNeXtLarge": 64,
-    "ConvNeXtSmall": 32,
-    "ConvNeXtTiny": 32,
-    "ConvNeXtXLarge": 64,
-    "DenseNet121": 32,
-    "DenseNet169": 64,
-    "DenseNet201": 64,
-    "EfficientNetB0": 32,
-    "EfficientNetB1": 64,
-    "EfficientNetB2": 64,
-    "EfficientNetB3": 32,
-    "EfficientNetB4": 64,
-    "EfficientNetB5": 64,
-    "EfficientNetB6": 32,
-    "EfficientNetB7": 64,
-    "EfficientNetV2B0": 32,
-    "EfficientNetV2B1": 64,
-    "EfficientNetV2B2": 64,
-    "EfficientNetV2B3": 64,
-    "InceptionResNetV2": 64,
-    "InceptionV3": 32,
-    "MobileNet": 64,
-    "MobileNetV2": 64,
-    "NASNetLarge": 64,
-    "NASNetMobile": 32,
-    "ResNet50": 32,
-    "ResNet101": 64,
-    "ResNet152": 64,
-    "ResNet50V2": 64,
-    "ResNet101V2": 32,
-    "ResNet152V2": 64,
-    "VGG16": 64,
-    "VGG19": 64,
-    "Xception": 64,
-    "EfficientNetV2L": 64,
-    "EfficientNetV2M": 64,
-    "EfficientNetV2S": 64,
-}
-
-CPU_SIZES = {
-    "ConvNeXtBase": 64,
-    "ConvNeXtLarge": 64,
-    "ConvNeXtSmall": 64,
-    "ConvNeXtTiny": 64,
-    "ConvNeXtXLarge": 64,
-    "DenseNet121": 64,
-    "DenseNet169": 64,
-    "DenseNet201": 64,
-    "EfficientNetB0": 64,
-    "EfficientNetB1": 64,
-    "EfficientNetB2": 64,
-    "EfficientNetB3": 64,
-    "EfficientNetB4": 64,
-    "EfficientNetB5": 64,
-    "EfficientNetB6": 64,
-    "EfficientNetB7": 64,
-    "EfficientNetV2B0": 64,
-    "EfficientNetV2B1": 64,
-    "EfficientNetV2B2": 64,
-    "EfficientNetV2B3": 64,
-    "EfficientNetV2L": 64,
-    "EfficientNetV2M": 64,
-    "EfficientNetV2S": 64,
-    "InceptionResNetV2": 64,
-    "InceptionV3": 64,
-    "MobileNet": 64,
-    "MobileNetV2": 64,
-    "NASNetLarge": 64,
-    "NASNetMobile": 64,
-    "ResNet50": 64,
-    "ResNet101": 64,
-    "ResNet152": 64,
-    "ResNet50V2": 64,
-    "ResNet101V2": 64,
-    "ResNet152V2": 64,
-    "VGG16": 64,
-    "VGG19": 64,
-    "Xception": 64,
-}
-
 CORRUPTIONS = [
-    'gaussian_noise_',
-    'shot_noise_',
-    'impulse_noise_',
-    'defocus_blur_',
-    'glass_blur_',
-    'motion_blur_',
-    'zoom_blur_',
-    'snow_',
-    'frost_',
-    'fog_',
-    'brightness_',
-    'contrast_',
-    'elastic_transform_',
-    'pixelate_',
-    'jpeg_compression_',
-    'gaussian_blur_',
-    'saturate_',
-    'spatter_',
-    'speckle_noise_'
+    'gaussian_noise_', 'shot_noise_', 'impulse_noise_', 'defocus_blur_', 'glass_blur_', 'motion_blur_',
+    'zoom_blur_', 'snow_', 'frost_', 'fog_', 'brightness_', 'contrast_', 'elastic_transform_',
+    'pixelate_', 'jpeg_compression_', 'gaussian_blur_', 'saturate_', 'spatter_', 'speckle_noise_'
 ]
 ALL_CORRUPTIONS = [f'imagenet2012_corrupted/{corr}{level}' for corr, level in product(CORRUPTIONS, [1, 2, 3, 4, 5])]
 FIRST_CORR = ALL_CORRUPTIONS[:10]
 
+TESTED_BATCH_SIZES = [8, 16, 32, 64, 128, 256, 512]
+
 def load_corrupted_sample(data_path, seed=0):
-    # rng = np.random.default_rng(0)
-    # IDX = tf.data.Dataset.range(50000)
     complete = []
     for idx, corr in enumerate(FIRST_CORR):
         _, ds, info = load_data_and_model(data_path, variant=corr, batch_size=1)
         shard = ds.shard(len(FIRST_CORR), index=idx)
         complete.append(shard)
-        # idc = IDX.shard(len(FIRST_CORR), index=idx)
-        # for img, i in tqdm( zip(shard, idc), total=len(list(idc)) ):  
-        #     im = Image.fromarray(img[0].numpy())
-        #     im.save(f"imgs/{str(i.numpy()).zfill(5)}_img_{corr.split('/')[1]}.jpeg")
-
-    # for idx, img in enumerate(all):
-    #     print(idx)
-    # print(1)
     all = tf.data.Dataset.sample_from_datasets(complete)
     return all, info
 
@@ -175,23 +71,69 @@ def preprocess(image, label, prepr_func, input_size):
     i = prepr_func(i)
     return (i, label)
 
-def load_data_and_model(data_path, model=None, variant='imagenet2012', batch_size=32):
+def get_processor_name():
+    if platform.system() == "Windows":
+        return platform.processor()
+    elif platform.system() == "Linux":
+        command = "cat /proc/cpuinfo"
+        all_info = subprocess.check_output(command, shell=True).strip().decode('ascii')
+        for line in all_info.split("\n"):
+            if "model name" in line:
+                return re.sub( ".*model name.*:", "", line,1).strip()
+    return ""
+
+def load_data_and_model(data_path, model=None, variant='imagenet2012', batch_size=-1):
     # data
     extract_dir = os.path.join(data_path, 'extracted')
     config = {'download_config': tfds.download.DownloadConfig(extract_dir=extract_dir, manual_dir=data_path)}
     if variant is 'corrupted_sample':
-        ds, info = load_corrupted_sample(data_path)
+        ds, __builtins__ = load_corrupted_sample(data_path)
     else:
-        ds, info = tfds.load(variant, data_dir=extract_dir, split='validation', download=True, shuffle_files=False, as_supervised=True, with_info=True, download_and_prepare_kwargs=config)
+        ds, _ = tfds.load(variant, data_dir=extract_dir, split='validation', download=True, shuffle_files=False, as_supervised=True, with_info=True, download_and_prepare_kwargs=config)
     if model is None:
-        return None, ds, info
+        return None, ds, _
     preprocessor = load_prepr(model)
     ds = ds.map(preprocessor)
-    ds = ds.batch(batch_size)
+
     # model
     model = KERAS_MODELS[model](weights='imagenet')
     criterion = tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True)
     optimizer = tf.keras.optimizers.SGD()
     metrics = ['sparse_categorical_accuracy', 'sparse_top_k_categorical_accuracy']
     model.compile(optimizer=optimizer, loss=criterion, metrics=metrics)
-    return model, ds, info
+
+    # data batching
+    if isinstance(batch_size, int) and batch_size > 0: # use given
+        batched = ds.batch(batch_size)
+    elif batch_size == -1: # identify optimal
+        optimal, fastest = min(TESTED_BATCH_SIZES), np.inf
+        for batch_size in TESTED_BATCH_SIZES:
+            batched = ds.batch(batch_size)
+            try:
+                t0 = time.time()
+                model.evaluate(batched.take(max(TESTED_BATCH_SIZES) * 5 // batch_size))
+                t1 = time.time()
+                print(f'{str(batch_size):<4} {t1-t0:4.3f}')
+                if t1-t0 < fastest:
+                    optimal = batch_size
+                    fastest = t1-t0
+                else:
+                    break
+            except Exception:
+                break
+        batched = ds.batch(optimal)
+        batch_size = optimal
+    else: # do not batch
+        raise RuntimeError('Invalid batch size')
+    
+    # assemble meta information
+    meta = {
+        "batch_size": batch_size,
+        "software": f'Tensorflow {tf.__version__}',
+        "architecture": get_processor_name()
+    }
+    gpu_devices = tf.config.list_physical_devices('GPU')
+    if gpu_devices: # override with GPU information
+        meta["architecture"] = tf.config.experimental.get_device_details(gpu_devices[0]).get('device_name', 'Unknown GPU')
+        
+    return model, batched, meta

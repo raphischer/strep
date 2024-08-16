@@ -2,7 +2,7 @@ import argparse
 import os
 
 import mlflow
-
+import pandas as pd
 from codecarbon import OfflineEmissionsTracker
 
 if __name__ == '__main__':
@@ -21,26 +21,39 @@ if __name__ == '__main__':
     # init
     if args.nogpu:
         os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
-    from util import load_data_and_model, CPU_SIZES, GPU_SIZES
-    batch_size = CPU_SIZES[args.model] if args.nogpu else GPU_SIZES[args.model]
-    model, ds, info = load_data_and_model('/data/d1/fischer_diss/imagenet', args.model, batch_size=batch_size)
+    from util import load_data_and_model
+    model, ds, meta = load_data_and_model(args.datadir, args.model)
+    meta['dataset'] = 'ImageNet (ILSVRC 2012)'
+    meta['task'] = 'Inference'
 
     # evaluate on validation
-    emissions = 'emissions.csv'
     tracker = OfflineEmissionsTracker(measure_power_secs=args.measure_power_secs, log_level='warning', country_iso_code="DEU")
     tracker.start()
     eval_res = model.evaluate(ds, return_dict=True)
     tracker.stop()
 
+    # evaluate robustness
+    _, corr, _ = load_data_and_model('/data/d1/fischer_diss/imagenet', args.model, variant='corrupted_sample', batch_size=meta["batch_size"])
+    corr_res = model.evaluate(corr, return_dict=True)
+    for key, val in corr_res.items():
+        eval_res[f'corr_{key}'] = val
+
+    # assess some additional information
+    emissions, modelfile = 'emissions.csv', 'model.weights.h5'
+    model.save_weights(modelfile)
+    eval_res['fsize'] = os.path.getsize(modelfile)
+    eval_res['parameters'] = model.count_params()
+    emission_data = pd.read_csv('emissions.csv').to_dict()
+    eval_res['running_time'] = emission_data['duration'][0] / 50000
+    eval_res['power_draw'] = emission_data['energy_consumed'][0] * 3.6e6 / 50000
+
     # log results
     for key, val in eval_res.items():
-        mlflow.log_metric(key.replace('sparse_', '').replace('categorical_', '').replace('top_k', 'top_5'), val)
-    mlflow.log_metric('parameters', model.count_params())
+        mlflow.log_metric(key, val)
+    for key, val in meta.items():
+        mlflow.log_param(key, val)
     mlflow.log_artifact(emissions)
+    
+    # cleanup
     os.remove(emissions)
-
-    # evaluate robustness
-    _, ds, info = load_data_and_model('/data/d1/fischer_diss/imagenet', args.model, variant='corrupted_sample', batch_size=batch_size)
-    corr_res = model.evaluate(ds, return_dict=True)
-    for key, val in corr_res.items():
-        mlflow.log_metric('corr_' + key.replace('sparse_', '').replace('categorical_', '').replace('top_k', 'top_5'), val)
+    os.remove(modelfile)
