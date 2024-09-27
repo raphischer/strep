@@ -5,7 +5,6 @@ import numpy as np
 import pandas as pd
 import dash
 from dash.dependencies import Input, Output, State
-from dash import dcc
 import dash_bootstrap_components as dbc
 
 from strep.index_and_rate import rate_database, load_boundaries, save_boundaries, calculate_optimal_boundaries, save_weights, find_optimal_reference, update_weights
@@ -42,14 +41,16 @@ class Visualization(dash.Dash):
         }
         
         # setup page and create callbacks
-        self.layout = create_page(self.databases, index_mode, self.state['rating_mode'])
+        page_creator = lambda **kwargs: create_page(self.databases, index_mode, self.state['rating_mode'], **kwargs)
+        dash.register_page("home", layout=page_creator, path="/")
+        self.layout = dash.html.Div(dash.page_container)
         self.callback(
             [Output('x-weight', 'value'), Output('y-weight', 'value')],
             [Input('xaxis', 'value'), Input('yaxis', 'value'), Input('weights-upload', 'contents')]
         ) (self.update_metric_fields)
         # changing database, dataset or task
         self.callback(
-            [Output('ds-switch', 'options'), Output('ds-switch', 'value')],
+            [Output('ds-switch', 'options'), Output('ds-switch', 'value'), Output("url", "search"),],
             Input('db-switch', 'value')
         ) (self.db_selected)
         self.callback(
@@ -168,7 +169,7 @@ class Visualization(dash.Dash):
         self.state['db'] = db or self.state['db']
         self.database, self.meta, self.metrics, self.xaxis_default, self.yaxis_default, self.boundaries, self.boundaries_real, self.references = self.databases[self.state['db']]
         options = [ {'label': lookup_meta(self.meta, ds, subdict='dataset'), 'value': ds} for ds in pd.unique(self.database['dataset']) ]
-        return options, options[0]['value']
+        return options, options[0]['value'], f"?database={self.state['db']}"
 
     def ds_selected(self, ds=None):
         self.state['ds'] = ds or self.state['ds']
@@ -246,7 +247,7 @@ class Visualization(dash.Dash):
             return # callback init
         f_id = f'{self.state["model"]["model"]["name"]}_{self.state["model"]["environment"]}'.replace(' ', '_')
         if 'label' in dash.callback_context.triggered[0]['prop_id']:
-            return dcc.send_bytes(self.state['label'].write(), filename=f'energy_label_{f_id}.pdf')
+            return dash.dcc.send_bytes(self.state['label'].write(), filename=f'energy_label_{f_id}.pdf')
         elif 'sum' in dash.callback_context.triggered[0]['prop_id']:
             return dict(content=json.dumps(self.state['model'], indent=4, cls=PatchedJSONEncoder), filename=f'energy_summary_{f_id}.json')
         else: # full logs

@@ -31,8 +31,10 @@ style_upload = dict({
 }, **style_btn_cfg)
 
 
-def create_page(databases, indexmode, rating_mode):
-
+def create_page(databases, indexmode, rating_mode, **kwargs):
+    db = kwargs.get("database")
+    if db is None or db not in databases.keys():
+        db = list(databases.keys())[0]
     # if isinstance(meta_info, str) and os.path.isfile(meta_info):
     #     meta_info = read_json(meta_info)
     # if not isinstance(meta_info, dict):
@@ -43,7 +45,7 @@ def create_page(databases, indexmode, rating_mode):
         html.Div(children=[
             html.Div(children=[
                 html.H2('Database:'),
-                dbc.Select(id='db-switch', value=list(databases.keys())[0], options=[{'label': db, 'value': db} for db in databases.keys()],)
+                dbc.Select(id='db-switch', value=db, options=[{'label': db, 'value': db} for db in databases.keys()],)
             ]),
             html.Div(children=[
                 html.H2('Dataset:'),
@@ -188,6 +190,7 @@ def create_page(databases, indexmode, rating_mode):
     ]
     
     return html.Div([
+        dcc.Location(id="url", refresh=False),
         dbc.Container([
             dbc.Row(row0, style={"height": "15vh"}, align="center"),
             dbc.Row(row1, style={"height": "40vh"}),
