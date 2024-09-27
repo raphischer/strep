@@ -193,3 +193,62 @@ if __name__ == '__main__':
         data = data.dropna(how='all', axis=1)
         n_tasks, n_papers, m_methods = pd.unique(data['task']).size, pd.unique(data['paper']).size, pd.unique(data['methodology']).size
         print(f"{gr:<45} {n_tasks:<2} tasks {n_papers:<3} papers {m_methods:<3} methods {str(data.shape):<10} results")
+
+
+
+############# FILTER FOR RELEVANT:
+# print('    search relevant metrics')
+#     all_metrics = {}
+#     x_default, y_default = {}, {}
+#     to_delete = []
+#     properties_meta = identify_property_meta(meta, database)
+#     for ds in pd.unique(database['dataset']):
+#         subds = find_sub_db(database, ds)
+#         for task in pd.unique(database[database['dataset'] == ds]['task']):
+#             lookup = (ds, task)
+#             subd = find_sub_db(subds, ds, task)
+#             metrics = {}
+#             for col, meta in properties_meta.items():
+#                 if col in subd.columns or ('independent_of_task' in meta and meta['independent_of_task'] and col in subds.columns):
+#                     val = properties_meta[col]
+#                     metrics[col] = (val['weight'], val['group']) # weight is used for identifying the axis defaults
+#             if len(metrics) < 2:
+#                 to_delete.append(lookup)
+#             else:
+#                 # TODO later add this, such that it can be visualized
+#                 # metrics['resource_index'] = {sum([weight for (weight, group) in metrics.values() if group != 'Performance']), 'Resource'}
+#                 # metrics['quality_index'] = {sum([weight for (weight, group) in metrics.values() if group == 'Performance']), 'Performance'}
+#                 # metrics['compound_index'] = {1.0, 'n.a.'}
+#                 weights, groups = zip(*list(metrics.values()))
+
+#                 argsort = np.argsort(weights)
+#                 groups = np.array(groups)[argsort]
+#                 metrics = np.array(list(metrics.keys()))[argsort]
+#                 # use most influential Performance property on y-axis
+#                 if 'Performance' not in groups:
+#                     raise RuntimeError(f'Could not find quality property for {lookup}!')
+#                 y_default[lookup] = metrics[groups == 'Performance'][-1]
+#                 if 'Resources' in groups: # use the most influential resource property on x-axis
+#                     x_default[lookup] = metrics[groups == 'Resources'][-1]
+#                 elif 'Complexity' in groups: # use most influential complexity
+#                     x_default[lookup] = metrics[groups == 'Complexity'][-1]
+#                 else:
+#                     try:
+#                         x_default[lookup] = metrics[groups == 'Performance'][-2]
+#                     except IndexError:
+#                         print(f'No second Performance property and no Resources or Complexity properties were found for {lookup}!')
+#                         to_delete.append(lookup)
+#                 all_metrics[lookup] = metrics
+#     drop_rows = []
+#     for (ds, task) in to_delete:
+#         print(f'Not enough numerical properties found for {task} on {ds}!')
+#         try:
+#             del(all_metrics[(ds, task)])
+#             del(x_default[(ds, task)])
+#             del(y_default[(ds, task)])
+#         except KeyError:
+#             pass
+#         drop_rows.extend( find_sub_db(database, ds, task).index.to_list() )
+#     database = database.drop(drop_rows)
+#     database = database.reset_index(drop=True)
+#     return database, all_metrics, x_default, y_default

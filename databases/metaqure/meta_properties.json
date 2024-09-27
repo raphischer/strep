@@ -1,0 +1,82 @@
+{
+    "accuracy": {
+        "name": "Accuracy",
+        "shortname": "ACC",
+        "unit": "percent",
+        "group": "Performance",
+        "weight": 0.125,
+        "maximize": true,
+        "independent_of_task": true
+    },
+    "f1": {
+        "name": "F1 Score",
+        "shortname": "F1",
+        "unit": "percent",
+        "group": "Performance",
+        "weight": 0.125,
+        "maximize": true,
+        "independent_of_task": true
+    },
+    "precision": {
+        "name": "Precision",
+        "shortname": "PRC",
+        "unit": "percent",
+        "group": "Performance",
+        "weight": 0.125,
+        "maximize": true,
+        "independent_of_task": true
+    },
+    "recall": {
+        "name": "Recall",
+        "shortname": "REC",
+        "unit": "percent",
+        "group": "Performance",
+        "weight": 0.125,
+        "maximize": true,
+        "independent_of_task": true
+    },
+    "parameters": {
+        "name": "Number of Parameters",
+        "shortname": "PAR",
+        "unit": "number",
+        "group": "Resources",
+        "weight": 0.0833333333,
+        "independent_of_task": true
+    },
+    "fsize": {
+        "name": "Model Size on Disc",
+        "shortname": "FS",
+        "unit": "byte",
+        "group": "Resources",
+        "weight": 0.0833333333,
+        "independent_of_task": true
+    },
+    "train_power_draw": {
+        "name": "Training Energy Draw",
+        "shortname": "ENT",
+        "unit": "wattseconds",
+        "group": "Resources",
+        "weight": 0.0833333333
+    },
+    "train_running_time": {
+        "name": "Training Time",
+        "shortname": "RTT",
+        "unit": "seconds",
+        "group": "Resources",
+        "weight": 0.0833333333
+    },
+    "power_draw": {
+        "name": "Energy Draw per Inference",
+        "shortname": "ENI",
+        "unit": "wattseconds",
+        "group": "Resources",
+        "weight": 0.0833333333
+    },
+    "running_time": {
+        "name": "Running Time per Inference",
+        "shortname": "RTI",
+        "unit": "seconds",
+        "group": "Resources",
+        "weight": 0.0833333333
+    }
+}
