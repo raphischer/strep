@@ -27,9 +27,9 @@ def preprocess_database(fname):
     from strep.index_scale import scale_and_rate
     import numpy as np
     t0 = time.time()
-    proc_new = scale_and_rate(database, meta)
+    proc_new, boundaries = scale_and_rate(database, meta)
     t1 = time.time()
-    rated_database, boundaries, real_boundaries, references = rate_database(database, meta)
+    rated_database, boundaries_old, real_boundaries, references = rate_database(database, meta)
     t2 = time.time()
     scaled_old = prop_dict_to_val(rated_database, 'index')
     rated_old = prop_dict_to_val(rated_database, 'rating')
