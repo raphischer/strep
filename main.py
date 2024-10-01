@@ -43,4 +43,4 @@ for name, fname in DATABASES.items():
 
 app = Visualization(databases, use_pages=True, pages_folder='')
 server = app.server
-app.run_server(debug=False)
+app.run_server(debug=False, host='0.0.0.0', port=10000)
