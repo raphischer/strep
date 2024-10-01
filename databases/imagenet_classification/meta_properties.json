@@ -4,7 +4,7 @@
         "shortname": "Top1",
         "unit": "percent",
         "group": "Performance",
-        "weight": 0.1666666,
+        "weight": 0.17,
         "maximize": true,
         "independent_of_task": true
     },
@@ -13,7 +13,7 @@
         "shortname": "Top5",
         "unit": "percent",
         "group": "Performance",
-        "weight": 0.1666666,
+        "weight": 0.1366666,
         "maximize": true,
         "independent_of_task": true
     },

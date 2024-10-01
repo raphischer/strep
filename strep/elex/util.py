@@ -1,6 +1,7 @@
 from plotly import colors
 from plotly.validators.scatter.marker import SymbolValidator
 from dash import html
+import numpy as np
 
 
 ENV_SYMBOLS = [SymbolValidator().values[i] for i in range(0, len(SymbolValidator().values), 12)]
@@ -9,7 +10,6 @@ RATING_COLOR_SCALE = colors.make_colorscale([RATING_COLORS[idx] for idx in range
 RATING_COLOR_SCALE_REV = colors.make_colorscale([RATING_COLORS[4-idx] for idx in range(5)])
 PATTERNS = ["", "/", ".", "x", "-", "\\", "|", "+", "."]
 RATING_MEANINGS = 'ABCDE'
-
 
 
 def rgb_to_rgba(rgb, alpha):
@@ -30,7 +30,7 @@ def rgb_to_rgba(rgb, alpha):
 #     return full_str
 
 
-def summary_to_html_tables(summary, metrics):
+def summary_to_html_tables(summary, properties, unit_fmt):
     # general info
     final_rating = f"{summary['compound_index']:5.3f} ({RATING_MEANINGS[summary['compound_rating']]})"
     info_header = [
@@ -41,19 +41,22 @@ def summary_to_html_tables(summary, metrics):
     mname = summary['model']['name'] if isinstance(summary['model'], dict) else summary['model']
     info_row = [html.Tbody([html.Tr([html.Td(field) for field in [task, mname, summary['environment'], final_rating]])])]
 
-    # metrics
-    metrics_header = [
-        html.Thead(html.Tr([html.Th("Metric"), html.Th("Value"), html.Th("Index"), html.Th("Rating"), html.Th("Weight")]))
+    # properties
+    properties_header = [
+        html.Thead(html.Tr([html.Th("Property"), html.Th("Value"), html.Th("Index"), html.Th("Rating"), html.Th("Weight")]))
     ]
-    metrics_rows = []
-    for key in metrics:
-        val = summary[key]
-        if isinstance(val, dict) and "value" in val:
-            table_cells = [f'{val["name"]} {val["fmt_unit"]}', val["fmt_val"][:6], f'{val["index"]:4.2f}'[:4], val["rating"], f'{val["weight"]:3.2f}']
-            metrics_rows.append(html.Tr([html.Td(field) for field in table_cells]))
+    properties_rows = []
+    for prop, meta in properties.items():
+        if np.isnan(summary[prop]):
+            fmt_val, fmt_unit = 'N.A.', meta["unit"]
+        else:
+            fmt_val, fmt_unit = unit_fmt.reformat_value(summary[prop], meta["unit"])
+        index, rating = summary[f'{prop}_index'], summary[f'{prop}_rating']
+        table_cells = [f'{meta["name"]} {fmt_unit}', fmt_val, f'{index:5.3f}'[:5], rating, f'{meta["weight"]:3.2f}']
+        properties_rows.append(html.Tr([html.Td(field) for field in table_cells]))
 
     model = info_header + info_row
-    metrics = metrics_header + [html.Tbody(metrics_rows)]
+    metrics = properties_header + [html.Tbody(properties_rows)]
     return model, metrics
 
 

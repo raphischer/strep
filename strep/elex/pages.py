@@ -1,9 +1,5 @@
-import os
-
 from dash import html, dcc
 import dash_bootstrap_components as dbc
-
-from strep.util import read_json, lookup_meta
 
 def create_axis_option(x=True):
     xy = 'x' if x else 'y'
@@ -31,7 +27,7 @@ style_upload = dict({
 }, **style_btn_cfg)
 
 
-def create_page(databases, indexmode, rating_mode, **kwargs):
+def create_page(databases, indexmode, compound_mode, **kwargs):
     db = kwargs.get("database")
     if db is None or db not in databases.keys():
         db = list(databases.keys())[0]
@@ -102,10 +98,10 @@ def create_page(databases, indexmode, rating_mode, **kwargs):
                     id="weights-upload", className='btn btn-default', style=style_btn_cfg,
                     children=['Drop or ', html.A('Select a Weights File (.json)')],
                 ),
-                html.H4('Rating Mode'),
+                html.H4('Compound Mode'),
                 dbc.RadioItems(
-                    id='rating', value=rating_mode,
-                    options=[{'label': opt, 'value': opt.lower()} for opt in ['Optimistic Median', 'Pessimistic Median', 'Optimistic Mean', 'Pessimistic Mean', 'Best', 'Worst']],
+                    id='compound_mode', value=compound_mode,
+                    options=[{'label': opt, 'value': opt.lower()} for opt in ['Mean', 'Median', 'Min', 'Max']],
                 )
             ], title = 'More Graph Options')
         ], start_collapsed=True), id="graph-config", title="Graph Configuration", is_open=False, style=dict(width='40%')

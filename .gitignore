@@ -132,3 +132,6 @@ dmypy.json
 
 # mlflow
 mlruns/
+
+# paper results
+./paper_results/*

@@ -2,7 +2,7 @@ import argparse
 import os
 import time
 
-from strep.index_and_rate import rate_database, find_relevant_metrics, load_database, prop_dict_to_val
+from strep.index_scale import load_database, scale_and_rate
 from strep.util import load_meta
 from strep.elex.app import Visualization
 
@@ -10,8 +10,8 @@ DATABASES = {
     # 'Papers With Code': 'databases/paperswithcode/database.pkl',
     # 'MetaQuRe': 'databases/metaqure/database.pkl',
     'ImageNetEff': 'databases/imagenet_classification/database.pkl',
-    # 'RobustBench': 'databases/robustbench/database.pkl',
-    # 'Forecasting': 'databases/xpcr/database.pkl'
+    'RobustBench': 'databases/robustbench/database.pkl',
+    'Forecasting': 'databases/xpcr/database.pkl'
 }
 
 def preprocess_database(fname):
@@ -24,25 +24,8 @@ def preprocess_database(fname):
     # load meta infotmation
     meta = load_meta(os.path.dirname(fname))
     # rate database
-    from strep.index_scale import scale_and_rate
-    import numpy as np
-    t0 = time.time()
-    proc_new, boundaries = scale_and_rate(database, meta)
-    t1 = time.time()
-    rated_database, boundaries_old, real_boundaries, references = rate_database(database, meta)
-    t2 = time.time()
-    scaled_old = prop_dict_to_val(rated_database, 'index')
-    rated_old = prop_dict_to_val(rated_database, 'rating')
-    for prop in meta['properties'].keys():
-        new = proc_new[f'{prop}_index'].dropna()
-        if not np.all(np.isclose(scaled_old.loc[new.index,prop].values, new)):
-            print(f'not all equal for {fname} {prop}')
-    for comp in [col for col in rated_database.columns if '_index' in col]:
-        if not np.all(np.isclose(rated_database[comp], proc_new[comp])):
-            print(f'not all compound index vals equal for {fname} {comp}')
-    print(f'    database {name} has {rated_database.shape} entries - new scaling took {t1-t0:5.3f}, old scaling took {t2-t1:5.3f}')
-    database2, metrics, xaxis_default, yaxis_default = find_relevant_metrics(database, meta)
-    return rated_database, meta, metrics, xaxis_default, yaxis_default, boundaries, real_boundaries, references
+    rated_database, boundaries, real_boundaries, defaults = scale_and_rate(database, meta)
+    return rated_database, meta, defaults, boundaries, real_boundaries, None
 
 if __name__ == '__main__':    
 
