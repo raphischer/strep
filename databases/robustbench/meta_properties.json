@@ -7,6 +7,15 @@
         "unit": "percent",
         "maximize": true
     },
+    "autoattack_acc": {
+        "name": "AutoAttack Robustness",
+        "shortname": "AARob",
+        "weight": 0.2,
+        "group": "Performance",
+        "unit": "percent",
+        "maximize": true,
+        "icon": "robustness"
+    },
     "corruptions_reported": {
         "name": "Reported Corruption Robustness",
         "shortname": "CorRep",
@@ -28,15 +37,6 @@
     "L2_reported": {
         "name": "Reported L2 Robustness",
         "shortname": "L2Rep",
-        "weight": 0.2,
-        "group": "Performance",
-        "unit": "percent",
-        "maximize": true,
-        "icon": "robustness"
-    },
-    "autoattack_acc": {
-        "name": "AutoAttack Robustness",
-        "shortname": "AARob",
         "weight": 0.2,
         "group": "Performance",
         "unit": "percent",

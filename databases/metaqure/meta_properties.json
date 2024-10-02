@@ -35,22 +35,6 @@
         "maximize": true,
         "independent_of_task": true
     },
-    "parameters": {
-        "name": "Number of Parameters",
-        "shortname": "PAR",
-        "unit": "number",
-        "group": "Resources",
-        "weight": 0.0833333333,
-        "independent_of_task": true
-    },
-    "fsize": {
-        "name": "Model Size on Disc",
-        "shortname": "FS",
-        "unit": "byte",
-        "group": "Resources",
-        "weight": 0.0833333333,
-        "independent_of_task": true
-    },
     "train_power_draw": {
         "name": "Training Energy Draw",
         "shortname": "ENT",
@@ -78,5 +62,21 @@
         "unit": "seconds",
         "group": "Resources",
         "weight": 0.0833333333
+    },
+    "parameters": {
+        "name": "Number of Parameters",
+        "shortname": "PAR",
+        "unit": "number",
+        "group": "Resources",
+        "weight": 0.0833333333,
+        "independent_of_task": true
+    },
+    "fsize": {
+        "name": "Model Size on Disc",
+        "shortname": "FS",
+        "unit": "byte",
+        "group": "Resources",
+        "weight": 0.0833333333,
+        "independent_of_task": true
     }
 }

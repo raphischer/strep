@@ -94,7 +94,7 @@ def _real_boundaries_and_defaults(input, boundaries, meta, reference=None):
     input, split_by = _prepare_for_scale(input)
     split_by.remove('environment')
     real_bounds = {}
-    defaults = { 'x':{}, 'y': {} }
+    defaults = { 'x': {}, 'y': {} }
     if len(split_by) == 0:
         raise NotImplementedError
     else:
@@ -116,6 +116,7 @@ def _real_boundaries_and_defaults(input, boundaries, meta, reference=None):
             task_ds = tuple([val for conf, val in zip(split_by, sub_config) if conf != 'environment'])
             if task_ds in defaults['x']: # not necessary for each individual data set!
                 continue
+            sub_props = list(reversed(sub_props)) # makes sure that equally weighted properties stay in right order (top down in json)
             weights, groups = zip(*[(meta[prop]['weight'], meta[prop]['group']) for prop in sub_props])            
             argsort = np.argsort(weights)
             groups = np.array(groups)[argsort]

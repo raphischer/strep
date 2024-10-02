@@ -12,7 +12,7 @@ DATABASES = {
     # 'MetaQuRe': 'databases/metaqure/database.pkl',
     'ImageNetEff': 'databases/imagenet_classification/database.pkl',
     'RobustBench': 'databases/robustbench/database.pkl',
-    'Forecasting': 'databases/xpcr/database.pkl'
+    'XPCR-Forecasting': 'databases/xpcr/database.pkl'
 }
 
 
