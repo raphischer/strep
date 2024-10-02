@@ -1,5 +1,7 @@
 # STREP - Sustainable and Trustworthy Reporting for ML
 
+**You are on the frozen "paper" branch. We continue enhancing our STREP software on other branches. To be consistent, this is the state of the repository when the paper was accepted and published.**
+
 Software repository for more sustainable and trustworthy reporting of ML results - associated research paper published in [Data Mining and Knowledge Discovery](https://link.springer.com/article/10.1007/s10618-024-01020-3). To investigate the results you can use our publicly available [Exploration tool](http://167.99.254.41/), so no code needs to be run on your machine (note that it might not be the most current version, we are working on updating it automatically with changes to this repository).
 
 ![Framework Overview](./paper_results/framework.png)
