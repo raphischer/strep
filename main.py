@@ -1,6 +1,4 @@
-import argparse
 import os
-import time
 
 from strep.index_scale import load_database, scale_and_rate
 from strep.util import load_meta
@@ -9,10 +7,10 @@ from strep.elex.app import Visualization
 
 DATABASES = {
     # 'Papers With Code': 'databases/paperswithcode/database.pkl',
-    # 'MetaQuRe': 'databases/metaqure/database.pkl',
     'ImageNetEff': 'databases/imagenet_classification/database.pkl',
     'RobustBench': 'databases/robustbench/database.pkl',
-    'XPCR-Forecasting': 'databases/xpcr/database.pkl'
+    'XPCR-Forecasting': 'databases/xpcr/database.pkl',
+    'MetaQuRe': 'databases/metaqure/database.pkl'
 }
 
 
