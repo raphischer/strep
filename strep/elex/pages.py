@@ -15,6 +15,9 @@ def create_axis_option(x=True):
 
     return dbc.AccordionItem(content, title=f'{xy}-Axis Configuration')
 
+def loading(element):
+    return dcc.Loading([element])
+
 style_btn_cfg = {
     'width': '90%',
     'textAlign': 'center'
@@ -124,7 +127,7 @@ def create_page(databases, indexmode, compound_mode, **kwargs):
     # label display & tables
     label_display = html.Div(children=[
         html.H3('Energy Label:'),
-        html.Img(id='model-label', className="img-fluid"),
+        loading(html.Img(id='model-label', className="img-fluid")),
         dbc.Tooltip("Click to enlarge", target="model-label"),
     ])
 
@@ -140,11 +143,11 @@ def create_page(databases, indexmode, compound_mode, **kwargs):
 
     table_model = html.Div(children=[
         html.H3('General Information:'),
-        dbc.Table(id='model-table', bordered=True)
+        loading(dbc.Table(id='model-table', bordered=True))
     ])
     table_metrics = html.Div(children=[
         html.H3('Properties:'),
-        dbc.Table(id='metric-table', bordered=True),
+        loading(dbc.Table(id='metric-table', bordered=True))
     ])
 
     buttons = dbc.Container([
