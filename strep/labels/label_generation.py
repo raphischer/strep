@@ -112,7 +112,7 @@ def find_icon(metric_key, metric, icons):
 
 class PropertyLabel(fitz.Document):
 
-    def __init__(self, summary, custom=None):
+    def __init__(self, summary, meta, unit_fmt, custom=None):
         # check if custom badge positions are wanted
         try:
             with open(os.path.join(custom, 'label_map.json'), 'r') as jf:
@@ -120,7 +120,7 @@ class PropertyLabel(fitz.Document):
         except Exception:
             metric_map = {}
         # apart from customs, per default display most important (highest weighted) properties
-        weights = {prop: vals['weight'] for prop, vals in summary.items() if isinstance(vals, dict) and 'weight' in vals and prop not in metric_map.values()}
+        weights = {prop: vals['weight'] for prop, vals in meta.items() if prop not in metric_map.values()}
         met_by_weight = list(reversed(sorted(weights, key=weights.get)))
         idx = 0
         for pos in POS_METRICS.keys():
@@ -171,17 +171,22 @@ class PropertyLabel(fitz.Document):
         for location, positions in POS_METRICS.items():
             if location in metric_map:
                 metric_key = metric_map[location]
-                metric = summary[metric_key]
+                value = summary[metric_key]
                 # print icon
-                icon = find_icon(metric_key, metric, icons)
-                rating = metric['rating']
+                icon = find_icon(metric_key, meta[metric_key], icons)
+                rating = int(summary[f'{metric_key}_rating'])
                 icon = icon.replace('_$.', f'_{rating}.')
                 rel_x, rel_y = positions['icon']
                 # print texts
                 # TODO improve this by looking at the absolute height of the placed icon
                 place_relatively(canvas, rel_x, rel_y, 'drawInlineImage', icon)
-                place_relatively(canvas, rel_x, rel_y - 0.08, 'drawCentredString', f"{metric['fmt_val']} {metric['fmt_unit']}", '', 56)
-                place_relatively(canvas, rel_x, rel_y - 0.11, 'drawCentredString', metric['name'], '', 56)
+                try:
+                    fmt_val, fmt_unit = unit_fmt.reformat_value(value, meta[metric_key]['unit'])
+                    formatted = f"{fmt_val} {fmt_unit}"
+                except Exception:
+                    formatted = 'N.A.'
+                place_relatively(canvas, rel_x, rel_y - 0.08, 'drawCentredString', formatted, '', 56)
+                place_relatively(canvas, rel_x, rel_y - 0.11, 'drawCentredString', meta[metric_key]['name'], '', 56)
         
         super().__init__(stream=canvas.getpdfdata(), filetype='pdf')
     

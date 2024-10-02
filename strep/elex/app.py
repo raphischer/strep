@@ -207,7 +207,7 @@ class Visualization(dash.Dash):
             if isinstance(self.state['model']['model'], str): 
                 # make sure that model is always a dict with name field
                 self.state['model']['model'] = {'name': self.state['model']['model']}
-            self.state['label'] = PropertyLabel(self.state['model'], custom=self.meta['meta_dir'])
+            self.state['label'] = PropertyLabel(self.state['model'], self.state['metrics'], self.unit_fmt, custom=self.meta['meta_dir'])
             # TODO here, pass only the prop meta info for the properties in state!
             model_table, metric_table = summary_to_html_tables(self.state['model'], self.state['metrics'], self.unit_fmt)
             starplot = create_star_plot(self.state['model'], self.state['metrics'])
