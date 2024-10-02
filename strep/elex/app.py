@@ -5,14 +5,13 @@ import numpy as np
 import pandas as pd
 import dash
 from dash.dependencies import Input, Output, State
-from dash import dcc
 import dash_bootstrap_components as dbc
 
-from strep.index_and_rate import rate_database, load_boundaries, save_boundaries, calculate_optimal_boundaries, save_weights, find_optimal_reference, update_weights
 from strep.elex.pages import create_page
 from strep.elex.util import summary_to_html_tables, toggle_element_visibility
 from strep.elex.graphs import assemble_scatter_data, create_scatter_graph, create_bar_graph, add_rating_background, create_star_plot
 from strep.labels.label_generation import PropertyLabel
+from strep.index_scale import scale_and_rate
 from strep.unit_reformatting import CustomUnitReformater
 from strep.load_experiment_logs import find_sub_db
 from strep.util import lookup_meta, PatchedJSONEncoder, fill_meta
@@ -28,7 +27,6 @@ class Visualization(dash.Dash):
 
         self.databases = databases
         self.unit_fmt = CustomUnitReformater()
-
         self.state = {
             'db': None,
             'ds': None,
@@ -36,20 +34,22 @@ class Visualization(dash.Dash):
             'sub_database': None,
             'indexmode': index_mode,
             'update_on_change': False,
-            'rating_mode': 'optimistic mean',
+            'compound_mode': 'mean',
             'model': None,
             'label': None
         }
         
         # setup page and create callbacks
-        self.layout = create_page(self.databases, index_mode, self.state['rating_mode'])
+        page_creator = lambda **kwargs: create_page(self.databases, index_mode, self.state['compound_mode'], **kwargs)
+        dash.register_page("home", layout=page_creator, path="/")
+        self.layout = dash.html.Div(dash.page_container)
         self.callback(
             [Output('x-weight', 'value'), Output('y-weight', 'value')],
             [Input('xaxis', 'value'), Input('yaxis', 'value'), Input('weights-upload', 'contents')]
         ) (self.update_metric_fields)
         # changing database, dataset or task
         self.callback(
-            [Output('ds-switch', 'options'), Output('ds-switch', 'value')],
+            [Output('ds-switch', 'options'), Output('ds-switch', 'value'), Output("url", "search"),],
             Input('db-switch', 'value')
         ) (self.db_selected)
         self.callback(
@@ -67,7 +67,7 @@ class Visualization(dash.Dash):
         ) (self.update_boundary_sliders)
         self.callback(
             [Output('graph-scatter', 'figure'), Output('select-reference', 'disabled'), Output('btn-optimize-reference', 'disabled')],
-            [Input('environments', 'value'), Input('scale-switch', 'value'), Input('indexmode-switch', 'value'), Input('rating', 'value'), Input('x-weight', 'value'), Input('y-weight', 'value'), Input('boundary-slider-x', 'value'), Input('boundary-slider-y', 'value')]
+            [Input('environments', 'value'), Input('scale-switch', 'value'), Input('indexmode-switch', 'value'), Input('compound_mode', 'value'), Input('x-weight', 'value'), Input('y-weight', 'value'), Input('boundary-slider-x', 'value'), Input('boundary-slider-y', 'value')]
         ) (self.update_scatter_graph)
         self.callback(
             Output('graph-bars', 'figure'),
@@ -75,7 +75,7 @@ class Visualization(dash.Dash):
         ) (self.update_bars_graph)
         self.callback(
             [Output('model-table', 'children'), Output('metric-table', 'children'), Output('model-label', "src"), Output('label-modal-img', "src"), Output('btn-open-paper', "href"), Output('info-hover', 'is_open')],
-            Input('graph-scatter', 'hoverData'), State('environments', 'value'), State('rating', 'value')
+            Input('graph-scatter', 'hoverData'), State('environments', 'value'), State('compound_mode', 'value')
         ) (self.display_model)
         # buttons for saving and loading
         self.callback(Output('save-label', 'data'), [Input('btn-save-label', 'n_clicks'), Input('btn-save-label2', 'n_clicks'), Input('btn-save-summary', 'n_clicks'), Input('btn-save-logs', 'n_clicks')]) (self.save_label)
@@ -86,8 +86,7 @@ class Visualization(dash.Dash):
         self.callback(Output("graph-config", "is_open"), Input("btn-open-graph-config", "n_clicks"), State("graph-config", "is_open")) (toggle_element_visibility)
         self.callback(Output('label-modal', 'is_open'), Input('model-label', "n_clicks"), State('label-modal', 'is_open')) (toggle_element_visibility)
 
-
-    def update_scatter_graph(self, env_names=None, scale_switch=None, indexmode_switch=None, rating_mode=None, xweight=None, yweight=None, *slider_args):
+    def update_scatter_graph(self, env_names=None, scale_switch=None, indexmode_switch=None, compound_mode=None, xweight=None, yweight=None, *slider_args):
         update_db = False
         triggered_prop = self.triggered_graph_prop or dash.callback_context.triggered[0]['prop_id']
         self.triggered_graph_prop = None
@@ -106,8 +105,11 @@ class Visualization(dash.Dash):
                 self.boundaries[axis][3 - sl_idx][1] = sl_val
             update_db = True
          # check if rating mode was changed
-        if rating_mode != self.state['rating_mode']:
-            self.state['rating_mode'] = rating_mode
+        if compound_mode != self.state['compound_mode']:
+            self.state['compound_mode'] = compound_mode
+            for bounds in self.boundaries.values(): # remove old boundaries, they have to be renewed after the update
+                for key in ['compound_index', 'quality_index', 'resource_index']:
+                    del bounds[key]
             update_db = True
         # check if indexmode was changed
         if indexmode_switch != self.state['indexmode']:
@@ -116,22 +118,21 @@ class Visualization(dash.Dash):
         reference_select_disabled = self.state['indexmode'] != 'centered'
         # update database if necessary
         if update_db:
-            self.update_database(only_current=False)
+            self.update_database()
         # assemble data for plotting
         scale = scale_switch or 'index'
         db, xaxis, yaxis = self.state['sub_database'], self.state['xaxis'], self.state['yaxis']
-        bounds = self.boundaries if scale == 'index' else self.boundaries_real
-        self.plot_data, axis_names, rating_pos = assemble_scatter_data(env_names, db, scale, xaxis, yaxis, self.meta, bounds)
+        bounds = self.boundaries[self.state['task_ds']] if scale == 'index' else self.boundaries_real[self.state['task_ds']]
+        self.plot_data, axis_names = assemble_scatter_data(env_names, db, scale, xaxis, yaxis, self.meta)
         scatter = create_scatter_graph(self.plot_data, axis_names, dark_mode=self.dark_mode)
-        add_rating_background(scatter, rating_pos, self.state['rating_mode'], dark_mode=self.dark_mode)
+        background_bounds = [bounds[xaxis].tolist(), bounds[yaxis].tolist()]
+        add_rating_background(scatter, background_bounds, self.state['compound_mode'], dark_mode=self.dark_mode)
         return scatter, reference_select_disabled, reference_select_disabled
     
-    def update_database(self, only_current=True):
-        if not only_current: # remark for making a full update when task / data set is changed
-            self.state['update_on_change'] = True
-        # update the data currently displayed to user
-        self.state['sub_database'], self.boundaries, self.boundaries_real, self.references = rate_database(self.state['sub_database'], self.meta, self.boundaries, self.state['indexmode'], self.references, self.unit_fmt, self.state['rating_mode'])
-        self.database.loc[self.state['sub_database'].index] = self.state['sub_database']
+    def update_database(self):
+        # re-scale everything!
+        self.database, self.boundaries, self.real_boundaries, self.defaults = scale_and_rate(self.database, self.meta['properties'], self.references, self.boundaries, self.state['compound_mode'], False)
+        self.state['sub_database'] = self.database.loc[self.state['sub_database'].index]
 
     def update_bars_graph(self, scatter_graph=None, discard_y_axis=False):
         bars = create_bar_graph(self.plot_data, self.dark_mode, discard_y_axis)
@@ -141,11 +142,11 @@ class Visualization(dash.Dash):
         self.triggered_graph_prop = dash.callback_context.triggered[0]['prop_id']
         if uploaded_boundaries is not None:
             boundaries_dict = json.loads(base64.b64decode(uploaded_boundaries.split(',')[-1]))
-            self.boundaries = load_boundaries(boundaries_dict)
-            self.update_database(only_current=False)
+            raise NotImplementedError
+            self.update_database()
         if calculated_boundaries is not None and 'calc' in dash.callback_context.triggered[0]['prop_id']:
             if self.state['update_on_change']: # if the indexmode was changed, it is first necessary to update all index values
-                self.database, self.boundaries, self.boundaries_real, self.references = rate_database(self.database, self.meta, self.boundaries, self.state['indexmode'], self.references, self.unit_fmt, self.state['rating_mode'])
+                self.database, self.boundaries, self.boundaries_real, self.references = rate_database(self.database, self.meta, self.boundaries, self.state['indexmode'], self.references, self.unit_fmt, self.state['compound_mode'])
                 self.state['update_on_change'] = False
             self.boundaries = calculate_optimal_boundaries(self.database, [0.8, 0.6, 0.4, 0.2])
         if self.references is not None and reference != self.references[self.state['ds']]:
@@ -156,19 +157,17 @@ class Visualization(dash.Dash):
         self.state['yaxis'] = yaxis or self.state['yaxis']
         values = []
         for axis in [self.state['xaxis'], self.state['yaxis']]:
-            all_ratings = [metric['index'] for metric in self.state['sub_database'][axis].dropna()]
-            min_v = min(all_ratings)
-            max_v = max(all_ratings)
-            value = [entry[0] for entry in reversed(self.boundaries[axis][1:])]
+            all_vals = self.state['sub_database'][f'{axis}_index'].dropna()
+            min_v, max_v = all_vals.min(), all_vals.max()
             marks = { val: {'label': str(val)} for val in np.round(np.linspace(min_v, max_v, 20), 3)}
-            values.extend([min_v, max_v, value, marks])
+            values.extend([min_v, max_v, self.boundaries[self.state['task_ds']][axis].tolist(), marks])
         return values
     
     def db_selected(self, db=None):
         self.state['db'] = db or self.state['db']
-        self.database, self.meta, self.metrics, self.xaxis_default, self.yaxis_default, self.boundaries, self.boundaries_real, self.references = self.databases[self.state['db']]
+        self.database, self.meta, self.defaults, self.boundaries, self.boundaries_real, self.references = self.databases[self.state['db']]
         options = [ {'label': lookup_meta(self.meta, ds, subdict='dataset'), 'value': ds} for ds in pd.unique(self.database['dataset']) ]
-        return options, options[0]['value']
+        return options, options[0]['value'], f"?database={self.state['db']}"
 
     def ds_selected(self, ds=None):
         self.state['ds'] = ds or self.state['ds']
@@ -180,21 +179,22 @@ class Visualization(dash.Dash):
             self.references[self.state['ds']] = find_optimal_reference(self.state['sub_database'])
             self.update_database()
         if self.state['update_on_change']:
-            self.database, self.boundaries, self.boundaries_real, self.references = rate_database(self.database, self.meta, self.boundaries, self.state['indexmode'], self.references, self.unit_fmt, self.state['rating_mode'])
+            self.database, self.boundaries, self.boundaries_real, self.references = rate_database(self.database, self.meta, self.boundaries, self.state['indexmode'], self.references, self.unit_fmt, self.state['compound_mode'])
             self.state['update_on_change'] = False
-        self.state['ds_task'] = (self.state['ds'], task) or (self.state['ds'], self.state['task'])
-
-        avail_envs = [ {"label": env, "value": env} for env in pd.unique(find_sub_db(self.database, self.state['ds'], self.state['ds_task'][1])['environment']) ]
-        axis_options = [{'label': lookup_meta(self.meta, metr, subdict='properties'), 'value': metr} for metr in self.metrics[self.state['ds_task']]]
-        self.state['xaxis'] = self.xaxis_default[self.state['ds_task']]
-        self.state['yaxis'] = self.yaxis_default[self.state['ds_task']]
-        self.state['sub_database'] = find_sub_db(self.database, self.state['ds'], self.state['ds_task'][1])
+        self.state['task'] = task or self.state['task']
+        self.state['task_ds'] = (self.state['task'], self.state['ds'])
+        self.state['metrics'] = {prop: self.meta['properties'][prop] for prop in self.boundaries_real[self.state['task_ds']].keys()}
+        avail_envs = [ {"label": env, "value": env} for env in pd.unique(find_sub_db(self.database, self.state['ds'], self.state['task'])['environment']) ]
+        axis_options = [{'label': lookup_meta(self.meta, metr, subdict='properties'), 'value': metr} for metr in self.state['metrics']]
+        self.state['xaxis'] = self.defaults['x'][self.state['task_ds']]
+        self.state['yaxis'] = self.defaults['y'][self.state['task_ds']]
+        self.state['sub_database'] = find_sub_db(self.database, self.state['ds'], self.state['task'])
         models = self.state['sub_database']['model'].values
         ref_options = [{'label': mod, 'value': mod} for mod in models]
         curr_ref = self.references[self.state['ds']] if self.references is not None and self.state['ds'] in self.references else models[0]
         return avail_envs, [avail_envs[0]['value']], axis_options, self.state['xaxis'], axis_options, self.state['yaxis'], ref_options, curr_ref
 
-    def display_model(self, hover_data=None, env_names=None, rating_mode=None):
+    def display_model(self, hover_data=None, env_names=None, compound_mode=None):
         if hover_data is None:
             self.state['model'] = None
             self.state['label'] = None
@@ -207,9 +207,10 @@ class Visualization(dash.Dash):
             if isinstance(self.state['model']['model'], str): 
                 # make sure that model is always a dict with name field
                 self.state['model']['model'] = {'name': self.state['model']['model']}
-            self.state['label'] = PropertyLabel(self.state['model'], custom=self.meta['meta_dir'])
-            model_table, metric_table = summary_to_html_tables(self.state['model'], self.metrics[self.state['ds_task']])
-            starplot = create_star_plot(self.state['model'], self.metrics[self.state['ds_task']])
+            self.state['label'] = PropertyLabel(self.state['model'], self.state['metrics'], self.unit_fmt, custom=self.meta['meta_dir'])
+            # TODO here, pass only the prop meta info for the properties in state!
+            model_table, metric_table = summary_to_html_tables(self.state['model'], self.state['metrics'], self.unit_fmt)
+            starplot = create_star_plot(self.state['model'], self.state['metrics'])
             enc_label = self.state['label'].to_encoded_image()
             try:
                 link = self.state['model']['model']['url']
@@ -227,15 +228,10 @@ class Visualization(dash.Dash):
             weights = json.loads(base64.b64decode(upload.split(',')[-1]))
             update_db = update_weights(self.database, weights)
             if update_db:
-                self.update_database(only_current=False)
+                self.update_database()
         self.state['xaxis'] = xaxis or self.state['xaxis']
         self.state['yaxis'] = yaxis or self.state['yaxis']
-        for _, row in self.state['sub_database'].iterrows():
-            try:
-                return row[self.state['xaxis']]['weight'], row[self.state['yaxis']]['weight']
-            except TypeError:
-                pass
-        raise RuntimeError('No weights found for props ')
+        return self.meta['properties'][self.state['xaxis']]['weight'], self.meta['properties'][self.state['yaxis']]['weight']
 
     def save_weights(self, save_weights_clicks=None):
         if save_weights_clicks is not None:
@@ -246,7 +242,7 @@ class Visualization(dash.Dash):
             return # callback init
         f_id = f'{self.state["model"]["model"]["name"]}_{self.state["model"]["environment"]}'.replace(' ', '_')
         if 'label' in dash.callback_context.triggered[0]['prop_id']:
-            return dcc.send_bytes(self.state['label'].write(), filename=f'energy_label_{f_id}.pdf')
+            return dash.dcc.send_bytes(self.state['label'].write(), filename=f'energy_label_{f_id}.pdf')
         elif 'sum' in dash.callback_context.triggered[0]['prop_id']:
             return dict(content=json.dumps(self.state['model'], indent=4, cls=PatchedJSONEncoder), filename=f'energy_summary_{f_id}.json')
         else: # full logs

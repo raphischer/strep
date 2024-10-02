@@ -215,3 +215,15 @@ def format_hardware(cpu, gpu=None):
             except AttributeError:
                 pass
     return hardware_short
+
+
+def weighted_median(values, weights):
+    assert np.isclose(weights.sum(), 1), "Weights for weighted median should sum up to one"
+    asort = values.argsort()
+    values, cumw = values[asort], np.cumsum(weights[asort])
+    for i, (cw, v) in enumerate(zip(cumw, values)):
+        if cw == 0.5:
+            return np.average([v, values[i + 1]])
+        if cw > 0.5 or (cw < 0.5 and cumw[i + 1] > 0.5):
+            return v
+    raise RuntimeError

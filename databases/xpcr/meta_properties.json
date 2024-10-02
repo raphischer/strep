@@ -39,6 +39,13 @@
         "weight": 0.166666667,
         "independent_of_task": true
     },
+    "running_time": {
+        "name": "Running Time per Inference",
+        "shortname": "I Time",
+        "unit": "seconds",
+        "group": "Resources",
+        "weight": 0.0833333333
+    },
     "train_power_draw": {
         "name": "Training Power Draw",
         "shortname": "T Power",
@@ -57,13 +64,6 @@
         "name": "Power Draw per Inference",
         "shortname": "I Power",
         "unit": "wattseconds",
-        "group": "Resources",
-        "weight": 0.0833333333
-    },
-    "running_time": {
-        "name": "Running Time per Inference",
-        "shortname": "I Time",
-        "unit": "seconds",
         "group": "Resources",
         "weight": 0.0833333333
     }

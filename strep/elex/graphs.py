@@ -1,4 +1,5 @@
 import os
+from itertools import pairwise
 
 import numpy as np
 import plotly.graph_objects as go
@@ -6,52 +7,45 @@ from plotly.express.colors import sample_colorscale
 from PIL import Image
 
 from strep.util import lookup_meta
-from strep.index_and_rate import calculate_single_compound_rating, find_sub_db
+from strep.load_experiment_logs import find_sub_db
 from strep.elex.util import RATING_COLORS, ENV_SYMBOLS, PATTERNS, RATING_COLOR_SCALE
 
 GRAD = Image.open(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'assets', 'grad.png'))
 
 
-def assemble_scatter_data(env_names, db, scale_switch, xaxis, yaxis, meta, boundaries):
-    plot_data = {}
-    if scale_switch != 'index':
-        boundaries = boundaries[(db['dataset'].iloc[0], db['task'].iloc[0], env_names[0])]
+def assemble_scatter_data(env_names, db, scale_switch, xaxis, yaxis, meta):
+    plot_data, substr = {}, '_index' if scale_switch == 'index' else ''
     for env in env_names:
-        env_data = { 'ratings': [], 'x': [], 'y': [], 'index': [], 'names': [] }
-        for _, log in find_sub_db(db, environment=env).iterrows():
-            env_data['ratings'].append(log['compound_rating'])
-            env_data['index'].append(log['compound_index'])
-            env_data['names'].append(lookup_meta(meta, log['model'], key='short', subdict='model'))
-            for xy_axis, metric in zip(['x', 'y'], [xaxis, yaxis]):
-                if isinstance(log[metric], dict): # either take the value or the index of the metric
-                    env_data[xy_axis].append(log[metric][scale_switch])
-                elif isinstance(log[metric], float):
-                    if scale_switch != 'index':
-                        print(f'WARNING: Only index values found for displaying {metric}!')
-                    env_data[xy_axis].append(log[metric])
-                else: # error during value aggregation
-                    env_data[xy_axis].append(0)
+        sub_db = find_sub_db(db, environment=env)
+        env_data = {
+            'ratings': sub_db['compound_rating'].values,
+            'index': sub_db['compound_index'].values,
+            'x': sub_db[f'{xaxis}{substr}'].values,
+            'y': sub_db[f'{yaxis}{substr}'].values,
+            'names': sub_db['model'].map(lambda mod: lookup_meta(meta, mod, key='short', subdict='model') ).tolist()
+        }
         plot_data[env] = env_data
     axis_names = [lookup_meta(meta, ax, subdict='properties') for ax in [xaxis, yaxis]]
     if scale_switch == 'index':
         axis_names = [name.split('[')[0].strip() + ' Index' if 'Index' not in name else name for name in axis_names]
-    return plot_data, axis_names, [boundaries[xaxis], boundaries[yaxis]]
+    return plot_data, axis_names
 
 
 def add_rating_background(fig, rating_pos, mode=None, dark_mode=None, col=None):
+    is_sorted = lambda a: np.all(a[:-1] <= a[1:]) # TODO maybe just look at mode?
     xaxis, yaxis = fig.layout[f'xaxis{col if col is not None and col > 1 else ""}'], fig.layout[f'yaxis{col if col is not None and col > 1 else ""}']
     min_x, max_x, min_y, max_y = xaxis.range[0], xaxis.range[1], yaxis.range[0], yaxis.range[1]
     if rating_pos is None:
         grad = GRAD if mode is None else GRAD.transpose(getattr(Image, mode))
         fig.add_layout_image(dict(source=grad, xref="x", yref="y", x=min_x, y=max_y, sizex=max_x-min_x, sizey=max_y-min_y, sizing="stretch", opacity=0.75, layer="below"))
     else:
-        for xi, (x0, x1) in enumerate(rating_pos[0]):
-            x0 = max_x if xi == 0 and x0 > x1 else (min_x if xi == 0 else x0)
-            x1 = min_x if xi == len(rating_pos[0]) - 1 and x0 > x1 else (max_x if xi == len(rating_pos[0]) - 1 else x1)
-            for yi, (y0, y1) in enumerate(rating_pos[1]):
-                y0 = max_y if yi == 0 and y0 > y1 else (min_y if yi == 0 else y0)
-                y1 = min_y if yi == len(rating_pos[1]) - 1 and y0 > y1 else (max_y if yi == len(rating_pos[1]) - 1 else y1)
-                color = RATING_COLORS[int(calculate_single_compound_rating([xi, yi], mode))]
+        # add values for border rectangles
+        for idx, (vals, min_v, max_v) in enumerate(zip(rating_pos, [min_x, min_y], [max_x, max_y])):
+            rating_pos[idx] = [min_v] + vals + [max_v] if is_sorted(vals) else [max_v] + vals + [min_v]            
+        # plot each rectangle
+        for xi, (x0, x1) in enumerate(pairwise(rating_pos[0])):
+            for yi, (y0, y1) in enumerate(pairwise(rating_pos[1])):
+                color = RATING_COLORS[int(getattr(np, mode)([xi, yi]))]
                 add_args = {}
                 if dark_mode:
                     add_args['line'] = dict(color='#0c122b')

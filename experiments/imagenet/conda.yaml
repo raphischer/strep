@@ -1,0 +1,12 @@
+name: imagenet
+dependencies:
+  - python=3.10
+  - pip
+  - pip:
+    - mlflow
+    - tensorflow[and-cuda]
+    - tensorflow-datasets
+    - tensor
+    - codecarbon
+    - opencv-python
+    - scikit-image

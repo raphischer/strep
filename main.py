@@ -1,16 +1,18 @@
-import argparse
 import os
 
-from strep.index_and_rate import rate_database, find_relevant_metrics, load_database
+from strep.index_scale import load_database, scale_and_rate
 from strep.util import load_meta
 from strep.elex.app import Visualization
 
+
 DATABASES = {
+    # 'Papers With Code': 'databases/paperswithcode/database.pkl',
     'ImageNetEff': 'databases/imagenet_classification/database.pkl',
     'RobustBench': 'databases/robustbench/database.pkl',
-    'Forecasting': 'databases/dnn_forecasting/database.pkl',
-    'Papers With Code': 'databases/paperswithcode/database.pkl',
+    'XPCR-Forecasting': 'databases/xpcr/database.pkl',
+    'MetaQuRe': 'databases/metaqure/database.pkl'
 }
+
 
 def preprocess_database(fname):
     if not os.path.isfile(fname):
@@ -22,38 +24,21 @@ def preprocess_database(fname):
     # load meta infotmation
     meta = load_meta(os.path.dirname(fname))
     # rate database
-    database, metrics, xaxis_default, yaxis_default = find_relevant_metrics(database, meta)
-    rated_database, boundaries, real_boundaries, references = rate_database(database, meta)
-    print(f'    database {name} has {rated_database.shape} entries')
-    return rated_database, meta, metrics, xaxis_default, yaxis_default, boundaries, real_boundaries, references
+    rated_database, boundaries, real_boundaries, defaults = scale_and_rate(database, meta)
+    return rated_database, meta, defaults, boundaries, real_boundaries, None
 
-if __name__ == '__main__':    
 
-    parser = argparse.ArgumentParser()
+databases = {}
+for name, fname in DATABASES.items():
+    print('LOADING', fname)
+    databases[name] = preprocess_database(fname)
+    # override defaults for robustbench
+    if 'robustbench' in fname:
+        for ds_task in databases[name][2].keys():
+            databases[name][3][ds_task] = 'clean_acc' # x axis
+            databases[name][4][ds_task] = 'autoattack_acc' # y axis
 
-    parser.add_argument("--mode", default='interactive', choices=['interactive', 'paper_results'])
-    parser.add_argument("--database", default=None)
-    # interactive exploration params
-    parser.add_argument("--host", default='localhost', type=str, help="default host") # '0.0.0.0'
-    parser.add_argument("--port", default=8888, type=int, help="default port")
-    parser.add_argument("--debug", default=False, type=bool, help="debugging")
 
-    args = parser.parse_args()
-
-    if args.database is not None:
-        DATABASES = {'CUSTOM': args.database}
-
-    databases = {}
-    for name, fname in DATABASES.items():
-        print('LOADING', fname)
-        databases[name] = preprocess_database(fname)
-        # override defaults for robustbench
-        if 'robustbench' in fname:
-            for ds_task in databases[name][2].keys():
-                databases[name][3][ds_task] = 'clean_acc' # x axis
-                databases[name][4][ds_task] = 'autoattack_acc' # y axis
-
-    app = Visualization(databases)
-    server = app.server
-        
-    app.run_server(debug=args.debug, host=args.host, port=args.port)
+app = Visualization(databases, use_pages=True, pages_folder='')
+server = app.server
+app.run_server(debug=False, host='0.0.0.0', port=10000)

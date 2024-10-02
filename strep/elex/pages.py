@@ -1,9 +1,5 @@
-import os
-
 from dash import html, dcc
 import dash_bootstrap_components as dbc
-
-from strep.util import read_json, lookup_meta
 
 def create_axis_option(x=True):
     xy = 'x' if x else 'y'
@@ -19,6 +15,9 @@ def create_axis_option(x=True):
 
     return dbc.AccordionItem(content, title=f'{xy}-Axis Configuration')
 
+def loading(element):
+    return dcc.Loading([element])
+
 style_btn_cfg = {
     'width': '90%',
     'textAlign': 'center'
@@ -31,8 +30,10 @@ style_upload = dict({
 }, **style_btn_cfg)
 
 
-def create_page(databases, indexmode, rating_mode):
-
+def create_page(databases, indexmode, compound_mode, **kwargs):
+    db = kwargs.get("database")
+    if db is None or db not in databases.keys():
+        db = list(databases.keys())[0]
     # if isinstance(meta_info, str) and os.path.isfile(meta_info):
     #     meta_info = read_json(meta_info)
     # if not isinstance(meta_info, dict):
@@ -43,7 +44,7 @@ def create_page(databases, indexmode, rating_mode):
         html.Div(children=[
             html.Div(children=[
                 html.H2('Database:'),
-                dbc.Select(id='db-switch', value=list(databases.keys())[0], options=[{'label': db, 'value': db} for db in databases.keys()],)
+                dbc.Select(id='db-switch', value=db, options=[{'label': db, 'value': db} for db in databases.keys()],)
             ]),
             html.Div(children=[
                 html.H2('Dataset:'),
@@ -100,10 +101,10 @@ def create_page(databases, indexmode, rating_mode):
                     id="weights-upload", className='btn btn-default', style=style_btn_cfg,
                     children=['Drop or ', html.A('Select a Weights File (.json)')],
                 ),
-                html.H4('Rating Mode'),
+                html.H4('Compound Mode'),
                 dbc.RadioItems(
-                    id='rating', value=rating_mode,
-                    options=[{'label': opt, 'value': opt.lower()} for opt in ['Optimistic Median', 'Pessimistic Median', 'Optimistic Mean', 'Pessimistic Mean', 'Best', 'Worst']],
+                    id='compound_mode', value=compound_mode,
+                    options=[{'label': opt, 'value': opt.lower()} for opt in ['Mean', 'Median', 'Min', 'Max']],
                 )
             ], title = 'More Graph Options')
         ], start_collapsed=True), id="graph-config", title="Graph Configuration", is_open=False, style=dict(width='40%')
@@ -126,7 +127,7 @@ def create_page(databases, indexmode, rating_mode):
     # label display & tables
     label_display = html.Div(children=[
         html.H3('Energy Label:'),
-        html.Img(id='model-label', className="img-fluid"),
+        loading(html.Img(id='model-label', className="img-fluid")),
         dbc.Tooltip("Click to enlarge", target="model-label"),
     ])
 
@@ -142,11 +143,11 @@ def create_page(databases, indexmode, rating_mode):
 
     table_model = html.Div(children=[
         html.H3('General Information:'),
-        dbc.Table(id='model-table', bordered=True)
+        loading(dbc.Table(id='model-table', bordered=True))
     ])
     table_metrics = html.Div(children=[
         html.H3('Properties:'),
-        dbc.Table(id='metric-table', bordered=True),
+        loading(dbc.Table(id='metric-table', bordered=True))
     ])
 
     buttons = dbc.Container([
@@ -188,6 +189,7 @@ def create_page(databases, indexmode, rating_mode):
     ]
     
     return html.Div([
+        dcc.Location(id="url", refresh=False),
         dbc.Container([
             dbc.Row(row0, style={"height": "15vh"}, align="center"),
             dbc.Row(row1, style={"height": "40vh"}),

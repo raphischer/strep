@@ -276,7 +276,7 @@
     },
     "autosklearn": {
         "name": "AutoSklearn",
-        "short": "ASK",
+        "short": "ASk",
         "local/global": "Global",
         "data": "Univariate",
         "method": "AutoML",
@@ -288,7 +288,7 @@
     },
     "autokeras": {
         "name": "AutoKeras",
-        "short": "AKR",
+        "short": "AKe",
         "local/global": "Global",
         "data": "Univariate",
         "method": "AutoML",
@@ -298,16 +298,28 @@
         "module": null,
         "class": "AutoKeras"
     },
-    "autokerasforecast": {
-        "name": "AutoKerasForecaster",
-        "short": "AKF",
+    "autopytorch": {
+        "name": "Auto-PyTorch",
+        "short": "APT",
         "local/global": "Global",
         "data": "Univariate",
         "method": "AutoML",
-        "implementation": "tensorflow",
-        "paper": "Haifeng  et al. 2023",
-        "url": "https://www.jmlr.org/papers/v24/20-1355.html",
+        "implementation": "pytorch",
+        "paper": "Zimmer  et al. 2021",
+        "url": "https://ieeexplore.ieee.org/document/9382913",
         "module": null,
-        "class": "AutoKerasForecaster"
+        "class": "AutoPyTorch"
+    },
+    "autogluon": {
+        "name": "AutoGluon",
+        "short": "AGl",
+        "local/global": "Global",
+        "data": "Univariate",
+        "method": "AutoML",
+        "implementation": "gluon",
+        "paper": "Erickson  et al. 2020",
+        "url": "https://arxiv.org/abs/2003.06505",
+        "module": null,
+        "class": "AutoGluon"
     }
 }
