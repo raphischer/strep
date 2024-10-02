@@ -23,8 +23,9 @@ class Visualization(dash.Dash):
         self.dark_mode = dark_mode
         if dark_mode:
             kwargs['external_stylesheets'] = [dbc.themes.DARKLY]
-        super().__init__(__name__, **kwargs)
-
+        super().__init__(__name__, use_pages=True, pages_folder='', **kwargs)
+        if not isinstance(databases, dict):
+            databases = {'CUSTOM': databases}
         self.databases = databases
         self.unit_fmt = CustomUnitReformater()
         self.state = {

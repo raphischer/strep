@@ -1,12 +1,12 @@
 import pandas as pd
 import numpy as np
 
-from strep.util import weighted_median
+from strep.util import weighted_median, load_meta
 
 
 def _identify_property_meta(input, given_meta=None):
     properties_meta = {}
-    if given_meta is not None and isinstance(given_meta, dict): # assess columns defined in meta
+    if given_meta is not None and isinstance(given_meta, dict) and len(given_meta) > 0: # assess columns defined in meta
         cols_to_rate = [key for key in given_meta if (key in input.columns) and (input[key].dropna(how='all').size > 0)]
     else: # assess all numeric columns
         cols_to_rate = input.select_dtypes('number').dropna(how='all')
@@ -15,9 +15,9 @@ def _identify_property_meta(input, given_meta=None):
     for col in cols_to_rate:
         try:
             meta = given_meta[col]
-        except IndexError:
+        except (TypeError, IndexError, KeyError):
             # TODO improve by looking up group and unit from properly characterized popular metrics in PWC and OpenML
-            meta = { "name": col, "shortname": col[:4], "unit": "number", "group": "Quality", "weight": 1.0 / len(cols_to_rate) }
+            meta = { "name": col, "shortname": col[:4], "unit": "number", "group": "Performance", "weight": 1.0 / len(cols_to_rate) }
         properties_meta[col] = meta
     return properties_meta
 
@@ -159,7 +159,7 @@ def _scale_single(input, scale_m, meta, reference, mode):
     if mode == 'compound':
         assert not np.any(np.logical_or(input[sub_meta.keys()] > 1, input[sub_meta.keys()] < 0)), f'Found values outside of the interval (0, 1] - please properly index-scale your results first!'
     results, boundaries = scale_m(input, sub_meta, reference_input)
-    return results, boundaries, sub_meta.keys()
+    return results, boundaries, sub_meta
 
 def _scaled_cols(input):
     return [col for col in input.columns if '_index' in col or '_rating' in col]
@@ -177,13 +177,14 @@ def load_database(fname):
             except Exception as e:
                 pass
         database['environment'] = 'unknown'
-    return database
+    meta = load_meta(fname)
+    return database, meta
 
 def scale(input, meta=None, reference=None, mode='index', verbose=True):
     input, split_by = _prepare_for_scale(input)
     assert mode in ['rating', 'index', 'compound_mean', 'compound_median', 'compound_max', 'compound_min']
     scale_m = _index_scale_best if reference is None else _index_scale_reference # default is index scaling
-    if 'properties' in meta: # other meta info irrelevant for scaling
+    if isinstance(meta, dict) and 'properties' in meta: # other meta info irrelevant for scaling
         meta = meta['properties']
     if mode == 'index' and len(_scaled_cols(input)) > 0:
         raise RuntimeError('Found columns with "_scaling" or "_rating" information, which could result in runtime problems. Please rename these columns.')
@@ -213,13 +214,13 @@ def scale(input, meta=None, reference=None, mode='index', verbose=True):
         results, boundaries, sub_properties = zip(*sub_results.values())
         results = pd.concat(results).sort_index()
         boundaries = {config: bounds for config, bounds in zip(sub_results.keys(), boundaries)}
-        all_props = list(set([col for sub_cols in sub_properties for col in sub_cols]))
+        all_props = {k: v for sub in sub_properties for k, v in sub.items()}
     else:
         # process complete dataframe
         if verbose:
             print(f'Performing {mode} for the complete data frame, without any splitting. If you want internal splitting, please provide information on respective "environment", "task" or "dataset".')
         results, boundaries, all_props = _scale_single(input, scale_m, meta, reference, mode)
-    final = pd.concat([input[input.columns.drop(all_props)], results], axis=1)
+    final = pd.concat([input[input.columns.drop(all_props.keys())], results], axis=1)
     # make some properties available across all tasks
     if 'task' in split_by and meta is not None and mode == 'index':
         independent_props = [prop for prop, vals in meta.items() if 'independent_of_task' in vals and vals['independent_of_task']]
@@ -231,16 +232,16 @@ def scale(input, meta=None, reference=None, mode='index', verbose=True):
                     print(f'{valid.shape[0]} not-NA values found for {prop} across all tasks on {group_field_vals}!')
                 if valid.shape[0] > 0:
                     final.loc[data.index,prop] = [valid.values[0]] * data.shape[0]
-    if mode != 'index':
+    if mode != 'index': # after index scaling returned identified meta info, otherwise return boundaries
         return final, boundaries
-    return final
+    return final, all_props
 
 def scale_and_rate(input, meta, reference=None, boundaries=None, compound_mode='mean', verbose=False):
     if 'compound_rating' in input.columns: # already processed db as input, so go back to original values
         input = input.drop(columns=_scaled_cols(input))
-    if 'properties' in meta: # other meta info irrelevant for scaling
-        meta = meta['properties']
-    scaled = scale(input, meta, reference=reference, verbose=verbose)
+    scaled, meta_ret = scale(input, meta, reference=reference, verbose=verbose)
+    if len(meta['properties']) == 0:
+        meta['properties'] = meta_ret
     rated, prop_boundaries = scale(scaled, meta, reference=boundaries, mode='rating', verbose=verbose)
     compound, comp_boundaries = scale(scaled, meta, reference=boundaries, mode=f'compound_{compound_mode}', verbose=verbose)
     config_cols = [col for col in compound.columns if col in input.columns]
@@ -252,5 +253,5 @@ def scale_and_rate(input, meta, reference=None, boundaries=None, compound_mode='
         ], axis=1)   
     for config, boundaries in prop_boundaries.items():
         comp_boundaries[config].update(boundaries)
-    real_boundaries, defaults = _real_boundaries_and_defaults(input, comp_boundaries, meta, reference)
-    return all_res, comp_boundaries, real_boundaries, defaults
+    real_boundaries, defaults = _real_boundaries_and_defaults(input, comp_boundaries, meta['properties'], reference)
+    return all_res, meta, defaults, comp_boundaries, real_boundaries, reference

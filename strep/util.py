@@ -45,11 +45,15 @@ def identify_correlation(db):
 def load_meta(directory=None):
     if directory is None:
         directory = os.getcwd()
-    meta = {}
+    if os.path.isfile(directory):
+        directory = os.path.dirname(directory)
+    meta = {'properties': {}}
     for fname in os.listdir(directory):
         re_match = re.match('meta_(.*).json', fname)
         if re_match:
             meta[re_match.group(1)] = read_json(os.path.join(directory, fname))
+    if len(meta['properties']) == 0:
+        print('Could not find any meta information - assuming all numeric properties relate to Quality and want to be maximized.')
     meta['meta_dir'] = os.path.abspath(directory)
     return meta
 
