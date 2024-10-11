@@ -1,9 +1,11 @@
+import argparse
 import inspect
 import os
 from itertools import product
 import platform
 import re
 import subprocess
+import sys
 import time
 
 import numpy as np
@@ -49,8 +51,6 @@ CORRUPTIONS = [
 ALL_CORRUPTIONS = [f'imagenet2012_corrupted/{corr}{level}' for corr, level in product(CORRUPTIONS, [1, 2, 3, 4, 5])]
 FIRST_CORR = ALL_CORRUPTIONS[:10]
 
-TESTED_BATCH_SIZES = [8, 16, 32, 64, 128, 256, 512]
-
 def load_corrupted_sample(data_path, seed=0):
     complete = []
     for idx, corr in enumerate(FIRST_CORR):
@@ -82,49 +82,69 @@ def get_processor_name():
                 return re.sub( ".*model name.*:", "", line,1).strip()
     return ""
 
-def load_data_and_model(data_path, model=None, variant='imagenet2012', batch_size=-1):
+def execute(cmd):
+    popen = subprocess.Popen(cmd, stdout=subprocess.PIPE, universal_newlines=True)
+    for stdout_line in iter(popen.stdout.readline, ""):
+        yield stdout_line 
+    popen.stdout.close()
+    return_code = popen.wait()
+    if return_code:
+        raise subprocess.CalledProcessError(return_code, cmd)
+
+def find_ideal_batch_size(model, nogpu, data_dir):
+    batch_size_tests = [1, 2, 4, 8, 16, 32, 64, 128, 256]
+    if nogpu:
+        batch_size_tests = [32, 64, 128, 256, 512, 1024]
+    optimal, fastest = min(batch_size_tests), np.inf
+    for batch_size in batch_size_tests:
+        t0 = time.time()
+        try: # running the util script as main will perform a single inference experiment
+            for path in execute(['python', __file__, '--model', model, '--batch-size', str(batch_size),
+                                 '--datadir', data_dir, '--max_batch_size', str(max(batch_size_tests))]):
+                if 'sparse_categorical_accuracy' in path:
+                    print(path[:-1], end="\r")
+            time.sleep(10)
+        except Exception: # test failed for some reason
+            time.sleep(10)
+            break            
+        t1 = time.time()
+        print(f'{str(batch_size):<4} {t1-t0:4.3f}')
+        if t1-t0 < fastest:
+            optimal = batch_size
+            fastest = t1-t0
+        else:
+            break
+    return optimal
+
+def load_data_and_model(data_path, model_name=None, variant='imagenet2012', batch_size=-1, nogpu=False):
+
+    # if not batch_size is provided, search for optimal
+    if batch_size == -1:
+        batch_size = find_ideal_batch_size(model_name, nogpu, data_path)
+    
     # data
     extract_dir = os.path.join(data_path, 'extracted')
     config = {'download_config': tfds.download.DownloadConfig(extract_dir=extract_dir, manual_dir=data_path)}
-    if variant is 'corrupted_sample':
+    if variant == 'corrupted_sample':
         ds, __builtins__ = load_corrupted_sample(data_path)
     else:
         ds, _ = tfds.load(variant, data_dir=extract_dir, split='validation', download=True, shuffle_files=False, as_supervised=True, with_info=True, download_and_prepare_kwargs=config)
-    if model is None:
+    if model_name == None:
         return None, ds, _
-    preprocessor = load_prepr(model)
+    preprocessor = load_prepr(model_name)
     ds = ds.map(preprocessor)
 
     # model
-    model = KERAS_MODELS[model](weights='imagenet')
+    model = KERAS_MODELS[model_name](weights='imagenet')
     criterion = tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True)
     optimizer = tf.keras.optimizers.SGD()
     metrics = ['sparse_categorical_accuracy', 'sparse_top_k_categorical_accuracy']
     model.compile(optimizer=optimizer, loss=criterion, metrics=metrics)
 
     # data batching
-    if isinstance(batch_size, int) and batch_size > 0: # use given
-        batched = ds.batch(batch_size)
-    elif batch_size == -1: # identify optimal
-        optimal, fastest = min(TESTED_BATCH_SIZES), np.inf
-        for batch_size in TESTED_BATCH_SIZES:
-            batched = ds.batch(batch_size)
-            try:
-                t0 = time.time()
-                model.evaluate(batched.take(max(TESTED_BATCH_SIZES) * 5 // batch_size))
-                t1 = time.time()
-                print(f'{str(batch_size):<4} {t1-t0:4.3f}')
-                if t1-t0 < fastest:
-                    optimal = batch_size
-                    fastest = t1-t0
-                else:
-                    break
-            except Exception:
-                break
-        batched = ds.batch(optimal)
-        batch_size = optimal
-    else: # do not batch
+    if not isinstance(batch_size, int) or batch_size <= 0: # use given
         raise RuntimeError('Invalid batch size')
+    batched = ds.batch(batch_size)
     
     # assemble meta information
     meta = {
@@ -137,3 +157,21 @@ def load_data_and_model(data_path, model=None, variant='imagenet2012', batch_siz
         meta["architecture"] = tf.config.experimental.get_device_details(gpu_devices[0]).get('device_name', 'Unknown GPU')
         
     return model, batched, meta
+
+
+if __name__ == '__main__':
+
+    parser = argparse.ArgumentParser(description="Perform inference with a model and few batches of data")
+    parser.add_argument("--model", default="ResNet152")
+    parser.add_argument("--datadir", default="/data/d1/fischer_diss/imagenet")
+    parser.add_argument("--batch-size", type=int, default=32)
+    parser.add_argument("--max_batch_size", type=int, default=32)
+    parser.add_argument("--max_batches", type=int, default=2)
+    args = parser.parse_args()
+    
+    print('testing', args.datadir, args.model, args.batch_size)
+
+    model, ds, _ = load_data_and_model(args.datadir, args.model, batch_size=args.batch_size)
+    model.evaluate(ds.take(args.max_batch_size * args.max_batches // args.batch_size))
+
+    sys.exit(0)
