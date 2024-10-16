@@ -50,19 +50,20 @@ ALL_CORRUPTIONS = [f'imagenet2012_corrupted/{corr}{level}' for corr, level in pr
 FIRST_CORR = ALL_CORRUPTIONS[:10]
 
 MODEL_SUBSET_SIZES = {
-    'ConvNeXtBase': 10,
     'ResNet152V2': 2,
     'InceptionResNetV2': 4,
-    'EfficientNetB7': 10,
-    'EfficientNetB6': 8,
+    'EfficientNetB7': 8,
+    'EfficientNetB6': 7,
     'EfficientNetB5': 6,
     'EfficientNetB4': 3,
     'EfficientNetB3': 2,
-    'EfficientNetB2': 1.5,
-    'EfficientNetB1': 1.5,
+    'EfficientNetV2L': 2,
+    'NASNetLarge': 2,
     'DenseNet201': 3,
+    'ConvNeXtBase': 5,
     'ConvNeXtSmall': 2,
-    'NASNetMobile': 6,
+    'ConvNeXtLarge': 2,
+    'ConvNeXtXLarge': 2,
     'ResNet152': 4,
 }
 

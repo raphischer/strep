@@ -13,7 +13,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="Inference benchmarking with keras models on ImageNet")
     # data and model input
     parser.add_argument("--experiment", default="/home/fischer/repos/mlprops/experiments/imagenet/")
-    parser.add_argument("--model", default="MobileNetV3Small")
+    parser.add_argument("--model", default="ConvNeXtBase")
     parser.add_argument("--dataset", default=None)
     parser.add_argument("--datadir", default="/data/d1/fischer_diss/imagenet")
     parser.add_argument("--measure_power_secs", default=0.5)
@@ -28,7 +28,7 @@ if __name__ == '__main__':
 
     # identify batch_size and load data
     batch_size = lookup_batch_size(args.model) or find_ideal_batch_size(args.model, args.nogpu, args.datadir)
-    from experiments.imagenet.data_and_model_loading import load_data_and_model, MODEL_SUBSET_SIZES # import inits tensorflow, so only import now
+    from data_and_model_loading import load_data_and_model, MODEL_SUBSET_SIZES # import inits tensorflow, so only import now
     model, ds, meta = load_data_and_model(args.datadir, args.model, batch_size=batch_size)
     meta['dataset'] = 'ImageNet (ILSVRC 2012)'
     meta['task'] = 'Inference'
@@ -38,9 +38,9 @@ if __name__ == '__main__':
 
     # take a snippet of the data, if only testing a subset (e.g., for energy profiling)
     if args.subset:
-        if args.nogpu: # on CPU, models are about 5x slower
-            ds = ds.take(len(ds) // 5)
-            n_samples = n_samples // 5
+        if args.nogpu: # on CPU, models are about 8x slower
+            ds = ds.take(len(ds) // 8)
+            n_samples = n_samples // 8
         if args.model in MODEL_SUBSET_SIZES: # take less data for big models
             ds = ds.take(len(ds) // MODEL_SUBSET_SIZES[args.model])
             n_samples = n_samples // MODEL_SUBSET_SIZES[args.model]

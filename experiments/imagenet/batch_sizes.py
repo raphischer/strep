@@ -76,7 +76,7 @@ if __name__ == '__main__':
         assert batch_size.shape[0] == 1
         if mod in batch_sizes[arch]:
             print('Overriding batch size for', arch, mod)
-        batch_sizes[arch][mod] = batch_size['params.batch_size'].iloc[0]
+        batch_sizes[arch][mod] = int(batch_size['params.batch_size'].iloc[0])
 
     # write updated batch size file
     with open(BATCH_SIZE_FILE, 'w') as bf:
