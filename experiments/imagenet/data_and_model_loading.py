@@ -2,13 +2,12 @@ import argparse
 import inspect
 import os
 from itertools import product
-import platform
-import re
-import subprocess
 import sys
 
 import tensorflow as tf
 import tensorflow_datasets as tfds
+
+from util import get_processor_name
 
 KERAS_BUILTINS = [e for e in tf.keras.applications.__dict__.values() if inspect.ismodule(e) and hasattr(e, 'preprocess_input')]
 KERAS_MODELS = {n: e for mod in KERAS_BUILTINS for n, e in mod.__dict__.items() if callable(e) and n[0].isupper()}
@@ -58,7 +57,7 @@ MODEL_SUBSET_SIZES = {
     'EfficientNetB4': 3,
     'EfficientNetB3': 2,
     'EfficientNetV2L': 2,
-    'NASNetLarge': 2,
+    'NASNetLarge': 3,
     'DenseNet201': 3,
     'ConvNeXtBase': 5,
     'ConvNeXtSmall': 2,
@@ -86,17 +85,6 @@ def preprocess(image, label, prepr_func, input_size):
     i = tf.image.resize_with_crop_or_pad(i, input_size[0], input_size[1]) # necessary for processing batches
     i = prepr_func(i)
     return (i, label)
-
-def get_processor_name():
-    if platform.system() == "Windows":
-        return platform.processor()
-    elif platform.system() == "Linux":
-        command = "cat /proc/cpuinfo"
-        all_info = subprocess.check_output(command, shell=True).strip().decode('ascii')
-        for line in all_info.split("\n"):
-            if "model name" in line:
-                return re.sub( ".*model name.*:", "", line,1).strip()
-    return ""
 
 def load_data_and_model(data_path, model_name=None, variant='imagenet2012', batch_size=32):
     

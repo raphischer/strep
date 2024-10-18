@@ -11,14 +11,16 @@ from util import execute
 BATCH_SIZE_FILE = os.path.join(os.path.dirname(__file__), 'batch_sizes.json')
 
 arch_test_code = """
+import os
 import tensorflow as tf
 gpu_devices = tf.config.list_physical_devices('GPU')
 if gpu_devices: # override with GPU information
     print(tf.config.experimental.get_device_details(gpu_devices[0]).get('device_name', 'Unknown GPU'))
 else:
+    os.chdir("$DIR")
     from util import get_processor_name
     print(get_processor_name())
-"""
+""".replace('$DIR', os.path.dirname(__file__))
 
 def lookup_batch_size(model):
     try:
@@ -58,7 +60,7 @@ def find_ideal_batch_size(model, nogpu, data_dir):
 if __name__ == '__main__':
 
     parser = argparse.ArgumentParser(description="Inference benchmarking with keras models on ImageNet")
-    parser.add_argument("--experiment", default="imagenet_1_2024-10-16_13-14-21.csv")
+    parser.add_argument("--experiment", default="imagenet_1_2024-10-16_16-01-28.csv")
     args = parser.parse_args()
 
     # load already available batch sizes

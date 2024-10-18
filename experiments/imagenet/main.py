@@ -35,12 +35,13 @@ if __name__ == '__main__':
     for key, val in meta.items():
         mlflow.log_param(key, val)
     n_samples = 50000
+    model.evaluate(ds.take(1)) # init inference
 
     # take a snippet of the data, if only testing a subset (e.g., for energy profiling)
     if args.subset:
-        if args.nogpu: # on CPU, models are about 8x slower
-            ds = ds.take(len(ds) // 8)
-            n_samples = n_samples // 8
+        if args.nogpu: # on CPU, models are about 9x slower
+            ds = ds.take(len(ds) // 9)
+            n_samples = n_samples // 9
         if args.model in MODEL_SUBSET_SIZES: # take less data for big models
             ds = ds.take(len(ds) // MODEL_SUBSET_SIZES[args.model])
             n_samples = n_samples // MODEL_SUBSET_SIZES[args.model]
