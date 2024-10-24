@@ -1,6 +1,9 @@
 import argparse
 import os
+import sys
+import time
 
+import numpy as np
 import mlflow
 import pandas as pd
 from codecarbon import OfflineEmissionsTracker
@@ -13,12 +16,12 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="Inference benchmarking with keras models on ImageNet")
     # data and model input
     parser.add_argument("--experiment", default="/home/fischer/repos/mlprops/experiments/imagenet/")
-    parser.add_argument("--model", default="ConvNeXtBase")
+    parser.add_argument("--model", default="DenseNet121")
     parser.add_argument("--dataset", default=None)
     parser.add_argument("--datadir", default="/data/d1/fischer_diss/imagenet")
     parser.add_argument("--measure_power_secs", default=0.5)
     parser.add_argument("--nogpu", type=int, default=0)
-    parser.add_argument("--subset", default=0)
+    parser.add_argument("--seconds", type=int, default=0, help="number of seconds to profile model on a subset of the data -- 0 process complete")
     args = parser.parse_args()
     mlflow.log_dict(args.__dict__, 'config.json')
     
@@ -27,27 +30,33 @@ if __name__ == '__main__':
         os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
 
     # identify batch_size and load data
-    batch_size = lookup_batch_size(args.model) or find_ideal_batch_size(args.model, args.nogpu, args.datadir)
-    from data_and_model_loading import load_data_and_model, MODEL_SUBSET_SIZES # import inits tensorflow, so only import now
+    batch_size = 4 # lookup_batch_size(args.model) or find_ideal_batch_size(args.model, args.nogpu, args.datadir)
+    from data_and_model_loading import load_data_and_model # import inits tensorflow, so only import now
     model, ds, meta = load_data_and_model(args.datadir, args.model, batch_size=batch_size)
     meta['dataset'] = 'ImageNet (ILSVRC 2012)'
     meta['task'] = 'Inference'
     for key, val in meta.items():
         mlflow.log_param(key, val)
+    model.evaluate(ds.take(1)) # init inference (often has some temporal overhead)
     n_samples = 50000
-    model.evaluate(ds.take(1)) # init inference
 
-    # take a snippet of the data, if only testing a subset (e.g., for energy profiling)
-    if args.subset:
-        if args.nogpu: # on CPU, models are about 9x slower
-            ds = ds.take(len(ds) // 9)
-            n_samples = n_samples // 9
-        if args.model in MODEL_SUBSET_SIZES: # take less data for big models
-            ds = ds.take(len(ds) // MODEL_SUBSET_SIZES[args.model])
-            n_samples = n_samples // MODEL_SUBSET_SIZES[args.model]
-    mlflow.log_param('n_samples', n_samples)
+    # given limit for evaluation, so only take a subset of the data
+    if args.seconds:
+        t0 = time.time()
+        model.evaluate(ds.take(1)) # first test a single batch
+        t1 = time.time()
+        test_n = max(5, np.round(args.seconds / (4 * (t1-t0)))) # test min of five batches, but if very fast, 1/4 of the time limit
+        model.evaluate(ds.take(test_n + 1))
+        t_single_without_init = (time.time() - t1 - (t1 - t0)) / test_n # remove overhead and calc per sample time
+        n_batches = np.round(args.seconds / t_single_without_init)
+        n_samples = n_batches * meta['batch_size']
+        while n_batches > len(ds): # for very fast models, we maybe need to repeat the dataset several times
+            ds = ds.concatenate(ds)
+        ds = ds.take(n_batches)
+        print(f'Processing {n_batches} batches, per batch expected runtime {t_single_without_init:.4f}s, len ds {len(ds)}')
 
     # evaluate on validation
+    mlflow.log_param('n_samples', n_samples)
     tracker = OfflineEmissionsTracker(measure_power_secs=args.measure_power_secs, log_level='warning', country_iso_code="DEU")
     tracker.start()
     print_colored_block(f'STARTING ENERGY PROFILING FOR   {args.model.upper()}   on   {"CPU" if args.nogpu else "GPU"}')
@@ -55,7 +64,7 @@ if __name__ == '__main__':
     print_colored_block(f'STOPPING ENERGY PROFILING FOR   {args.model.upper()}   on   {"CPU" if args.nogpu else "GPU"}', ok=False)
     tracker.stop()
 
-    if not args.subset:
+    if not args.seconds:
         # evaluate robustness
         _, corr, _ = load_data_and_model('/data/d1/fischer_diss/imagenet', args.model, variant='corrupted_sample', batch_size=meta["batch_size"])
         corr_res = model.evaluate(corr, return_dict=True)
@@ -84,3 +93,4 @@ if __name__ == '__main__':
     # cleanup
     os.remove(emissions)
     print(eval_res)
+    sys.exit(0)
