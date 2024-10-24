@@ -253,7 +253,7 @@ def param_evaluate(roi_frames, params):
     return func
 
 # Example usage
-video_directory = r'D:/Videos/24 10 energy/imagenet_1_2024-10-17_10-13-03'
+video_directory = r'D:/Videos/24 10 energy/imagenet_120_2024-10-23_07-50-44' # imagenet_1_2024-10-17_10-13-03'
 output_folder = os.path.basename(video_directory)
 if not os.path.exists(output_folder):
     os.makedirs(output_folder)
@@ -269,23 +269,22 @@ ocr_func = lambda im: pytesseract.image_to_string(im, lang='lets', config='--psm
 
 # identify preprocessing hyperparameters
 # TODO handle with argparse and local config file
-DRF_TMAX = 5 * 60
-roi = (1662, 601, 1843, 665)
+DRF_TMAX = 5 * 60 # 5 minutes for finding good hyperparamaters
 bounds = [(1, 50), (1, 20), (3, 6), (1, 5)]
-# roi = select_roi(cv2.imread(os.path.join(output_folder, frame_names[0])))
-x1, y1, x2, y2 = roi
 frame_names = [fname for fname in sorted(os.listdir(output_folder)) if 'frame_' in fname]
+roi = select_roi(cv2.imread(os.path.join(output_folder, frame_names[0])))
+x1, y1, x2, y2 = roi
 roi_frames = [cv2.imread(os.path.join(output_folder, fname))[y1:y2, x1:x2] for fname in frame_names]
 # DRF_BEST_X = np.array([21, 10, 3, 1]) # block_size, c_value, kernel_size, erosion_iterations
 DRF_BEST_X, DRF_BEST_F, DRF_T0 = None, np.inf, time.time()
 warnings.filterwarnings("ignore")
-try:
-    dual_annealing(lambda x: param_evaluate(roi_frames, x), bounds=bounds, no_local_search=True) # minimizer_kwargs={'method': 'Nelder-Mead', 'bounds': bounds, 'options': {'maxfun': 2}})
-except Exception:
-    print('stopped due to time limit')
+# try:
+#     dual_annealing(lambda x: param_evaluate(roi_frames, x), bounds=bounds, no_local_search=True) # minimizer_kwargs={'method': 'Nelder-Mead', 'bounds': bounds, 'options': {'maxfun': 2}})
+# except Exception:
+#     print('stopped due to time limit')
 # or control interactively
-# test_frames = [cv2.imread(os.path.join(output_folder, fr))[y1:y2, x1:x2] for fr in np.random.choice(frame_names, size=7)]
-# preprocessor = interactive_preprocessing_with_ocr(test_frames, ocr_func)
+test_frames = [cv2.imread(os.path.join(output_folder, fr))[y1:y2, x1:x2] for fr in np.random.choice(frame_names, size=7)]
+DRF_BEST_X = interactive_preprocessing_with_ocr(test_frames, ocr_func)
 
 # run OCR for all frames
 ocr_out = {}
