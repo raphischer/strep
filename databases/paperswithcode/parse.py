@@ -31,9 +31,9 @@ def convert_to_float(value):
         v = v.strip()
         if value.lower() in ['_', '-', '--', '', '.', 'n/a', 'none', '/', 'na', 'n.a.', 'unknown']:
             return np.nan
-        if value.lower() in ['yes', '✓', 'true']:
+        if value.lower() in ['yes', '✓', 'true', '√']:
             return True
-        if value.lower() in ['no', '✘', 'false']:
+        if value.lower() in ['no', '✘', 'false', '×']:
             return False
         v = v.replace('..', '.') # typos
         v = v.replace(' ', '') # remove redundant white space
@@ -201,7 +201,8 @@ if __name__ == '__main__':
         print(f':::::::::::::::: FINISH DB SHAPE:', sparse.shape)
         sparse.to_pickle(FILTERED)
 
-    print(1)
+    print(pd.__version__)
+    print('done')
     
     # # write filter stats
     # with open(FILTER_STATS, 'w') as jf:
