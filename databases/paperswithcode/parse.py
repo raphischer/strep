@@ -11,9 +11,6 @@ from tqdm import tqdm
 import pandas as pd
 
 
-def uniform_metric(key):
-    return key.lower().strip().replace('-', '_').replace(' ', '_')
-
 FORMATTER = {
     r'([\d\.]+)\,(\d*)': lambda v: v.replace('.', '').replace(',', '.'), # 1.000.000,15 => 1000000.15
     r'([\d\s]+),(\d*)': lambda v: v.replace(' ', '').replace(',', '.'), # 1 000 000,15 => 1000000.15
@@ -24,6 +21,7 @@ FORMATTER = {
     r'([\d]+)[KkMBG]': lambda v: v.replace('K', '000').replace('k', '000').replace('M', '000000').replace('B', '000000000').replace('G', '000000000'), # 3214M => 3214000000
     r'([\d\.]+)m+': lambda v: v.replace('m', '') # remove length unit, e.g. 4.13mm
 }
+
 
 def convert_to_float(value):
     v = value
@@ -202,33 +200,44 @@ if __name__ == '__main__':
         print(f':::::::::::::::: FINISH DB SHAPE:', sparse.shape)
         sparse.to_pickle(FILTERED)
 
+    # create properties json by checking the metrics in the DF, and whether they want to by minimized or maximized
+    res_metrics = ['time', 'param', 'size', 'flops']
+    client = PapersWithCodeClient()
+    group_res = {'Resources': [], 'Performance': []}
+    properties, possible_errors = {}, {}
+    for task, task_data in tqdm(sparse.groupby('task')):
+        eval_list = client.task_evaluation_list(task)
+        metrics_to_check = set(task_data.dropna(how='all', axis=1).select_dtypes('number').columns.to_list())
+        for eval in eval_list.results:
+            if len(metrics_to_check) == 0:
+                break
+            metrics = client.evaluation_metric_list(eval.id)
+            for metr in metrics.results:
+                if metr.name in metrics_to_check:
+                    unified = metr.name.lower().replace(' = ', '').replace(' ', '').replace('-', '').replace('_', '').replace('(', '').replace(')', '').replace('%', '').replace(',', '')
+                    group = 'Resources' if any([key in unified for key in res_metrics]) else 'Performance'
+                    group_res[group].append(metr.name)
+                    if metr.name in properties:
+                        if metr.is_loss != properties[metr.name]['maximize']:
+                            if metr.name not in possible_errors:
+                                possible_errors[metr.name] = []
+                            possible_errors[metr.name].append(metr.is_loss)
+                    else:
+                        properties[metr.name] =  {
+                            "name": metr.name, "shortname": unified[:6], "unit": "number",
+                            "group": group, "weight": 1, "maximize": not metr.is_loss,
+                        }
+                    metrics_to_check.remove(metr.name)
+                    if len(metrics_to_check) == 0:
+                        break
+    print('RESOURCE METRICS:\n', set(group_res['Resources']), '\n\n PERFORMANCE METRICS:\n', set(group_res['Performance']), '\n\nPOSSIBLE_ERRORS ACROSS TASKS\n', possible_errors.keys())
+    for metr, is_loss in possible_errors.items():
+        # take the is_loss information that occurs more frequently
+        properties[metr]['maximize'] = bool(np.median(is_loss))
+    with open(PROPS, 'w') as jf:
+        json.dump(properties, jf)
+    
     print('done', pd.__version__)
-    
-    # # write filter stats
-    # with open(FILTER_STATS, 'w') as jf:
-    #     json.dump(shapes, jf)
-
-    # # create properties json
-    # res_metrics = ['time', 'param', 'size', 'flops']
-    # properties = {}
-    # for task in tqdm(pd.unique(merged['task'])):
-    #     eval_list = client.task_evaluation_list(task)
-    #     for eval in eval_list.results:
-    #         metrics = client.evaluation_metric_list(eval.id)
-    #         for metr in metrics.results:
-    #             metr_name = uniform_metric(metr.name)
-    #             group = 'Resources' if any([key in metr_name for key in res_metrics]) else 'Performance'
-    #             properties[metr_name] =  {
-    #                 "name": metr.description if len(metr.description) > 0 else metr.name,
-    #                 "shortname": metr.name,
-    #                 "unit": "number",
-    #                 "group": group,
-    #                 "weight": 1,
-    #                 "maximize": not metr.is_loss,
-    #             }
-    # with open(PROPS, 'w') as jf:
-    #     json.dump(properties, jf)
-    
     # for gr, data in merged.groupby(['dataset']):
     #     data = data.dropna(how='all', axis=1)
     #     n_tasks, n_papers, m_methods = pd.unique(data['task']).size, pd.unique(data['paper']).size, pd.unique(data['methodology']).size
