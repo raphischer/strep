@@ -197,12 +197,12 @@ if __name__ == '__main__':
         sparse = sparse.loc[keep_rows,keep_cols].reset_index(drop=True)
         for col in keep_cols: # drop all non-float values
             if col not in meta_cols:
-                sparse.loc[:,col] = pd.to_numeric(sparse[col], errors='coerce').astype(pd.SparseDtype("str", np.nan))
+                numeric = pd.to_numeric(sparse[col], errors='coerce')
+                sparse.loc[:,col] = numeric.astype(pd.SparseDtype(numeric.dtype, np.nan))
         print(f':::::::::::::::: FINISH DB SHAPE:', sparse.shape)
         sparse.to_pickle(FILTERED)
 
-    print(pd.__version__)
-    print('done')
+    print('done', pd.__version__)
     
     # # write filter stats
     # with open(FILTER_STATS, 'w') as jf:
