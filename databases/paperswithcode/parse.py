@@ -140,9 +140,11 @@ if __name__ == '__main__':
         #         ren_cols.append( sparse_metrics[unified] )
         # sparse_metrics = pd.concat(ren_cols, axis=1)
         
-        # process values wherever possible
+        # process values to positive floats wherever possible
         sparse_metrics_stacked = sparse.drop(meta_cols, axis=1).stack()
         sparse_metrics_proc = sparse_metrics_stacked.apply(convert_to_float)
+        sparse_metrics_proc = sparse_metrics_proc.map(lambda v: np.nan if isinstance(v, float) and v < 0 else v)
+        # check for amount of successful conversions
         equal = sparse_metrics_stacked[sparse_metrics_stacked == sparse_metrics_proc]
         unequal = sparse_metrics_stacked[sparse_metrics_stacked != sparse_metrics_proc]
         print(f'Could not convert {equal.size / sparse_metrics_proc.size * 100:.2f}% of PWC metric values to float ({pd.unique(equal).size} / {pd.unique(unequal).size} in total).\nThe following metric values could not be transformed:', pd.unique(equal).to_dense())
@@ -166,10 +168,9 @@ if __name__ == '__main__':
 
         # check number of evaluated metrics for every DS X TASK combo, and remove all that do not fit the filter
         assert 'environment' not in sparse.columns
-        MIN_EVALS, MIN_PROPS, MIN_POP = 10, 3, 0.5
-        keep_rows, keep_cols = [], [pd.Series(meta_cols)]
-        # filter for top 100 most densely populated evaluations
-        for _, data in tqdm(sparse.groupby(['dataset', 'task'])):
+        MIN_EVALS, MIN_PROPS, MIN_POP, TOPK = 10, 3, 0.5, 100
+        eval_data = {}
+        for eval_meta, data in tqdm(sparse.groupby(['dataset', 'task'])):
             # delete if there only very few evals
             try:
                 assert data.shape[0] >= MIN_EVALS
@@ -188,13 +189,19 @@ if __name__ == '__main__':
                         continue
             # otherwise, keep these rows and well-populated metrics
             if len(metrics) >= MIN_PROPS:
-                keep_rows.append( data[metrics].dropna(how='all').index.to_series() )
-                keep_cols.append( pd.Series(metrics))
+                eval_size, eval_rows, eval_cols = data[metrics].stack().size, data[metrics].dropna(how='all').index.to_series(), pd.Series(metrics)
+                eval_data[eval_meta] = [eval_size, eval_rows, eval_cols]
 
-        # finalize data to keep
+        # filter for top 100 most densely populated evaluations
+        eval_meta, eval_data = zip(*eval_data.items())
+        eval_sizes, eval_rows, eval_cols = zip(*eval_data)
+        top_evals = np.argsort(eval_sizes)[-TOPK:]
+        keep_rows, keep_cols = [eval_rows[i] for i in top_evals], [eval_cols[i] for i in top_evals]
+        keep_cols = [pd.Series(meta_cols)] + keep_cols
         keep_rows, keep_cols = pd.concat(keep_rows), pd.concat(keep_cols).drop_duplicates()
         sparse = sparse.loc[keep_rows,keep_cols].reset_index(drop=True)
-        for col in keep_cols: # drop all non-float values
+        # drop all non-float values
+        for col in keep_cols:
             if col not in meta_cols:
                 numeric = pd.to_numeric(sparse[col], errors='coerce')
                 sparse.loc[:,col] = numeric.astype(pd.SparseDtype(numeric.dtype, np.nan))
