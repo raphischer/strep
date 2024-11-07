@@ -181,7 +181,7 @@ if __name__ == '__main__':
             for col in data.columns:
                 if col not in meta_cols:
                     try:
-                        num_vals = pd.to_numeric(sparse[col], errors='coerce').dropna()
+                        num_vals = pd.to_numeric(data[col], errors='coerce').dropna()
                         assert num_vals.size >= data.shape[0] * MIN_POP
                         metrics.append(col)
                     except Exception:
