@@ -166,8 +166,9 @@ if __name__ == '__main__':
 
         # check number of evaluated metrics for every DS X TASK combo, and remove all that do not fit the filter
         assert 'environment' not in sparse.columns
-        MIN_EVALS, MIN_PROPS, MIN_POP = 10, 2, 0.5
+        MIN_EVALS, MIN_PROPS, MIN_POP = 10, 3, 0.5
         keep_rows, keep_cols = [], [pd.Series(meta_cols)]
+        # filter for top 100 most densely populated evaluations
         for _, data in tqdm(sparse.groupby(['dataset', 'task'])):
             # delete if there only very few evals
             try:
