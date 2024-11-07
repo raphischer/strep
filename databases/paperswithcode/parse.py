@@ -214,30 +214,35 @@ if __name__ == '__main__':
     group_res = {'Resources': [], 'Performance': []}
     properties, possible_errors = {}, {}
     for task, task_data in tqdm(sparse.groupby('task')):
-        eval_list = client.task_evaluation_list(task)
-        metrics_to_check = set(task_data.dropna(how='all', axis=1).select_dtypes('number').columns.to_list())
-        for eval in eval_list.results:
-            if len(metrics_to_check) == 0:
-                break
-            metrics = client.evaluation_metric_list(eval.id)
-            for metr in metrics.results:
-                if metr.name in metrics_to_check:
-                    unified = metr.name.lower().replace(' = ', '').replace(' ', '').replace('-', '').replace('_', '').replace('(', '').replace(')', '').replace('%', '').replace(',', '')
-                    group = 'Resources' if any([key in unified for key in res_metrics]) else 'Performance'
-                    group_res[group].append(metr.name)
-                    if metr.name in properties:
-                        if metr.is_loss != properties[metr.name]['maximize']:
-                            if metr.name not in possible_errors:
-                                possible_errors[metr.name] = []
-                            possible_errors[metr.name].append(metr.is_loss)
-                    else:
-                        properties[metr.name] =  {
-                            "name": metr.name, "shortname": unified[:6], "unit": "number",
-                            "group": group, "weight": 1, "maximize": not metr.is_loss,
-                        }
-                    metrics_to_check.remove(metr.name)
-                    if len(metrics_to_check) == 0:
-                        break
+        page, metrics_to_check = 1, set(task_data.dropna(how='all', axis=1).select_dtypes('number').columns.to_list())
+        while len(metrics_to_check) > 0:
+            eval_list = client.task_evaluation_list(task, page=page)
+            for eval in eval_list.results:
+                if len(metrics_to_check) == 0:
+                    break
+                metrics = client.evaluation_metric_list(eval.id)
+                for metr in metrics.results:
+                    if metr.name in metrics_to_check:
+                        unified = metr.name.lower().replace(' = ', '').replace(' ', '').replace('-', '').replace('_', '').replace('(', '').replace(')', '').replace('%', '').replace(',', '')
+                        group = 'Resources' if any([key in unified for key in res_metrics]) else 'Performance'
+                        group_res[group].append(metr.name)
+                        if metr.name in properties:
+                            if metr.is_loss != properties[metr.name]['maximize']:
+                                if metr.name not in possible_errors:
+                                    possible_errors[metr.name] = []
+                                possible_errors[metr.name].append(metr.is_loss)
+                        else:
+                            properties[metr.name] =  {
+                                "name": metr.name, "shortname": unified[:6], "unit": "number",
+                                "group": group, "weight": 1, "maximize": not metr.is_loss,
+                            }
+                        metrics_to_check.remove(metr.name)
+                        if len(metrics_to_check) == 0:
+                            break
+            if eval_list.next_page is not None:
+                page += 1
+        if len(metrics_to_check) > 0:
+            raise RuntimeError('No properties found for', metrics_to_check)
     print('RESOURCE METRICS:\n', set(group_res['Resources']), '\n\n PERFORMANCE METRICS:\n', set(group_res['Performance']), '\n\nPOSSIBLE_ERRORS ACROSS TASKS\n', possible_errors.keys())
     for metr, is_loss in possible_errors.items():
         # take the is_loss information that occurs more frequently
