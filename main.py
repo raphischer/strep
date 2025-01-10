@@ -1,23 +1,34 @@
-import os
+import argparse
 
 from strep.index_scale import load_database, scale_and_rate
-from strep.util import load_meta
 from strep.elex.app import Visualization
 
 DATABASES = {
-    # 'Papers With Code': 'databases/paperswithcode/database.pkl',
     'ImageNetEff': 'databases/imagenet_classification/database.pkl',
     'XPCR-Forecasting': 'databases/xpcr/database.pkl',
     'MetaQuRe': 'databases/metaqure/database.pkl',
-    'RobustBench': 'databases/robustbench/database.pkl'
+    'RobustBench': 'databases/robustbench/database.pkl',
+    'Papers With Code': 'databases/paperswithcode/database.pkl'
 }
 
-databases = {}
-for name, fname in DATABASES.items():
-    print('LOADING', fname)
-    database, meta = load_database(fname)
-    databases[name] = scale_and_rate(database, meta)
+if __name__ == '__main__':    
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--custom", default=None)
+    args = parser.parse_args()
+    databases = {}
     
-app = Visualization(databases)
-server = app.server
-app.run_server(debug=False, host='0.0.0.0', port=10000)
+    if args.custom: # load custom database and meta information (if available)
+        database, meta = load_database(args.custom)
+        # index-scale and rate database
+        databases = scale_and_rate(database, meta)
+
+    else: # load pre-defined databases
+        for name, fname in DATABASES.items():
+            print('LOADING', fname)
+            database, meta = load_database(fname)
+            databases[name] = scale_and_rate(database, meta)
+
+    # start the interactive exploration tool
+    app = Visualization(databases)
+    app.run_server()

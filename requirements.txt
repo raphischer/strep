@@ -1,4 +1,4 @@
-pandas
+pandas==2.2.3
 scipy
 dash
 plotly
@@ -8,3 +8,4 @@ PyMuPDF
 qrcode
 pint
 gunicorn
+tqdm

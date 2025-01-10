@@ -3,6 +3,6 @@ dependencies:
   - python=3.10
   - pip
   - pip:
-    - pandas
+    - pandas==2.2.3
     - tqdm
     - paperswithcode-client

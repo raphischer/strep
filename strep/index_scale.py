@@ -1,15 +1,15 @@
 import pandas as pd
 import numpy as np
+from tqdm import tqdm
 
 from strep.util import weighted_median, load_meta
-
 
 def _identify_property_meta(input, given_meta=None):
     properties_meta = {}
     if given_meta is not None and isinstance(given_meta, dict) and len(given_meta) > 0: # assess columns defined in meta
         cols_to_rate = [key for key in given_meta if (key in input.columns) and (input[key].dropna(how='all').size > 0)]
     else: # assess all numeric columns
-        cols_to_rate = input.select_dtypes('number').dropna(how='all')
+        cols_to_rate = input.dropna(how='all', axis=1).select_dtypes('number').columns.to_list()
     if len(cols_to_rate) < 1:
         raise RuntimeError('No rateable properties found!')
     for col in cols_to_rate:
@@ -24,7 +24,6 @@ def _identify_property_meta(input, given_meta=None):
 def _value_to_index(value, ref, higher_better=True):
     res = value / ref if higher_better else ref / value
     res[np.isinf(value)] = 1 if higher_better else np.nan
-    res[np.isnan(value)] = np.nan
     return res
 
 def _index_to_value(index, ref, higher_better=True):
@@ -38,6 +37,7 @@ def _index_scale_reference(input, properties_meta, reference):
 def _index_scale_best(input, properties_meta, ___unused=None):
     results = {}
     for prop, meta in properties_meta.items():
+        # values = input[prop].astype(input[prop].dtype.subtype) if isinstance(input[prop].dtype, pd.SparseDtype) else input[prop]
         assert not np.any(input[prop] < 0), f"Found negative values in {prop}, please scale to only positive values!"
         if 'maximize' in meta and meta['maximize']:
             results[prop] = _value_to_index(input[prop], input[prop].max())
@@ -92,7 +92,8 @@ def _prepare_for_scale(input):
 
 def _real_boundaries_and_defaults(input, boundaries, meta, reference=None):
     input, split_by = _prepare_for_scale(input)
-    split_by.remove('environment')
+    if 'environment' in split_by:
+        split_by.remove('environment')
     real_bounds = {}
     defaults = { 'x': {}, 'y': {} }
     if len(split_by) == 0:
@@ -166,17 +167,6 @@ def _scaled_cols(input):
 
 def load_database(fname):
     database = pd.read_pickle(fname)
-    if hasattr(database, 'sparse'): # convert sparse databases to regular ones
-        old_shape = database.shape
-        database = database.sparse.to_dense()
-        assert old_shape == database.shape
-        for col in database.columns:
-            try:
-                fl = database[col].astype(float)
-                database[col] = fl
-            except Exception as e:
-                pass
-        database['environment'] = 'unknown'
     meta = load_meta(fname)
     return database, meta
 
@@ -196,11 +186,11 @@ def scale(input, meta=None, reference=None, mode='index', verbose=True):
     if len(split_by) > 0:
         # process each individual combination of environment, task and dataset
         if mode != 'index' and 'environment' in split_by:
-            split_by.remove('environment') # environment only considered for index scaling
+            split_by.remove('environment') # environment only need to be considered for index scaling
         if verbose:
             print(f'Performing {mode} scaling for every separate combination of {str(split_by)}')
         sub_results = {}
-        for sub_config, sub_input in input.groupby(split_by):
+        for sub_config, sub_input in tqdm(input.groupby(split_by), f'calculating {mode}'):
             sub_ref = reference
             if reference is not None and mode != 'index':
                 try:
@@ -237,6 +227,8 @@ def scale(input, meta=None, reference=None, mode='index', verbose=True):
     return final, all_props
 
 def scale_and_rate(input, meta, reference=None, boundaries=None, compound_mode='mean', verbose=False):
+    if 'environment' not in input.columns:
+        input['environment'] = 'unknown'
     if 'compound_rating' in input.columns: # already processed db as input, so go back to original values
         input = input.drop(columns=_scaled_cols(input))
     scaled, meta_ret = scale(input, meta, reference=reference, verbose=verbose)

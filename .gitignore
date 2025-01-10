@@ -135,3 +135,4 @@ mlruns/
 
 # paper results
 .paper_results/*
+.databases/paperswithcode/evaluations/*
