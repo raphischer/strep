@@ -1,11 +1,16 @@
+# general functionality
 pandas==2.2.3
 scipy
+pint
+tqdm
+
+# visualization
 dash
 plotly
 dash-bootstrap-components
 reportlab
 PyMuPDF
 qrcode
-pint
+
+# render
 gunicorn
-tqdm
