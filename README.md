@@ -11,7 +11,7 @@ Instead of exploring the pre-assembled databases, you can also investigate your 
 1. Prepare your database as a `pandas` DataFrame (each row lists one model performance result on some data set, with different measures as columns). 
 2. Store it in a directory, optionally add some `JSON` meta information (check our databases folder for examples and follow these naming conventions).
 3. Clone the repo and install necessary libraries via `pip install -r requirements.txt` (tested on Python 3.10).
-4. Either run `python minimum.py --fname path/to/database.pkl`, or use the following code:
+4. Either run `python main.py --custom path/to/database.pkl`, or use the following code snippet:
 ```python
 from strep.index_scale import load_database, scale_and_rate
 from strep.elex.app import Visualization
@@ -27,6 +27,7 @@ app.run_server()
 ```
 
 ## News and Release History
+- **10 January 2025** - Minor fixes and re-added the report extract from [Papers with Code](https://paperswithcode.com/) (state: Dec 29th 2024)! 
 - **2 October 2024** - Greatly improved index scaling (x15 speed), added / updated result databases from [MetaQuRe](https://github.com/raphischer/metaqure) and [AutoXPCR](https://github.com/raphischer/xpcr) (Forecasting), and updated README. For the time being, the `Papers With Code` results are not available (incompatible with the new index scaling, have to be regenerated)
 - **11 September 2024** - Presented our paper and repository at ECML-PKDD '24
 - **16 August 2024** - Merged a lot of functionality that was developed for other works
@@ -42,13 +43,37 @@ We would love to showcase other resource-aware results here. If you send us your
 - [XPCR / Forecasting (Fischer et al. 2024)](https://github.com/raphischer/xpcr): Efficiency information of DNNs for time series forecasting tasks
 - [MetaQuRe (Fischer et al. 2024)](https://github.com/raphischer/metaqure): Resource and quality information of ML algorithm performance on popular tabular data sets
 - [RobustBench (Croce et al. 2020)](https://robustbench.github.io/): Robustness and quality information of image classification models trained with adversarial training, as taken from the RobustBench database
-- [Papers With Code](https://paperswithcode.com/): Currently not available, will be re-added soon!
+- [Papers With Code](https://paperswithcode.com/): The most populated evaluations and benchmarks from this online repository - the code for re-assembling this database can be found in the respective [folder](./databases/paperswithcode)
+
+## Citing
+
+If you appreciate our work and code, please cite [our paper](https://doi.org/10.1007/s10618-024-01020-3) as given by Springer:
+
+Fischer, R., Liebig, T. & Morik, K. Towards more sustainable and trustworthy reporting in machine learning. Data Min Knowl Disc 38, 1909–1928 (2024). https://doi.org/10.1007/s10618-024-01020-3
+
+or using the bibkey below:
+
+```
+@article{fischer_towards_2024,
+	title = {Towards more sustainable and trustworthy reporting in machine learning},
+	volume = {38},
+	issn = {1573-756X},
+	url = {https://doi.org/10.1007/s10618-024-01020-3},
+	doi = {10.1007/s10618-024-01020-3},
+	number = {4},
+	journal = {Data Mining and Knowledge Discovery},
+	author = {Fischer, Raphael and Liebig, Thomas and Morik, Katharina},
+	month = jul,
+	year = {2024},
+	pages = {1909--1928},
+}
+```
 
 ## Repository Structure
 The `databases` directory contains different gathered databases of ML reports, including scripts to assemble some of them.
 `strep` contains code that processes these databases, calculates index values and compound scores for measurements, and visualizes them.
-All `paper_results` can be found in the respective folder, and can be re-generated with the corresponding script.
+All `paper_results` of the original [STREP](https://doi.org/10.1007/s10618-024-01020-3) paper can be found in the respective folder.
 `parse_logs.py` allows to generate a database file from multiple log directories (documentation to follow).
 
 ## Terms of Use
-Copyright (c) 2024 Raphael Fischer
+Copyright (c) 2025 Raphael Fischer
