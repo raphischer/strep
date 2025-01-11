@@ -134,5 +134,5 @@ dmypy.json
 mlruns/
 
 # paper results
-.paper_results/*
-.databases/paperswithcode/evaluations/*
+paper_results/*
+databases/paperswithcode/evaluations/*
