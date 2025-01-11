@@ -99,7 +99,7 @@ if __name__ == "__main__":
     books = query_papers(keywords, type='Parts_in_Books_or_Collections')
     all_results = journals + conferences + books
     data = parse_results(all_results)
-    data.to_csv(os.path.join(os.path.dirname(__file__), "parse_dblp_data.csv"), index=False, sep=';')
+    data.to_csv(os.path.join(os.path.dirname(__file__), "ch2_parse_dblp_data.csv"), index=False, sep=';')
     assert ';' not in data.to_string()
 
     # dblp_counts, dblp_titles, removed_titles = parse_results(all_results, keywords, logic='dblp')
