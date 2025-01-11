@@ -15,6 +15,16 @@ from scipy.stats.stats import pearsonr
 from strep.monitoring import log_system_info
 
 
+def find_sub_db(database, dataset=None, task=None, environment=None):
+    if dataset is not None:
+        database = database[database['dataset'] == dataset]
+    if task is not None:
+        database = database[database['task'] == task]
+    if environment is not None:
+        database = database[database['environment'] == environment]
+    return drop_na_properties(database) # drop columns with full NA
+
+
 def identify_all_correlations(db, all_metrics, scale='index'):
     corr = {}
     for ds_task, data in db.groupby(['dataset', 'task']):

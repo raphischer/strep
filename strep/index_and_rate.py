@@ -5,8 +5,7 @@ import numpy as np
 import pandas as pd
 
 from strep.unit_reformatting import CustomUnitReformater
-from strep.load_experiment_logs import find_sub_db
-from strep.util import lookup_meta, drop_na_properties, prop_dict_to_val
+from strep.util import lookup_meta, drop_na_properties, prop_dict_to_val, find_sub_db
 
 
 def filter_properties(data, groups, inverse=False):

@@ -13,8 +13,7 @@ from strep.elex.graphs import assemble_scatter_data, create_scatter_graph, creat
 from strep.labels.label_generation import PropertyLabel
 from strep.index_scale import scale_and_rate
 from strep.unit_reformatting import CustomUnitReformater
-from strep.load_experiment_logs import find_sub_db
-from strep.util import lookup_meta, PatchedJSONEncoder, fill_meta
+from strep.util import lookup_meta, PatchedJSONEncoder, fill_meta, find_sub_db
 
 
 class Visualization(dash.Dash):
@@ -124,7 +123,7 @@ class Visualization(dash.Dash):
         scale = scale_switch or 'index'
         db, xaxis, yaxis = self.state['sub_database'], self.state['xaxis'], self.state['yaxis']
         bounds = self.boundaries[self.state['task_ds']] if scale == 'index' else self.boundaries_real[self.state['task_ds']]
-        self.plot_data, axis_names = assemble_scatter_data(env_names, db, scale, xaxis, yaxis, self.meta)
+        self.plot_data, axis_names = assemble_scatter_data(env_names, db, scale, xaxis, yaxis, self.meta, self.unit_fmt)
         scatter = create_scatter_graph(self.plot_data, axis_names, dark_mode=self.dark_mode)
         background_bounds = [bounds[xaxis].tolist(), bounds[yaxis].tolist()]
         add_rating_background(scatter, background_bounds, self.state['compound_mode'], dark_mode=self.dark_mode)

@@ -8,6 +8,18 @@ from tqdm import tqdm
 import pandas as pd
 
 
+KEYWORDS = {
+    "explain": "Explainability",
+    "xai": "Explainability",
+    "ethic": "Ethics",
+    "trustworth" : "Trustworthiness",
+    "sustain": "Sustainability",
+    "fair": "Fairness",
+    "responsib": "Responsibility",
+    "account": "Accountability"
+}
+
+
 def generate_query(keywords, batch, batch_size, type):
     base_url = "https://dblp.org/search/publ/api"
     params = {
@@ -84,19 +96,9 @@ def parse_results(feeds):
 
 if __name__ == "__main__":
 
-    keywords = {
-        "explain": "Explainability",
-        "xai": "Explainability",
-        "ethic": "Ethics",
-        "trustworth" : "Trustworthiness",
-        "responsib": "Responsibility",
-        "account": "Accountability",
-        "sustain": "Sustainability",
-    }
-
-    journals = query_papers(keywords, type='Journal_Articles')
-    conferences = query_papers(keywords, type='Conference_and_Workshop_Papers')
-    books = query_papers(keywords, type='Parts_in_Books_or_Collections')
+    journals = query_papers(KEYWORDS, type='Journal_Articles')
+    conferences = query_papers(KEYWORDS, type='Conference_and_Workshop_Papers')
+    books = query_papers(KEYWORDS, type='Parts_in_Books_or_Collections')
     all_results = journals + conferences + books
     data = parse_results(all_results)
     data.to_csv(os.path.join(os.path.dirname(__file__), "ch2_parse_dblp_data.csv"), index=False, sep=';')

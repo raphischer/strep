@@ -6,14 +6,13 @@ import plotly.graph_objects as go
 from plotly.express.colors import sample_colorscale
 from PIL import Image
 
-from strep.util import lookup_meta
-from strep.load_experiment_logs import find_sub_db
+from strep.util import lookup_meta, find_sub_db
 from strep.elex.util import RATING_COLORS, ENV_SYMBOLS, PATTERNS, RATING_COLOR_SCALE
 
 GRAD = Image.open(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'assets', 'grad.png'))
 
 
-def assemble_scatter_data(env_names, db, scale_switch, xaxis, yaxis, meta):
+def assemble_scatter_data(env_names, db, scale_switch, xaxis, yaxis, meta, unit_fmt):
     plot_data, substr = {}, '_index' if scale_switch == 'index' else ''
     for env in env_names:
         sub_db = find_sub_db(db, environment=env)
@@ -28,6 +27,10 @@ def assemble_scatter_data(env_names, db, scale_switch, xaxis, yaxis, meta):
     axis_names = [lookup_meta(meta, ax, subdict='properties') for ax in [xaxis, yaxis]]
     if scale_switch == 'index':
         axis_names = [name.split('[')[0].strip() + ' Index' if 'Index' not in name else name for name in axis_names]
+    else:
+        for idx, ax in enumerate([xaxis, yaxis]):
+            unit = unit_fmt.reformat_value(1, lookup_meta(meta, ax, key='unit', subdict='properties'))[1]
+            axis_names[idx] = f'{axis_names[idx]} {unit}'
     return plot_data, axis_names
 
 

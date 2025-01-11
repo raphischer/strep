@@ -142,13 +142,3 @@ def assemble_database(logdir_root=None, logdir_merged=None, output_tar_dir=None,
     database = aggregate_logs(logs, property_extractors_module)
 
     return database
-
-
-def find_sub_db(database, dataset=None, task=None, environment=None):
-    if dataset is not None:
-        database = database[database['dataset'] == dataset]
-    if task is not None:
-        database = database[database['task'] == task]
-    if environment is not None:
-        database = database[database['environment'] == environment]
-    return drop_na_properties(database) # drop columns with full NA

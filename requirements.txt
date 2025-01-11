@@ -11,6 +11,7 @@ dash-bootstrap-components
 reportlab
 PyMuPDF
 qrcode
+kaleido
 
 # render
 gunicorn
