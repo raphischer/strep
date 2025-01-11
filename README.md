@@ -70,10 +70,10 @@ or using the bibkey below:
 ```
 
 ## Repository Structure
-The `databases` directory contains different gathered databases of ML reports, including scripts to assemble some of them.
-`strep` contains code that processes these databases, calculates index values and compound scores for measurements, and visualizes them.
-All `figures` of the original [STREP](https://doi.org/10.1007/s10618-024-01020-3) paper can be found in the respective folder, and are generated with `generate_figures.py`.
-`parse_logs.py` allows to generate a database file from multiple log directories (documentation to follow).
+- `databases` contain different gathered evaluation databases of ML reports, including scripts to assemble some of them.
+- `strep` contains code that processes the databases, calculates index values and compound scores, and visualizes them.
+- `materials` contains some additional data, scripts, and figures used in papers and my doctorate thesis.
+- The top level scripts are used to generate figures, deploy the software on [render](https://dashboard.render.com/), and a main script for running it locally.
 
 ## Terms of Use
 Copyright (c) 2025 Raphael Fischer
