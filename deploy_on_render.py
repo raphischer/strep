@@ -1,6 +1,4 @@
-from strep.index_scale import load_database, scale_and_rate
-from strep.elex.app import Visualization
-from main import DATABASES
+from main import DATABASES, load_database, scale_and_rate, Visualization
 
 databases = {}
 for name, fname in DATABASES.items():
