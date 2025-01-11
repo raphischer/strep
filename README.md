@@ -27,7 +27,7 @@ app.run_server()
 ```
 
 ## News and Release History
-- **10 January 2025** - Minor improvements and re-added the report extract from [Papers with Code](https://paperswithcode.com/) (state from Dec 29th 2024)! 
+- **10 January 2025** - Minor fixes and re-added the report extract from [Papers with Code](https://paperswithcode.com/) (state: Dec 29th 2024)! 
 - **2 October 2024** - Greatly improved index scaling (x15 speed), added / updated result databases from [MetaQuRe](https://github.com/raphischer/metaqure) and [AutoXPCR](https://github.com/raphischer/xpcr) (Forecasting), and updated README. For the time being, the `Papers With Code` results are not available (incompatible with the new index scaling, have to be regenerated)
 - **11 September 2024** - Presented our paper and repository at ECML-PKDD '24
 - **16 August 2024** - Merged a lot of functionality that was developed for other works
