@@ -59,7 +59,7 @@ def find_ideal_batch_size(model, nogpu, data_dir):
 
 if __name__ == '__main__':
 
-    parser = argparse.ArgumentParser(description="Inference benchmarking with keras models on ImageNet")
+    parser = argparse.ArgumentParser(description="Extend the batch size file with the ideal batch sizes obtained for the given experiment summary file.")
     parser.add_argument("--experiment", default="imagenet_1_2024-10-16_16-01-28.csv")
     args = parser.parse_args()
 

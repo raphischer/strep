@@ -48,24 +48,6 @@ CORRUPTIONS = [
 ALL_CORRUPTIONS = [f'imagenet2012_corrupted/{corr}{level}' for corr, level in product(CORRUPTIONS, [1, 2, 3, 4, 5])]
 FIRST_CORR = ALL_CORRUPTIONS[:10]
 
-MODEL_SUBSET_SIZES = {
-    'ResNet152V2': 2,
-    'InceptionResNetV2': 4,
-    'EfficientNetB7': 8,
-    'EfficientNetB6': 7,
-    'EfficientNetB5': 6,
-    'EfficientNetB4': 3,
-    'EfficientNetB3': 2,
-    'EfficientNetV2L': 2,
-    'NASNetLarge': 3,
-    'DenseNet201': 3,
-    'ConvNeXtBase': 5,
-    'ConvNeXtSmall': 2,
-    'ConvNeXtLarge': 2,
-    'ConvNeXtXLarge': 2,
-    'ResNet152': 4,
-}
-
 def load_corrupted_sample(data_path, seed=0):
     complete = []
     for idx, corr in enumerate(FIRST_CORR):
@@ -87,6 +69,11 @@ def preprocess(image, label, prepr_func, input_size):
     return (i, label)
 
 def load_data_and_model(data_path, model_name=None, variant='imagenet2012', batch_size=32):
+
+    # init gpu
+    gpu_devices = tf.config.list_physical_devices('GPU')
+    for device in gpu_devices:
+        tf.config.experimental.set_memory_growth(device, True)
     
     # data
     extract_dir = os.path.join(data_path, 'extracted')
@@ -118,7 +105,6 @@ def load_data_and_model(data_path, model_name=None, variant='imagenet2012', batc
         "software": f'Tensorflow {tf.__version__}',
         "architecture": get_processor_name()
     }
-    gpu_devices = tf.config.list_physical_devices('GPU')
     if gpu_devices: # override with GPU information
         meta["architecture"] = tf.config.experimental.get_device_details(gpu_devices[0]).get('device_name', 'Unknown GPU')
         
