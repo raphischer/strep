@@ -247,7 +247,7 @@ if __name__ == '__main__':
     # assess the meta information of the properties
     res_metrics = ['time', 'param', 'size', 'flops', 'latenc', 'operation', 'emission']
     client = PapersWithCodeClient()
-    group_res = {'Resources': [], 'Performance': []}
+    group_res = {'Resources': [], 'Quality': []}
     properties, possible_errors = {}, {}
     sparse_ds = pd.unique(sparse_new['dataset'])
     # check metrics of each of the filtered evaluations
@@ -260,7 +260,7 @@ if __name__ == '__main__':
             if metr.name in sparse_new.columns and metr.name not in meta_cols:
                 # identify group based on metric name - TODO - can this be improved?
                 unified = metr.name.lower().replace(' = ', '').replace(' ', '').replace('-', '').replace('_', '').replace('(', '').replace(')', '').replace('%', '').replace(',', '')
-                group = 'Resources' if any([key in unified for key in res_metrics]) else 'Performance'
+                group = 'Resources' if any([key in unified for key in res_metrics]) else 'Quality'
                 m_name = metr.name if metr.name not in renamed else f'{metr.name}_PWC$'
                 group_res[group].append(m_name)
                 if m_name in properties: # multiple values found => store the is_loss info (might be contradictory!)
@@ -276,7 +276,7 @@ if __name__ == '__main__':
                 missed_metrics.add(metr.name)
     print(f'the following metrics were not formalized into meta file, as they do not feature numeric data or are found in meta cols\n{missed_metrics}\n')
 
-    print('RESOURCE METRICS:\n', set(group_res['Resources']), '\n\n PERFORMANCE METRICS:\n', set(group_res['Performance']), '\n\nPOSSIBLE_ERRORS ACROSS TASKS\n', possible_errors.keys())
+    print('RESOURCE METRICS:\n', set(group_res['Resources']), '\n\n PERFORMANCE METRICS:\n', set(group_res['Quality']), '\n\nPOSSIBLE_ERRORS ACROSS TASKS\n', possible_errors.keys())
     for metr, is_loss in possible_errors.items():
         # take the is_loss information that occurs most frequently
         properties[metr]['maximize'] = bool(np.median(is_loss))

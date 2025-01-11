@@ -17,7 +17,7 @@ def _identify_property_meta(input, given_meta=None):
             meta = given_meta[col]
         except (TypeError, IndexError, KeyError):
             # TODO improve by looking up group and unit from properly characterized popular metrics in PWC and OpenML
-            meta = { "name": col, "shortname": col[:4], "unit": "number", "group": "Performance", "weight": 1.0 / len(cols_to_rate) }
+            meta = { "name": col, "shortname": col[:4], "unit": "number", "group": "Quality", "weight": 1.0 / len(cols_to_rate) }
         properties_meta[col] = meta
     return properties_meta
 
@@ -71,8 +71,8 @@ def _compound_single(input, mode, properties_meta):
 def _compound(input, properties_meta, boundaries, mode):
     index_vals = {}
     index_vals['compound_index'] = _compound_single(input, mode, properties_meta)
-    index_vals['resource_index'] = _compound_single(input, mode, {p: v for p, v in properties_meta.items() if v['group'] != 'Performance'})
-    index_vals['quality_index'] = _compound_single(input, mode, {p: v for p, v in properties_meta.items() if v['group'] == 'Performance'})
+    index_vals['resource_index'] = _compound_single(input, mode, {p: v for p, v in properties_meta.items() if v['group'] != 'Quality'})
+    index_vals['quality_index'] = _compound_single(input, mode, {p: v for p, v in properties_meta.items() if v['group'] == 'Quality'})
     index_vals = pd.DataFrame(index_vals, index=input.index)
     boundaries = _prepare_boundaries(index_vals, boundaries) # either provided from outside, or calculated based on quantiles
     rated, _ = _rate(index_vals, boundaries=boundaries)
@@ -123,16 +123,16 @@ def _real_boundaries_and_defaults(input, boundaries, meta, reference=None):
             groups = np.array(groups)[argsort]
             metrics = np.array(sub_props)[argsort]
             # use most influential Performance property on y-axis
-            if 'Performance' not in groups:
+            if 'Quality' not in groups:
                 raise RuntimeError(f'Could not find quality property for {task_ds}!')
-            defaults['y'][task_ds] = metrics[groups == 'Performance'][-1]
+            defaults['y'][task_ds] = metrics[groups == 'Quality'][-1]
             if 'Resources' in groups: # use the most influential resource property on x-axis
                 defaults['x'][task_ds] = metrics[groups == 'Resources'][-1]
             elif 'Complexity' in groups: # use most influential complexity
                 defaults['x'][task_ds] = metrics[groups == 'Complexity'][-1]
             else:
                 try:
-                    defaults['x'][task_ds] = metrics[groups == 'Performance'][-2]
+                    defaults['x'][task_ds] = metrics[groups == 'Quality'][-2]
                 except IndexError:
                     raise RuntimeError(f'No second Performance property and no Resources or Complexity properties were found for {task_ds}!')
     return real_bounds, defaults

@@ -29,11 +29,11 @@ def score_performances(database, mode='optimistic mean', quantiles=None):
     for i, (_, log) in enumerate(database.iterrows()):
         results['compound_index'].append( calculate_single_compound_rating(log, mode) )
         try:
-            results['quality_index'].append( calculate_single_compound_rating(filter_properties(log, 'Performance'), mode) )
+            results['quality_index'].append( calculate_single_compound_rating(filter_properties(log, 'Quality'), mode) )
         except RuntimeError:
             results['quality_index'].append(0)
         try:
-            results['resource_index'].append( calculate_single_compound_rating(filter_properties(log, 'Performance', True), mode) )
+            results['resource_index'].append( calculate_single_compound_rating(filter_properties(log, 'Quality', True), mode) )
         except RuntimeError:
             results['resource_index'].append(0)
 
@@ -266,7 +266,7 @@ def identify_property_meta(given_meta, database):
     for col in cols_to_rate:
         meta = lookup_meta(given_meta, col, '', 'properties')
         if not isinstance(meta, dict):
-            meta = { "name": col, "shortname": col[:4], "unit": "number", "group": "Performance", "weight": 1.0 }
+            meta = { "name": col, "shortname": col[:4], "unit": "number", "group": "Quality", "weight": 1.0 }
         properties_meta[col] = meta
     return properties_meta
 
@@ -392,8 +392,8 @@ def find_relevant_metrics(database, meta):
                 to_delete.append(lookup)
             else:
                 # TODO later add this, such that it can be visualized
-                # metrics['resource_index'] = {sum([weight for (weight, group) in metrics.values() if group != 'Performance']), 'Resource'}
-                # metrics['quality_index'] = {sum([weight for (weight, group) in metrics.values() if group == 'Performance']), 'Performance'}
+                # metrics['resource_index'] = {sum([weight for (weight, group) in metrics.values() if group != 'Quality']), 'Resource'}
+                # metrics['quality_index'] = {sum([weight for (weight, group) in metrics.values() if group == 'Quality']), 'Quality'}
                 # metrics['compound_index'] = {1.0, 'n.a.'}
                 weights, groups = zip(*list(metrics.values()))
 
@@ -401,16 +401,16 @@ def find_relevant_metrics(database, meta):
                 groups = np.array(groups)[argsort]
                 metrics = np.array(list(metrics.keys()))[argsort]
                 # use most influential Performance property on y-axis
-                if 'Performance' not in groups:
+                if 'Quality' not in groups:
                     raise RuntimeError(f'Could not find quality property for {lookup}!')
-                y_default[lookup] = metrics[groups == 'Performance'][-1]
+                y_default[lookup] = metrics[groups == 'Quality'][-1]
                 if 'Resources' in groups: # use the most influential resource property on x-axis
                     x_default[lookup] = metrics[groups == 'Resources'][-1]
                 elif 'Complexity' in groups: # use most influential complexity
                     x_default[lookup] = metrics[groups == 'Complexity'][-1]
                 else:
                     try:
-                        x_default[lookup] = metrics[groups == 'Performance'][-2]
+                        x_default[lookup] = metrics[groups == 'Quality'][-2]
                     except IndexError:
                         print(f'No second Performance property and no Resources or Complexity properties were found for {lookup}!')
                         to_delete.append(lookup)

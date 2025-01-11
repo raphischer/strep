@@ -3,7 +3,7 @@
         "name": "Accuracy",
         "shortname": "ACC",
         "unit": "percent",
-        "group": "Performance",
+        "group": "Quality",
         "weight": 0.125,
         "maximize": true,
         "independent_of_task": true
@@ -12,7 +12,7 @@
         "name": "F1 Score",
         "shortname": "F1",
         "unit": "percent",
-        "group": "Performance",
+        "group": "Quality",
         "weight": 0.125,
         "maximize": true,
         "independent_of_task": true
@@ -21,7 +21,7 @@
         "name": "Precision",
         "shortname": "PRC",
         "unit": "percent",
-        "group": "Performance",
+        "group": "Quality",
         "weight": 0.125,
         "maximize": true,
         "independent_of_task": true
@@ -30,7 +30,7 @@
         "name": "Recall",
         "shortname": "REC",
         "unit": "percent",
-        "group": "Performance",
+        "group": "Quality",
         "weight": 0.125,
         "maximize": true,
         "independent_of_task": true

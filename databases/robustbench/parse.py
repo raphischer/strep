@@ -97,7 +97,7 @@ for col in dfs_merged.columns:
             "name": "Clean Accuracy",
             "shortname": "ACC",
             "weight": 0.2,
-            "group": "Performance",
+            "group": "Quality",
             "unit": "percent",
             "maximize": True
         }

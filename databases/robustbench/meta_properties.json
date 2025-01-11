@@ -3,7 +3,7 @@
         "name": "Clean Accuracy",
         "shortname": "ACC",
         "weight": 0.2,
-        "group": "Performance",
+        "group": "Quality",
         "unit": "percent",
         "maximize": true
     },
@@ -11,7 +11,7 @@
         "name": "AutoAttack Robustness",
         "shortname": "AARob",
         "weight": 0.2,
-        "group": "Performance",
+        "group": "Quality",
         "unit": "percent",
         "maximize": true,
         "icon": "robustness"
@@ -20,7 +20,7 @@
         "name": "Reported Corruption Robustness",
         "shortname": "CorRep",
         "weight": 0.2,
-        "group": "Performance",
+        "group": "Quality",
         "unit": "percent",
         "maximize": true,
         "icon": "robustness"
@@ -29,7 +29,7 @@
         "name": "Acc Corruption Robustness",
         "shortname": "AccRob",
         "weight": 0.2,
-        "group": "Performance",
+        "group": "Quality",
         "unit": "percent",
         "maximize": true,
         "icon": "robustness"
@@ -38,7 +38,7 @@
         "name": "Reported L2 Robustness",
         "shortname": "L2Rep",
         "weight": 0.2,
-        "group": "Performance",
+        "group": "Quality",
         "unit": "percent",
         "maximize": true,
         "icon": "robustness"
@@ -47,7 +47,7 @@
         "name": "Reported Linf Robustness",
         "shortname": "LinRep",
         "weight": 0.2,
-        "group": "Performance",
+        "group": "Quality",
         "unit": "percent",
         "maximize": true,
         "icon": "robustness"
@@ -56,7 +56,7 @@
         "name": "Acc 3d Corruption Robustness",
         "shortname": "Acc 3dRob",
         "weight": 0.2,
-        "group": "Performance",
+        "group": "Quality",
         "unit": "percent",
         "maximize": true,
         "icon": "robustness"
@@ -65,7 +65,7 @@
         "name": "Mce 3d Corruption Robustness",
         "shortname": "Mce 3dRob",
         "weight": 0.2,
-        "group": "Performance",
+        "group": "Quality",
         "unit": "percent",
         "maximize": true,
         "icon": "robustness"
@@ -74,7 +74,7 @@
         "name": "Mce Corruption Robustness",
         "shortname": "MceRob",
         "weight": 0.2,
-        "group": "Performance",
+        "group": "Quality",
         "unit": "percent",
         "maximize": true,
         "icon": "robustness"

@@ -3,7 +3,7 @@
         "name": "Test MASE",
         "shortname": "MASE",
         "unit": "number",
-        "group": "Performance",
+        "group": "Quality",
         "weight": 0.111111111,
         "independent_of_task": true
     },
@@ -11,7 +11,7 @@
         "name": "Test RMSE",
         "shortname": "RMSE",
         "unit": "number",
-        "group": "Performance",
+        "group": "Quality",
         "weight": 0.111111111,
         "independent_of_task": true
     },
@@ -19,7 +19,7 @@
         "name": "Test MAPE",
         "shortname": "MAPE",
         "unit": "number",
-        "group": "Performance",
+        "group": "Quality",
         "weight": 0.111111111,
         "independent_of_task": true
     },

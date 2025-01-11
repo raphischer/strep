@@ -3,7 +3,7 @@
         "name": "Test Top1 Accuracy",
         "shortname": "Top1",
         "unit": "percent",
-        "group": "Performance",
+        "group": "Quality",
         "weight": 0.1666666,
         "maximize": true,
         "independent_of_task": true
@@ -12,7 +12,7 @@
         "name": "Test Top5 Accuracy",
         "shortname": "Top5",
         "unit": "percent",
-        "group": "Performance",
+        "group": "Quality",
         "weight": 0.1666666,
         "maximize": true,
         "independent_of_task": true
