@@ -54,7 +54,7 @@ def add_rating_background(fig, rating_pos, mode=None, dark_mode=None, col=None):
                 fig.add_shape(type="rect", layer='below', fillcolor=color, x0=x0, x1=x1, y0=y0, y1=y1, opacity=.8, **add_args)
 
 
-def create_scatter_graph(plot_data, axis_title, dark_mode, ax_border=0.1, marker_width=15, norm_colors=True, display_text=True, return_traces=False):
+def create_scatter_graph(plot_data, axis_title, dark_mode, ax_border=0.1, marker_width=15, norm_colors=True, display_text=False, return_traces=False):
     traces = []
     i_min, i_max = min([min(vals['index']) for vals in plot_data.values()]), max([max(vals['index']) for vals in plot_data.values()])
      # link model scatter points across multiple environment
