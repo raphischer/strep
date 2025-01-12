@@ -4,7 +4,7 @@ from strep.index_scale import load_database, scale_and_rate
 from strep.elex.app import Visualization
 
 DATABASES = {
-    'ImageNetEff': 'databases/imagenet_classification/database.pkl',
+    'ImageNetEff22': 'databases/imagenet_classification/database.pkl',
     'XPCR-Forecasting': 'databases/xpcr/database.pkl',
     'MetaQuRe': 'databases/metaqure/database.pkl',
     'RobustBench': 'databases/robustbench/database.pkl',
