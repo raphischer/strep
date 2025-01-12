@@ -44,7 +44,7 @@
     "train_power_draw": {
         "name": "Training Power Draw",
         "shortname": "T Power",
-        "unit": "wattseconds",
+        "unit": "kilowatthours",
         "group": "Resources",
         "weight": 0.2
     },
