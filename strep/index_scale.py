@@ -79,21 +79,8 @@ def _compound(input, properties_meta, boundaries, mode):
     rated = rated.rename(columns={col: col.replace('index', 'rating') for col in index_vals.columns})
     return pd.concat([index_vals, rated], axis=1), boundaries
 
-def _check_for_splitting(input):
-    return [field for field in ['environment', 'task', 'dataset'] if field in input.columns]
-
-def _prepare_for_scale(input):
-    if isinstance(input, pd.DataFrame):
-        pass
-    else:
-        raise NotImplementedError('Please pass a pandas dataframe as input!')
-    split_by = _check_for_splitting(input)
-    return input, split_by
-
 def _real_boundaries_and_defaults(input, boundaries, meta, reference=None):
-    input, split_by = _prepare_for_scale(input)
-    if 'environment' in split_by:
-        split_by.remove('environment')
+    split_by = ['task', 'dataset', 'environment']
     real_bounds = {}
     defaults = { 'x': {}, 'y': {} }
     if len(split_by) == 0:
@@ -148,7 +135,7 @@ def _prepare_boundaries(input, boundaries=None):
             boundaries = {}
         if not isinstance(boundaries, dict):
             raise NotImplementedError('Please pass boundaries / reference as a dict (list of boundaries for each property), np.ndarray (quantiles) or None (for standard [0.8, 0.6, 0.4, 0.2] quantiles).')
-    new_boundaries = {prop: boundaries[prop] if prop in boundaries else np.quantile(input[prop], quantiles) for prop in input.columns}
+    new_boundaries = {prop: boundaries[prop] if prop in boundaries else np.quantile(input[prop].dropna(), quantiles) for prop in input.columns}
     return new_boundaries
 
 def _scale_single(input, scale_m, meta, reference, mode):
@@ -166,12 +153,17 @@ def _scaled_cols(input):
     return [col for col in input.columns if '_index' in col or '_rating' in col]
 
 def load_database(fname):
-    database = pd.read_pickle(fname)
+    try:
+        database = pd.read_pickle(fname)
+    except Exception:
+        raise RuntimeError(f'Could not load database "{fname}"\nPlease check the given file path and make sure to pass a pickled pandas dataframe!')
     meta = load_meta(fname)
+    for field in ['environment', 'task', 'dataset']:
+        if field not in database.columns:
+            database[field] = 'unknown'
     return database, meta
 
 def scale(input, meta=None, reference=None, mode='index', verbose=True):
-    input, split_by = _prepare_for_scale(input)
     assert mode in ['rating', 'index', 'compound_mean', 'compound_median', 'compound_max', 'compound_min']
     scale_m = _index_scale_best if reference is None else _index_scale_reference # default is index scaling
     if isinstance(meta, dict) and 'properties' in meta: # other meta info irrelevant for scaling
@@ -183,66 +175,75 @@ def scale(input, meta=None, reference=None, mode='index', verbose=True):
     if 'compound' in mode:
         scale_m = lambda inp, sm, ref: _compound(inp, sm, ref, mode.split('_')[1]) # pass compound mode [mean, median, min max] to compound function
 
-    if len(split_by) > 0:
-        # process each individual combination of environment, task and dataset
-        if mode != 'index' and 'environment' in split_by:
-            split_by.remove('environment') # environment only need to be considered for index scaling
+    # process each individual combination of environment, task and dataset
+    split_by = ['task', 'dataset', 'environment']
+    # if mode != 'index':
+    #     split_by.remove('environment') # environment only need to be considered for index scaling
+    if verbose:
+        print(f'Performing {mode} scaling for every separate combination of {str(split_by)}')
+    sub_results = {}
+    for sub_config, sub_input in tqdm(input.groupby(split_by), f'calculating {mode}'):
+        sub_ref = reference
+        if reference is not None and mode != 'index':
+            try:
+                sub_ref = reference[sub_config]
+            except (ValueError, KeyError):
+                raise RuntimeError(f'Could not properly process boundary information {reference} for {sub_config}')
+        sub_results[sub_config] = _scale_single(sub_input, scale_m, meta, sub_ref, mode)
         if verbose:
-            print(f'Performing {mode} scaling for every separate combination of {str(split_by)}')
-        sub_results = {}
-        for sub_config, sub_input in tqdm(input.groupby(split_by), f'calculating {mode}'):
-            sub_ref = reference
-            if reference is not None and mode != 'index':
-                try:
-                    sub_ref = reference[sub_config]
-                except (ValueError, KeyError):
-                    raise RuntimeError(f'Could not properly process boundary information {reference} for {sub_config}')
-            sub_results[sub_config] = _scale_single(sub_input, scale_m, meta, sub_ref, mode)
-            if verbose:
-                print('   - scaled results for', sub_config)
-        # merge results results of each combination
-        results, boundaries, sub_properties = zip(*sub_results.values())
-        results = pd.concat(results).sort_index()
-        boundaries = {config: bounds for config, bounds in zip(sub_results.keys(), boundaries)}
-        all_props = {k: v for sub in sub_properties for k, v in sub.items()}
-    else:
-        # process complete dataframe
-        if verbose:
-            print(f'Performing {mode} for the complete data frame, without any splitting. If you want internal splitting, please provide information on respective "environment", "task" or "dataset".')
-        results, boundaries, all_props = _scale_single(input, scale_m, meta, reference, mode)
+            print('   - scaled results for', sub_config)
+    # merge results results of each combination
+    results, boundaries, sub_properties = zip(*sub_results.values())
+    results = pd.concat(results).sort_index()
+    all_props = {k: v for sub in sub_properties for k, v in sub.items()}
     final = pd.concat([input[input.columns.drop(all_props.keys())], results], axis=1)
+    if mode == 'index': # no boundary information, instead return identified meta info
+        return final, all_props
+    boundaries = {config: bounds for config, bounds in zip(sub_results.keys(), boundaries)}
     # make some properties available across all tasks
-    if 'task' in split_by and meta is not None and mode == 'index':
-        independent_props = [prop for prop, vals in meta.items() if 'independent_of_task' in vals and vals['independent_of_task']]
-        fixed_fields = ['model'] + list(set(['dataset', 'environment']).intersection(split_by))
-        for group_field_vals, data in final.groupby(fixed_fields):
+    # if meta is not None and mode == 'index':
+    #     independent_props = [prop for prop, vals in meta.items() if 'independent_of_task' in vals and vals['independent_of_task']]
+    #     fixed_fields = ['model'] + list(set(['dataset', 'environment']).intersection(split_by))
+    #     for group_field_vals, data in final.groupby(fixed_fields):
+    #         for prop in independent_props:
+    #             valid = data[prop].dropna()
+    #             if valid.shape[0] != 1:
+    #                 print(f'{valid.shape[0]} not-NA values found for {prop} across all tasks on {group_field_vals}!')
+    #             if valid.shape[0] > 0:
+    #                 final.loc[data.index,prop] = [valid.values[0]] * data.shape[0]
+    return final, boundaries
+
+def scale_and_rate(input, meta, reference=None, boundaries=None, compound_mode='mean', verbose=False):
+    # make some properties available across all tasks if "independent_of_task" in meta
+    if meta is not None and len(meta['properties']) >= 0:
+        independent_props = [prop for prop, vals in meta['properties'].items() if 'independent_of_task' in vals and vals['independent_of_task']]
+        fixed_fields = ['model', 'dataset', 'environment']
+        for group_field_vals, data in input.groupby(fixed_fields):
             for prop in independent_props:
                 valid = data[prop].dropna()
                 if valid.shape[0] != 1:
                     print(f'{valid.shape[0]} not-NA values found for {prop} across all tasks on {group_field_vals}!')
                 if valid.shape[0] > 0:
-                    final.loc[data.index,prop] = [valid.values[0]] * data.shape[0]
-    if mode != 'index': # after index scaling returned identified meta info, otherwise return boundaries
-        return final, boundaries
-    return final, all_props
-
-def scale_and_rate(input, meta, reference=None, boundaries=None, compound_mode='mean', verbose=False):
-    if 'environment' not in input.columns:
-        input['environment'] = 'unknown'
-    if 'compound_rating' in input.columns: # already processed db as input, so go back to original values
+                    input.loc[data.index,prop] = [valid.values[0]] * data.shape[0]
+    # already processed db as input, so go back to original values
+    if 'compound_rating' in input.columns:
         input = input.drop(columns=_scaled_cols(input))
+    # compute index values
     scaled, meta_ret = scale(input, meta, reference=reference, verbose=verbose)
     if len(meta['properties']) == 0:
         meta['properties'] = meta_ret
+    # compute ratings and compounds
     rated, prop_boundaries = scale(scaled, meta, reference=boundaries, mode='rating', verbose=verbose)
     compound, comp_boundaries = scale(scaled, meta, reference=boundaries, mode=f'compound_{compound_mode}', verbose=verbose)
+    # concat all results
     config_cols = [col for col in compound.columns if col in input.columns]
     all_res = pd.concat([
             input,
             scaled.drop(config_cols, axis=1).rename(columns=lambda col: f'{col}_index'),
             rated.drop(config_cols, axis=1).rename(columns=lambda col: f'{col}_rating'),
             compound.drop(config_cols, axis=1)
-        ], axis=1)   
+        ], axis=1)
+    # compute boundaries
     for config, boundaries in prop_boundaries.items():
         comp_boundaries[config].update(boundaries)
     real_boundaries, defaults = _real_boundaries_and_defaults(input, comp_boundaries, meta['properties'], reference)

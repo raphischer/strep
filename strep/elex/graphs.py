@@ -5,6 +5,7 @@ import numpy as np
 import plotly.graph_objects as go
 from plotly.express.colors import sample_colorscale
 from PIL import Image
+import base64
 
 from strep.util import lookup_meta, find_sub_db
 from strep.elex.util import RATING_COLORS, ENV_SYMBOLS, PATTERNS, RATING_COLOR_SCALE
@@ -34,26 +35,33 @@ def assemble_scatter_data(env_names, db, scale_switch, xaxis, yaxis, meta, unit_
     return plot_data, axis_names
 
 
-def add_rating_background(fig, rating_pos, mode=None, dark_mode=None, col=None):
-    is_sorted = lambda a: np.all(a[:-1] <= a[1:]) # TODO maybe just look at mode?
+def add_rating_background(fig, rating_pos, use_grad=False, mode=None, dark_mode=None, col=None):
     xaxis, yaxis = fig.layout[f'xaxis{col if col is not None and col > 1 else ""}'], fig.layout[f'yaxis{col if col is not None and col > 1 else ""}']
     min_x, max_x, min_y, max_y = xaxis.range[0], xaxis.range[1], yaxis.range[0], yaxis.range[1]
-    if rating_pos is None:
-        grad = GRAD if mode is None else GRAD.transpose(getattr(Image, mode))
-        fig.add_layout_image(dict(source=grad, xref="x", yref="y", x=min_x, y=max_y, sizex=max_x-min_x, sizey=max_y-min_y, sizing="stretch", opacity=0.75, layer="below"))
+    add_args = {}
+    if dark_mode:
+        add_args['line'] = dict(color='#0c122b')
+    if col is not None:
+        add_args['row'], add_args['col'] = 1, col
+    axis_sorted = [np.all(vals[:-1] <= vals[1:]) for vals in rating_pos]
+    if use_grad: # use gradient background
+        if axis_sorted[0]:
+            transp_mode = 'TRANSPOSE' if axis_sorted[1] else 'FLIP_LEFT_RIGHT'
+        else:
+            transp_mode = 'FLIP_TOP_BOTTOM' if axis_sorted[1] else None
+        grad = GRAD if transp_mode is None else GRAD.transpose(getattr(Image, transp_mode))
+        if col is None: # TODO improve and use kwargs instead of code copy?
+            fig.add_layout_image(source=grad, xref="x domain", yref="y domain", x=1, y=1, xanchor="right", yanchor="top", sizex=1.0, sizey=1.0, sizing="stretch", opacity=0.75, layer="below")
+        else:
+            fig.add_layout_image(row=1, col=col, source=grad, xref="x domain", yref="y domain", x=1, y=1, xanchor="right", yanchor="top", sizex=1.0, sizey=1.0, sizing="stretch", opacity=0.75, layer="below")
     else:
-        # add values for border rectangles
+        # add values for bordering rectangles
         for idx, (vals, min_v, max_v) in enumerate(zip(rating_pos, [min_x, min_y], [max_x, max_y])):
-            rating_pos[idx] = [min_v] + vals + [max_v] if is_sorted(vals) else [max_v] + vals + [min_v]            
+            rating_pos[idx] = [min_v] + vals + [max_v] if axis_sorted[idx] else [max_v] + vals + [min_v]            
         # plot each rectangle
         for xi, (x0, x1) in enumerate(pairwise(rating_pos[0])):
             for yi, (y0, y1) in enumerate(pairwise(rating_pos[1])):
                 color = RATING_COLORS[int(getattr(np, mode)([xi, yi]))]
-                add_args = {}
-                if dark_mode:
-                    add_args['line'] = dict(color='#0c122b')
-                if col is not None:
-                    add_args['row'], add_args['col'] = 1, col
                 fig.add_shape(type="rect", layer='below', fillcolor=color, x0=x0, x1=x1, y0=y0, y1=y1, opacity=.8, **add_args)
 
 

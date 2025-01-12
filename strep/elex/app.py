@@ -119,14 +119,16 @@ class Visualization(dash.Dash):
         # update database if necessary
         if update_db:
             self.update_database()
-        # assemble data for plotting
+        # assemble data for plotting and create scatter figure
         scale = scale_switch or 'index'
         db, xaxis, yaxis = self.state['sub_database'], self.state['xaxis'], self.state['yaxis']
-        bounds = self.boundaries[self.state['task_ds']] if scale == 'index' else self.boundaries_real[self.state['task_ds']]
         self.plot_data, axis_names = assemble_scatter_data(env_names, db, scale, xaxis, yaxis, self.meta, self.unit_fmt)
         scatter = create_scatter_graph(self.plot_data, axis_names, dark_mode=self.dark_mode)
-        background_bounds = [bounds[xaxis].tolist(), bounds[yaxis].tolist()]
-        add_rating_background(scatter, background_bounds, self.state['compound_mode'], dark_mode=self.dark_mode)
+        # identify boundaries for rating background
+        bounds = self.boundaries if scale == 'index' else self.boundaries_real
+        bounds = bounds[(self.state['task'], self.state['ds'], env_names[0])]
+        bounds = [bounds[xaxis].tolist(), bounds[yaxis].tolist()]
+        add_rating_background(scatter, bounds, use_grad=len(env_names)>1, mode=self.state['compound_mode'], dark_mode=self.dark_mode)
         return scatter, reference_select_disabled, reference_select_disabled
     
     def update_database(self):
@@ -155,13 +157,14 @@ class Visualization(dash.Dash):
             self.update_database()
         self.state['xaxis'] = xaxis or self.state['xaxis']
         self.state['yaxis'] = yaxis or self.state['yaxis']
-        values = []
-        for axis in [self.state['xaxis'], self.state['yaxis']]:
-            all_vals = self.state['sub_database'][f'{axis}_index'].dropna()
-            min_v, max_v = all_vals.min(), all_vals.max()
-            marks = { val: {'label': str(val)} for val in np.round(np.linspace(min_v, max_v, 20), 3)}
-            values.extend([min_v, max_v, self.boundaries[self.state['task_ds']][axis].tolist(), marks])
-        return values
+        # TODO implement again
+        # values = []
+        # for axis in [self.state['xaxis'], self.state['yaxis']]:
+        #     all_vals = self.state['sub_database'][f'{axis}_index'].dropna()
+        #     min_v, max_v = all_vals.min(), all_vals.max()
+        #     marks = { val: {'label': str(val)} for val in np.round(np.linspace(min_v, max_v, 20), 3)}
+        #     values.extend([min_v, max_v, self.boundaries[self.state['task_ds']][axis].tolist(), marks])
+        return [0, 1, np.linspace(0, 1, 10), np.round(np.linspace(0, 1, 10), 3)] * 2
     
     def db_selected(self, db=None):
         self.state['db'] = db or self.state['db']
@@ -181,18 +184,22 @@ class Visualization(dash.Dash):
         if self.state['update_on_change']:
             self.database, self.boundaries, self.boundaries_real, self.references = rate_database(self.database, self.meta, self.boundaries, self.state['indexmode'], self.references, self.unit_fmt, self.state['compound_mode'])
             self.state['update_on_change'] = False
+        # update task, ds, environment and metrics
         self.state['task'] = task or self.state['task']
         self.state['task_ds'] = (self.state['task'], self.state['ds'])
-        self.state['metrics'] = {prop: self.meta['properties'][prop] for prop in self.boundaries_real[self.state['task_ds']].keys()}
-        avail_envs = [ {"label": env, "value": env} for env in pd.unique(find_sub_db(self.database, self.state['ds'], self.state['task'])['environment']) ]
+        avail_envs = [ {"label": e, "value": e} for e in pd.unique(find_sub_db(self.database, self.state['ds'], self.state['task'])['environment']) ]
+        sel_env = [avail_envs[0]['value']]
+        avail_metrics = self.boundaries_real[(self.state['task'], self.state['ds'], sel_env[0])].keys()
+        self.state['metrics'] = {prop: self.meta['properties'][prop] for prop in avail_metrics}
         axis_options = [{'label': lookup_meta(self.meta, metr, subdict='properties'), 'value': metr} for metr in self.state['metrics']]
         self.state['xaxis'] = self.defaults['x'][self.state['task_ds']]
         self.state['yaxis'] = self.defaults['y'][self.state['task_ds']]
+        # find corresponding sub database and models
         self.state['sub_database'] = find_sub_db(self.database, self.state['ds'], self.state['task'])
         models = self.state['sub_database']['model'].values
         ref_options = [{'label': mod, 'value': mod} for mod in models]
         curr_ref = self.references[self.state['ds']] if self.references is not None and self.state['ds'] in self.references else models[0]
-        return avail_envs, [avail_envs[0]['value']], axis_options, self.state['xaxis'], axis_options, self.state['yaxis'], ref_options, curr_ref
+        return avail_envs, sel_env, axis_options, self.state['xaxis'], axis_options, self.state['yaxis'], ref_options, curr_ref
 
     def display_model(self, hover_data=None, env_names=None, compound_mode=None):
         if hover_data is None:

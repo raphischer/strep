@@ -9,7 +9,7 @@ def create_axis_option(x=True):
         dcc.Input(id=f"{xy}-weight", type='number', min=0, max=1, step=0.05),
         html.Label('Boundaries:'),
         dcc.RangeSlider(id=f'boundary-slider-{xy}', min=0, max=1,
-            value=[.2, .4, .6, .8], step=.001, pushable=.001,
+            value=[.2, .4, .6, .8], step=.001, pushable=.001, disabled=True, # TODO implement again
             tooltip={"placement": "bottom", "always_visible": True})  
     ]
 
