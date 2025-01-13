@@ -8,6 +8,7 @@ from main import DATABASES, load_database, scale_and_rate
 from strep.util import lookup_meta, find_sub_db, fill_meta
 from strep.elex.graphs import assemble_scatter_data, create_scatter_graph, add_rating_background, create_star_plot
 from strep.unit_reformatting import CustomUnitReformater
+from strep.labels.label_generation import PropertyLabel
 
 # external libraries
 import numpy as np
@@ -118,6 +119,9 @@ def chapter3(show):
             summary = fill_meta(model, meta)
             trace = create_star_plot(summary, task_props, name=env, color=LAM_COL_FIVE[e_idx], showlegend=idx==0, return_trace=True)
             fig.add_trace(trace, row=1, col=idx+1)
+            if e_idx == 0:
+                label = PropertyLabel(summary, task_props, UNIT_FMT)
+                label.save(os.path.join(DISS_FIGURES, f'ch3_label_{mod}.pdf'))
     fig.update_annotations(yshift=20)
     fig.update_layout(
         polar=dict(radialaxis=dict(visible=True)), width=PLOT_WIDTH, height=PLOT_HEIGHT,
@@ -127,10 +131,10 @@ def chapter3(show):
 
     fname = print_init('ch3_imagenet_tradeoffs') ###############################################################################
     env = pd.unique(db['environment'])[0]
-    scatter = make_subplots(rows=2, cols=2, shared_yaxes=True, horizontal_spacing=.02, vertical_spacing=.09)
-    for idx, (xaxis, yaxis, task) in enumerate([['power_draw', 'top-1_val', 'infer'], ['train_power_draw', 'top-1_val', 'train'], ['running_time', 'parameters', 'infer'], ['fsize', 'parameters', 'train']]):
+    scatter = make_subplots(rows=2, cols=2, shared_yaxes=True, horizontal_spacing=.02, vertical_spacing=.1)
+    for idx, (xaxis, yaxis, t) in enumerate([['power_draw', 'top-1_val', 'infer'], ['train_power_draw', 'top-1_val', 'train'], ['running_time', 'parameters', 'infer'], ['fsize', 'parameters', 'train']]):
         row, col = (idx // 2) + 1, (idx % 2) + 1
-        ax_bounds = [val_bounds[(task, ds, env)][xaxis].tolist(), val_bounds[(task, ds, env)][yaxis].tolist()]
+        ax_bounds = [val_bounds[(t, ds, env)][xaxis].tolist(), val_bounds[(t, ds, env)][yaxis].tolist()]
         plot_data, axis_names = assemble_scatter_data([env], db, 'value', xaxis, yaxis, meta, UNIT_FMT)
         traces = create_scatter_graph(plot_data, axis_names, dark_mode=False, display_text=True, marker_width=8, return_traces=True)
         scatter.add_traces(traces, rows=[row]*len(traces), cols=[col]*len(traces))
