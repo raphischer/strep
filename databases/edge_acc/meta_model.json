@@ -1,0 +1,172 @@
+{
+    "yolov8s-seg": {
+        "name": "yolov8s",
+        "epochs": null,
+        "url": "https://github.com/ultralytics/ultralytics"
+    },
+    "yolov8n-seg": {
+        "name": "yolov8n",
+        "epochs": null,
+        "url": "https://github.com/ultralytics/ultralytics"
+    },
+    "yolov8m-seg": {
+        "name": "yolov8m",
+        "epochs": null,
+        "url": "https://github.com/ultralytics/ultralytics"
+    },
+    "ResNet50": {
+        "name": "ResNet50",
+        "epochs": 90,
+        "url": "https://arxiv.org/abs/1512.03385"
+    },
+    "ResNet101": {
+        "name": "ResNet101",
+        "epochs": 90,
+        "url": "https://arxiv.org/abs/1512.03385"
+    },
+    "ResNet152": {
+        "name": "ResNet152",
+        "epochs": 90,
+        "url": "https://arxiv.org/abs/1512.03385"
+    },
+    "VGG16": {
+        "name": "VGG16",
+        "epochs": 90,
+        "url": "https://arxiv.org/abs/1409.1556"
+    },
+    "VGG19": {
+        "name": "VGG19",
+        "epochs": 90,
+        "url": "https://arxiv.org/abs/1409.1556"
+    },
+    "EfficientNetB0": {
+        "name": "EfficientNetB0",
+        "epochs": null,
+        "url": "https://arxiv.org/pdf/1905.11946.pdf"
+    },
+    "EfficientNetB1": {
+        "name": "EfficientNetB1",
+        "epochs": null,
+        "url": "https://arxiv.org/pdf/1905.11946.pdf"
+    },
+    "EfficientNetB2": {
+        "name": "EfficientNetB2",
+        "epochs": null,
+        "url": "https://arxiv.org/pdf/1905.11946.pdf"
+    },
+    "EfficientNetB3": {
+        "name": "EfficientNetB3",
+        "epochs": null,
+        "url": "https://arxiv.org/pdf/1905.11946.pdf"
+    },
+    "EfficientNetB4": {
+        "name": "EfficientNetB4",
+        "epochs": null,
+        "url": "https://arxiv.org/pdf/1905.11946.pdf"
+    },
+    "EfficientNetB5": {
+        "name": "EfficientNetB5",
+        "epochs": null,
+        "url": "https://arxiv.org/pdf/1905.11946.pdf"
+    },
+    "EfficientNetB6": {
+        "name": "EfficientNetB6",
+        "epochs": null,
+        "url": "https://arxiv.org/pdf/1905.11946.pdf"
+    },
+    "EfficientNetB7": {
+        "name": "EfficientNetB7",
+        "epochs": null,
+         "url": "https://arxiv.org/pdf/1905.11946.pdf"
+    },
+    "RegNetX400MF": {
+        "name": "RegNetX400MF",
+        "epochs": 100,
+        "url": "https://arxiv.org/abs/2003.13678"
+    },
+    "RegNetX32GF": {
+        "name": "RegNetX32GF",
+        "epochs": 100,
+        "url": "https://arxiv.org/abs/2003.13678"
+    },
+    "RegNetX8GF": {
+        "name": "RegNetX8GF",
+        "epochs": 100,
+        "url": "https://arxiv.org/abs/2003.13678"
+    },
+    "ResNext50": {
+        "name": "ResNext50",
+        "epochs": 100,
+        "url": "https://arxiv.org/abs/1611.05431"
+    },
+    "ResNext101": {
+        "name": "ResNext101",
+        "epochs": 100,
+        "url": "https://arxiv.org/abs/1611.05431"
+    },
+    "DenseNet121": {
+        "name": "DenseNet121",
+        "epochs": 90,
+        "url": "https://arxiv.org/pdf/1608.06993"
+    },
+    "DenseNet169": {
+        "name": "DenseNet169",
+        "epochs": 90,
+        "url": "https://arxiv.org/pdf/1608.06993"
+    },
+    "DenseNet201": {
+        "name": "DenseNet201",
+        "epochs": 90,
+        "url": "https://arxiv.org/pdf/1608.06993"
+    },
+    "Xception": {
+        "name": "Xception",
+        "epochs": null,
+        "url": "https://arxiv.org/abs/1610.02357"
+    },
+    "InceptionResNetV2": {
+        "name": "InceptionResNetV2",
+        "epochs": 200,
+        "url": "https://arxiv.org/abs/1602.07261"
+    },
+    "InceptionV3": {
+        "name": "InceptionV3",
+        "epochs": 100,
+        "url": "https://arxiv.org/abs/1512.00567"
+    },
+    "NASNetMobile": {
+        "name": "NASNetMobile",
+        "epochs": 100,
+        "url": "https://arxiv.org/pdf/1707.07012"
+    },
+    "MobileNetV2": {
+        "name": "MobileNetV2",
+        "epochs": 300,
+        "url": "https://arxiv.org/abs/1801.04381"
+    },
+    "MobileNetV3Small": {
+        "name": "MobileNetV3Small",
+        "epochs": 600,
+        "url": "https://arxiv.org/pdf/1905.02244"
+    },
+    "MobileNetV3Large": {
+        "name": "MobileNetV3Large",
+        "epochs": 600,
+        "url": "https://arxiv.org/pdf/1905.02244"
+    },
+    "QuickNetSmall": {
+        "name": "QuickNetSmall",
+        "epochs": 600,
+        "url": "https://arxiv.org/abs/2011.09398"
+    },
+    "QuickNet": {
+        "name": "QuickNet",
+        "epochs": 600,
+        "url": "https://arxiv.org/abs/2011.09398"
+    },
+    "QuickNetLarge": {
+        "name": "QuickNetLarge",
+        "epochs": 600,
+        "url": "https://arxiv.org/abs/2011.09398"
+    }    
+}

@@ -216,15 +216,17 @@ def scale(input, meta=None, reference=None, mode='index', verbose=True):
 def scale_and_rate(input, meta, reference=None, boundaries=None, compound_mode='mean', verbose=False):
     # make some properties available across all tasks if "independent_of_task" in meta
     if meta is not None and len(meta['properties']) >= 0:
-        independent_props = [prop for prop, vals in meta['properties'].items() if 'independent_of_task' in vals and vals['independent_of_task']]
-        fixed_fields = ['model', 'dataset', 'environment']
-        for group_field_vals, data in input.groupby(fixed_fields):
-            for prop in independent_props:
-                valid = data[prop].dropna()
-                if valid.shape[0] != 1:
-                    print(f'{valid.shape[0]} not-NA values found for {prop} across all tasks on {group_field_vals}!')
-                if valid.shape[0] > 0:
-                    input.loc[data.index,prop] = [valid.values[0]] * data.shape[0]
+        is_indep = lambda p, df: meta['properties'][p].get('independent_of_task') and df[p].dropna().size > 0
+        for ds, ds_data in input.groupby('dataset'):
+            fixed_fields = ['model', 'environment']
+            independent_props = [prop for prop in meta['properties'].keys() if is_indep(prop, ds_data)]
+            for group_field_vals, data in ds_data.groupby(fixed_fields):
+                for prop in independent_props:
+                    valid = data[prop].dropna()
+                    if valid.shape[0] != 1:
+                        print(f'{valid.shape[0]} not-NA values found for {prop} across all tasks on {ds} {group_field_vals}!')
+                    if valid.shape[0] > 0:
+                        input.loc[data.index,prop] = [valid.values[0]] * data.shape[0]
     # already processed db as input, so go back to original values
     if 'compound_rating' in input.columns:
         input = input.drop(columns=_scaled_cols(input))

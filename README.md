@@ -27,7 +27,7 @@ app.run_server()
 ```
 
 ## News and Release History
-- **10 January 2025** - Minor fixes and re-added the report extract from [Papers with Code](https://paperswithcode.com/) (state: Dec 29th 2024)! 
+- **13 January 2025** - Many fixes, (re-)added [Papers with Code](https://paperswithcode.com/) and [EdgeAccUSB](https://github.com/raphischer/edge-acc) databases
 - **2 October 2024** - Greatly improved index scaling (x15 speed), added / updated result databases from [MetaQuRe](https://github.com/raphischer/metaqure) and [AutoXPCR](https://github.com/raphischer/xpcr) (Forecasting).
 - **11 September 2024** - Presented our paper and repository at ECML-PKDD '24
 - **16 August 2024** - Merged a lot of functionality that was developed for other works
@@ -39,7 +39,8 @@ If you perform large-scale benchmark experiments, stress-test a lot of models or
 We would love to showcase other resource-aware reports here. If you send us your own performance databases, we will gladly add them and highlight your work as a significant contribution.
 
 ### Current available databases:
-- [ImageNetEff (Fischer et al. 2022)](https://github.com/raphischer/imagenet-energy-efficiency): Efficiency information of popular ImageNet models
+- [ImageNetEff22 (Fischer et al. 2022)](https://github.com/raphischer/imagenet-energy-efficiency): Efficiency information of popular ImageNet models
+- [EdgeAccUSB (Staay et al. 2024)](https://github.com/raphischer/edge-acc): Efficiency results of stress-tested USB accelerators for edge inference with computer vision models
 - [XPCR / Forecasting (Fischer et al. 2024)](https://github.com/raphischer/xpcr): Efficiency information of DNNs for time series forecasting tasks
 - [MetaQuRe (Fischer et al. 2024)](https://github.com/raphischer/metaqure): Resource and quality information of ML algorithm performance on tabular data
 - [RobustBench (Croce et al. 2020)](https://robustbench.github.io/): Robustness and quality information of image classification

@@ -1,0 +1,10 @@
+{
+    "coco": {
+        "name": "COCO",
+        "url": "https://cocodataset.org/#home"
+    },
+    "imagenet": {
+        "name": "ImageNet (ILSVRC2012)",
+        "url": "https://image-net.org/"
+    }
+}

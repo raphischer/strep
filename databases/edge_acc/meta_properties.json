@@ -1,0 +1,94 @@
+{
+    "accuracy_k1": {
+        "name": "Test Top1 Accuracy",
+        "shortname": "Top1",
+        "unit": "percent",
+        "group": "Quality",
+        "weight": 0.125,
+        "maximize": true,
+        "symbol": "[%]",
+        "independent_of_task": true
+    },
+    "accuracy_k3": {
+        "name": "Test Top3 Accuracy",
+        "shortname": "Top3",
+        "unit": "percent",
+        "group": "Quality",
+        "weight": 0.125,
+        "maximize": true,
+        "symbol": "[%]",
+        "independent_of_task": true
+    },
+    "accuracy_k5": {
+        "name": "Test Top5 Accuracy",
+        "shortname": "Top5",
+        "unit": "percent",
+        "group": "Quality",
+        "weight": 0.125,
+        "maximize": true,
+        "symbol": "[%]",
+        "independent_of_task": true
+    },
+    "accuracy_k10": {
+        "name": "Test Top10 Accuracy",
+        "shortname": "Top10",
+        "unit": "percent",
+        "group": "Quality",
+        "weight": 0.125,
+        "maximize": true,
+        "symbol": "[%]",
+        "independent_of_task": true
+    },
+    "mAP50_M": {
+        "name": "Mean mAP at IoU 0.5", 
+        "shortname": "mAP50",
+        "unit": "percent",
+        "group": "Quality",
+        "weight": 0.125,
+        "symbol": "[%]",
+        "maximize": true
+    },
+    "mAP50_95_M": {
+        "name": "Mean mAP at IoU 0.5 - 0.95", 
+        "shortname": "mAP50-95",
+        "unit": "percent",
+        "group": "Quality",
+        "weight": 0.125,
+        "symbol": "[%]",
+        "maximize": true
+    },
+    "precision_M": {
+        "name": "Mean Precision", 
+        "shortname": "M Prec",
+        "unit": "percent",
+        "group": "Quality",
+        "weight": 0.125,
+        "symbol": "[%]",
+        "maximize": true
+    },
+    "recall_M": {
+        "name": "Mean Recall", 
+        "shortname": "M Rec",
+        "unit": "percent",
+        "group": "Quality",
+        "weight": 0.125,
+        "symbol": "[%]",
+        "maximize": true
+    },
+    "approx_USB_power_draw": {
+        "name": "Power Draw per Inference",
+        "shortname": "ENI",
+        "unit": "wattseconds",
+        "group": "Resources",
+        "symbol": "[Ws]",
+        "weight": 0.25
+    },
+    "running_time": {
+        "name": "Running Time per Inference",
+        "shortname": "RTI",
+        "unit": "seconds",
+        "group": "Resources",
+        "symbol": "[s]",
+        "weight": 0.25
+    }
+}
