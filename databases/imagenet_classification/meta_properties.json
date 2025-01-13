@@ -1,7 +1,7 @@
 {
     "top-1_val": {
-        "name": "Test Top1 Accuracy",
-        "shortname": "Top1",
+        "name": "Average Top-1 Accuracy",
+        "shortname": "ACC1",
         "unit": "percent",
         "group": "Quality",
         "weight": 0.1666666,
@@ -9,8 +9,8 @@
         "independent_of_task": true
     },
     "top-5_val": {
-        "name": "Test Top5 Accuracy",
-        "shortname": "Top5",
+        "name": "Average Top-5 Accuracy",
+        "shortname": "ACC5",
         "unit": "percent",
         "group": "Quality",
         "weight": 0.1666666,
@@ -19,52 +19,52 @@
     },
     "parameters": {
         "name": "Number of Parameters",
-        "shortname": "Params",
+        "shortname": "PAR",
         "unit": "number",
         "group": "Complexity",
         "weight": 0.111111,
         "independent_of_task": true
     },
     "flops": {
-        "name": "Number of Float Operations",
-        "shortname": "FLOPS",
+        "name": "Floating Point Operations",
+        "shortname": "FLOP",
         "unit": "number",
         "group": "Complexity",
         "weight": 0.111111,
         "independent_of_task": true
     },
     "fsize": {
-        "name": "Model Size on Disc",
-        "shortname": "Size",
+        "name": "File Size on Disk",
+        "shortname": "FS",
         "unit": "byte",
         "group": "Complexity",
         "weight": 0.111111,
         "independent_of_task": true
     },
     "train_power_draw": {
-        "name": "Training Power Draw",
-        "shortname": "T Power",
+        "name": "Training Energy Draw",
+        "shortname": "ENT",
         "unit": "kilowatthours",
         "group": "Resources",
         "weight": 0.2
     },
     "train_running_time": {
         "name": "Training Time",
-        "shortname": "T Time",
+        "shortname": "RTT",
         "unit": "seconds",
         "group": "Resources",
         "weight": 0.1333333333
     },
     "power_draw": {
-        "name": "Power Draw per Inference",
-        "shortname": "I Power",
+        "name": "Energy Draw Per Batch",
+        "shortname": "ENI",
         "unit": "wattseconds",
         "group": "Resources",
         "weight": 0.2
     },
     "running_time": {
-        "name": "Running Time per Inference",
-        "shortname": "I Time",
+        "name": "Running Time per Batch",
+        "shortname": "RTI",
         "unit": "seconds",
         "group": "Resources",
         "weight": 0.1333333333

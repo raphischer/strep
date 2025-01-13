@@ -112,14 +112,14 @@ def _real_boundaries_and_defaults(input, boundaries, meta, reference=None):
             # use most influential Performance property on y-axis
             if 'Quality' not in groups:
                 raise RuntimeError(f'Could not find quality property for {task_ds}!')
-            defaults['y'][task_ds] = metrics[groups == 'Quality'][-1]
+            defaults['y'][task_ds] = metrics[groups == 'Quality'][0]
             if 'Resources' in groups: # use the most influential resource property on x-axis
-                defaults['x'][task_ds] = metrics[groups == 'Resources'][-1]
+                defaults['x'][task_ds] = metrics[groups == 'Resources'][0]
             elif 'Complexity' in groups: # use most influential complexity
-                defaults['x'][task_ds] = metrics[groups == 'Complexity'][-1]
+                defaults['x'][task_ds] = metrics[groups == 'Complexity'][0]
             else:
                 try:
-                    defaults['x'][task_ds] = metrics[groups == 'Quality'][-2]
+                    defaults['x'][task_ds] = metrics[groups == 'Quality'][1]
                 except IndexError:
                     raise RuntimeError(f'No second Performance property and no Resources or Complexity properties were found for {task_ds}!')
     return real_bounds, defaults

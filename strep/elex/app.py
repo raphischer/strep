@@ -217,7 +217,7 @@ class Visualization(dash.Dash):
             self.state['label'] = PropertyLabel(self.state['model'], self.state['metrics'], self.unit_fmt, custom=self.meta['meta_dir'])
             # TODO here, pass only the prop meta info for the properties in state!
             model_table, metric_table = summary_to_html_tables(self.state['model'], self.state['metrics'], self.unit_fmt)
-            starplot = create_star_plot(self.state['model'], self.state['metrics'])
+            starplot = create_star_plot(self.state['model'], self.state['metrics']) # TODO display!
             enc_label = self.state['label'].to_encoded_image()
             try:
                 link = self.state['model']['model']['url']

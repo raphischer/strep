@@ -15,13 +15,15 @@ from scipy.stats.stats import pearsonr
 from strep.monitoring import log_system_info
 
 
-def find_sub_db(database, dataset=None, task=None, environment=None):
+def find_sub_db(database, dataset=None, task=None, environment=None, model=None):
     if dataset is not None:
         database = database[database['dataset'] == dataset]
     if task is not None:
         database = database[database['task'] == task]
     if environment is not None:
         database = database[database['environment'] == environment]
+    if model is not None:
+        database = database[database['model'] == model]
     return drop_na_properties(database) # drop columns with full NA
 
 

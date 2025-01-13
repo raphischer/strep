@@ -8,7 +8,7 @@ from PIL import Image
 import base64
 
 from strep.util import lookup_meta, find_sub_db
-from strep.elex.util import RATING_COLORS, ENV_SYMBOLS, PATTERNS, RATING_COLOR_SCALE
+from strep.elex.util import RATING_COLORS, ENV_SYMBOLS, PATTERNS, RATING_COLOR_SCALE, rgb_to_rgba
 
 GRAD = Image.open(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'assets', 'grad.png'))
 
@@ -17,12 +17,13 @@ def assemble_scatter_data(env_names, db, scale_switch, xaxis, yaxis, meta, unit_
     plot_data, substr = {}, '_index' if scale_switch == 'index' else ''
     for env in env_names:
         sub_db = find_sub_db(db, environment=env)
+        dropped_na = sub_db.loc[~((sub_db[f'{xaxis}{substr}'].isna()) | (sub_db[f'{yaxis}{substr}'].isna()))]
         env_data = {
-            'ratings': sub_db['compound_rating'].values,
-            'index': sub_db['compound_index'].values,
-            'x': sub_db[f'{xaxis}{substr}'].values,
-            'y': sub_db[f'{yaxis}{substr}'].values,
-            'names': sub_db['model'].map(lambda mod: lookup_meta(meta, mod, key='short', subdict='model') ).tolist()
+            'ratings': dropped_na['compound_rating'].values,
+            'index': dropped_na['compound_index'].values,
+            'x': dropped_na[f'{xaxis}{substr}'].values,
+            'y': dropped_na[f'{yaxis}{substr}'].values,
+            'names': dropped_na['model'].map(lambda mod: lookup_meta(meta, mod, key='short', subdict='model') ).tolist()
         }
         plot_data[env] = env_data
     axis_names = [lookup_meta(meta, ax, subdict='properties') for ax in [xaxis, yaxis]]
@@ -35,14 +36,17 @@ def assemble_scatter_data(env_names, db, scale_switch, xaxis, yaxis, meta, unit_
     return plot_data, axis_names
 
 
-def add_rating_background(fig, rating_pos, use_grad=False, mode=None, dark_mode=None, col=None):
-    xaxis, yaxis = fig.layout[f'xaxis{col if col is not None and col > 1 else ""}'], fig.layout[f'yaxis{col if col is not None and col > 1 else ""}']
+def add_rating_background(fig, rating_pos, use_grad=False, mode='mean', dark_mode=None, rowcol=None):
+    xaxis_name, yaxis_name, add_args = "", "", {}
+    if rowcol is not None:
+        add_args['row'], add_args['col'] = rowcol[0], rowcol[1]
+        plot_idx = rowcol[2] + 1
+        if plot_idx > 1:
+            xaxis_name, yaxis_name = str(plot_idx), str(plot_idx)
+    xaxis, yaxis = fig.layout[f'xaxis{xaxis_name}'], fig.layout[f'yaxis{yaxis_name}']
     min_x, max_x, min_y, max_y = xaxis.range[0], xaxis.range[1], yaxis.range[0], yaxis.range[1]
-    add_args = {}
     if dark_mode:
         add_args['line'] = dict(color='#0c122b')
-    if col is not None:
-        add_args['row'], add_args['col'] = 1, col
     axis_sorted = [np.all(vals[:-1] <= vals[1:]) for vals in rating_pos]
     if use_grad: # use gradient background
         if axis_sorted[0]:
@@ -50,10 +54,10 @@ def add_rating_background(fig, rating_pos, use_grad=False, mode=None, dark_mode=
         else:
             transp_mode = 'FLIP_TOP_BOTTOM' if axis_sorted[1] else None
         grad = GRAD if transp_mode is None else GRAD.transpose(getattr(Image, transp_mode))
-        if col is None: # TODO improve and use kwargs instead of code copy?
+        if rowcol is None: # TODO improve and use kwargs instead of code copy?
             fig.add_layout_image(source=grad, xref="x domain", yref="y domain", x=1, y=1, xanchor="right", yanchor="top", sizex=1.0, sizey=1.0, sizing="stretch", opacity=0.75, layer="below")
         else:
-            fig.add_layout_image(row=1, col=col, source=grad, xref="x domain", yref="y domain", x=1, y=1, xanchor="right", yanchor="top", sizex=1.0, sizey=1.0, sizing="stretch", opacity=0.75, layer="below")
+            fig.add_layout_image(row=rowcol[0], col=rowcol[1], source=grad, xref="x domain", yref="y domain", x=1, y=1, xanchor="right", yanchor="top", sizex=1.0, sizey=1.0, sizing="stretch", opacity=0.75, layer="below")
     else:
         # add values for bordering rectangles
         for idx, (vals, min_v, max_v) in enumerate(zip(rating_pos, [min_x, min_y], [max_x, max_y])):
@@ -62,7 +66,7 @@ def add_rating_background(fig, rating_pos, use_grad=False, mode=None, dark_mode=
         for xi, (x0, x1) in enumerate(pairwise(rating_pos[0])):
             for yi, (y0, y1) in enumerate(pairwise(rating_pos[1])):
                 color = RATING_COLORS[int(getattr(np, mode)([xi, yi]))]
-                fig.add_shape(type="rect", layer='below', fillcolor=color, x0=x0, x1=x1, y0=y0, y1=y1, opacity=.8, **add_args)
+                fig.add_shape(type="rect", layer='below', fillcolor=color, x0=x0, x1=x1, y0=y0, y1=y1, opacity=.75, **add_args)
 
 
 def create_scatter_graph(plot_data, axis_title, dark_mode, ax_border=0.1, marker_width=15, norm_colors=True, display_text=False, return_traces=False):
@@ -137,6 +141,23 @@ def create_bar_graph(plot_data, dark_mode, discard_y_axis):
     return fig
 
 
-def create_star_plot(summary, metrics):
-    pass # TODO
+def create_star_plot(summary, metrics, scale='index', name=None, color=None, showlegend=True, return_trace=False):
+    if scale == 'index':
+        scale = '_index'
+    elif scale == 'value':
+        scale = ''
+    else:
+        raise NotImplementedError(f'Unsupported scale {scale}')
+    name = name or summary['model']['name']
+    color = color or RATING_COLORS[summary['compound_rating']]
+    star_cols = list(metrics.keys())
+    star_cols = star_cols + [star_cols[0]]
+    star_cols_short = [metrics[col]['shortname'] for col in star_cols]
+    trace = go.Scatterpolar(
+        r=[summary[f'{col}{scale}'] for col in star_cols], theta=star_cols_short,
+        line={'color': color}, fillcolor=rgb_to_rgba(color, 0.1), fill='toself', name=name, showlegend=showlegend
+    )
+    if return_trace:
+        return trace
+    return go.Figure(trace)
     

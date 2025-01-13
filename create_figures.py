@@ -5,8 +5,8 @@ import time
 
 # STREP imports
 from main import DATABASES, load_database, scale_and_rate
-from strep.util import lookup_meta, find_sub_db
-from strep.elex.graphs import assemble_scatter_data, create_scatter_graph, add_rating_background
+from strep.util import lookup_meta, find_sub_db, fill_meta
+from strep.elex.graphs import assemble_scatter_data, create_scatter_graph, add_rating_background, create_star_plot
 from strep.unit_reformatting import CustomUnitReformater
 
 # external libraries
@@ -47,6 +47,10 @@ DISS_FIGURES = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'materia
 def load_db(db):
     database, meta = load_database(db)
     return scale_and_rate(database, meta)
+
+
+def tex(text):
+    return r'$\text{' + text + r'}$'
 
 
 def print_init(fname):
@@ -101,48 +105,64 @@ def chapter2(show):
 
 def chapter3(show):
     db, meta, defaults, idx_bounds, val_bounds, _ = load_db(DATABASES['ImageNetEff22'])
-    ds = 'imagenet'
-    bounds = {'value': val_bounds, 'index': idx_bounds}
+    ds, task, bounds = 'imagenet', 'infer', {'value': val_bounds, 'index': idx_bounds}
+    MOD_SEL = 'EfficientNetB2', 'VGG16', 'MobileNetV3Small'
+    ENV_SEL = pd.unique(db['environment'])[:2]
+    task_props = {prop: meta for prop, meta in meta['properties'].items() if prop in idx_bounds[task, ds, ENV_SEL[0]]}
+
+    fname = print_init('ch3_imagenet_stars') ###############################################################################
+    fig = make_subplots(rows=1, cols=len(MOD_SEL), specs=[[{'type': 'polar'}] * len(MOD_SEL)], subplot_titles=MOD_SEL)
+    for idx, mod in enumerate(MOD_SEL):
+        for e_idx, env in enumerate(ENV_SEL):
+            model = find_sub_db(db, ds, task, env, mod).iloc[0].to_dict()
+            summary = fill_meta(model, meta)
+            trace = create_star_plot(summary, task_props, name=env, color=LAM_COL_FIVE[e_idx], showlegend=idx==0, return_trace=True)
+            fig.add_trace(trace, row=1, col=idx+1)
+    fig.update_annotations(yshift=20)
+    fig.update_layout(
+        polar=dict(radialaxis=dict(visible=True)), width=PLOT_WIDTH, height=PLOT_HEIGHT,
+        legend=dict( yanchor="top", y=-0.1, xanchor="center", x=0.5, orientation='h'), margin={'l': 10, 'r': 10, 'b': 0, 't': 40}
+    )
+    finalize(fig, fname, show)
 
     fname = print_init('ch3_imagenet_tradeoffs') ###############################################################################
     env = pd.unique(db['environment'])[0]
-    scatter = make_subplots(rows=1, cols=2, horizontal_spacing=.05)
-    for idx, (xaxis, yaxis, task) in enumerate([['running_time', 'top-1_val', 'infer'], ['train_power_draw', 'parameters', 'train']]):
+    scatter = make_subplots(rows=2, cols=2, shared_yaxes=True, horizontal_spacing=.02, vertical_spacing=.09)
+    for idx, (xaxis, yaxis, task) in enumerate([['power_draw', 'top-1_val', 'infer'], ['train_power_draw', 'top-1_val', 'train'], ['running_time', 'parameters', 'infer'], ['fsize', 'parameters', 'train']]):
+        row, col = (idx // 2) + 1, (idx % 2) + 1
         ax_bounds = [val_bounds[(task, ds, env)][xaxis].tolist(), val_bounds[(task, ds, env)][yaxis].tolist()]
         plot_data, axis_names = assemble_scatter_data([env], db, 'value', xaxis, yaxis, meta, UNIT_FMT)
         traces = create_scatter_graph(plot_data, axis_names, dark_mode=False, display_text=True, marker_width=8, return_traces=True)
-        scatter.add_traces(traces, rows=[1]*len(traces), cols=[idx+1]*len(traces))
+        scatter.add_traces(traces, rows=[row]*len(traces), cols=[col]*len(traces))
         min_x, max_x = np.min([min(data['x']) for data in plot_data.values()]), np.max([max(data['x']) for data in plot_data.values()])
         min_y, max_y = np.min([min(data['y']) for data in plot_data.values()]), np.max([max(data['y']) for data in plot_data.values()])
         diff_x, diff_y = max_x - min_x, max_y - min_y
-        scatter.update_xaxes(range=[min_x-0.1*diff_x, max_x+0.1*diff_x], showgrid=False, title=axis_names[0], row=1, col=idx+1)
-        scatter.update_yaxes(range=[min_y-0.1*diff_y, max_y+0.1*diff_y], showgrid=False, title=axis_names[1], row=1, col=idx+1)
-        add_rating_background(scatter, ax_bounds, True, 'mean', dark_mode=False, col=(idx+1))
-    for idx in range(len(scatter.data)):
+        scatter.update_xaxes(range=[min_x-0.1*diff_x, max_x+0.1*diff_x], showgrid=False, title=tex(axis_names[0]), row=row, col=col)
+        scatter.update_yaxes(range=[min_y-0.1*diff_y, max_y+0.1*diff_y], showgrid=False, row=row, col=col)
+        if col == 1:
+            scatter.update_yaxes(title=tex(axis_names[1]), row=row, col=col)
+        add_rating_background(scatter, ax_bounds, rowcol=(row, col, idx))
         scatter.data[idx]['showlegend'] = False
-    scatter.update_yaxes(side='right', row=1, col=2)
     # scatter.update_traces(textposition='top center')
-    scatter.update_layout(width=PLOT_WIDTH, height=PLOT_HEIGHT, margin={'l': 0, 'r': 0, 'b': 0, 't': 0},
+    scatter.update_layout(width=PLOT_WIDTH, height=PLOT_HEIGHT*2, margin={'l': 0, 'r': 0, 'b': 0, 't': 0},
                             legend=dict(x=.5, y=0.05, orientation="h", xanchor="center", yanchor="bottom"))
     finalize(scatter, fname, show)
 
-
     fname = print_init('ch3_index_scaling') ###############################################################################
-    task = 'infer'
     xaxis, yaxis = defaults['x'][(task, ds)], defaults['y'][(task, ds)]
     db = find_sub_db(db, dataset=ds, task=task)
-    scatter = make_subplots(rows=1, cols=2, horizontal_spacing=.05, subplot_titles=['Real measurements', 'Index scaled values'])
+    scatter = make_subplots(rows=1, cols=2, horizontal_spacing=.02, subplot_titles=[r'$\text{Real-values properties }\mu$', r'$\text{Index-scaled properties }\tilde{\mu}$'])
     for idx, scale in enumerate(['value', 'index']):
-        plot_data, axis_names = assemble_scatter_data(pd.unique(db['environment'])[:2], db, scale, xaxis, yaxis, meta, UNIT_FMT)
+        plot_data, axis_names = assemble_scatter_data(ENV_SEL, db, scale, xaxis, yaxis, meta, UNIT_FMT)
         traces = create_scatter_graph(plot_data, axis_names, dark_mode=False, display_text=False, marker_width=8, return_traces=True)
         scatter.add_traces(traces, rows=[1]*len(traces), cols=[idx+1]*len(traces))
         min_x, max_x = np.min([min(data['x']) for data in plot_data.values()]), np.max([max(data['x']) for data in plot_data.values()])
         min_y, max_y = np.min([min(data['y']) for data in plot_data.values()]), np.max([max(data['y']) for data in plot_data.values()])
         diff_x, diff_y = max_x - min_x, max_y - min_y
-        scatter.update_xaxes(range=[min_x-0.1*diff_x, max_x+0.1*diff_x], showgrid=False, title=axis_names[0], row=1, col=idx+1)
-        scatter.update_yaxes(range=[min_y-0.1*diff_y, max_y+0.1*diff_y], showgrid=False, title=axis_names[1], row=1, col=idx+1)
+        scatter.update_xaxes(range=[min_x-0.1*diff_x, max_x+0.1*diff_x], showgrid=False, title=tex(axis_names[0]), row=1, col=idx+1)
+        scatter.update_yaxes(range=[min_y-0.1*diff_y, max_y+0.1*diff_y], showgrid=False, title=tex(axis_names[1]), row=1, col=idx+1)
         ax_bounds = [bounds[scale][(task, ds, env)][xaxis].tolist(), bounds[scale][(task, ds, env)][yaxis].tolist()]
-        add_rating_background(scatter, ax_bounds, True, 'mean', dark_mode=False, col=(idx+1))  
+        add_rating_background(scatter, ax_bounds, True, 'mean', dark_mode=False, rowcol=(1, idx+1, idx))
     for idx in [1, 2]:
         scatter.data[idx]['showlegend'] = False
     scatter.update_yaxes(side='right', row=1, col=2)
@@ -168,8 +188,6 @@ if __name__ == '__main__':
     ####### DUMMY OUTPUT - for setting up pdf export of plotly
     fig = px.scatter(x=[0, 1, 2], y=[0, 1, 4])
     fig.write_image("dummy.pdf")
-    time.sleep(0.1)
-    os.remove("dummy.pdf")
 
     chapters = [chapter1, chapter2, chapter3, chapter4, chapter5]
     if args.chapter == -1:
@@ -181,3 +199,4 @@ if __name__ == '__main__':
     
     ####### print chapter figures
     chapters[args.chapter-1](args.show)
+    os.remove("dummy.pdf")
