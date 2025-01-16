@@ -11,7 +11,7 @@ from strep.elex.pages import create_page
 from strep.elex.util import summary_to_html_tables, toggle_element_visibility
 from strep.elex.graphs import assemble_scatter_data, create_scatter_graph, create_bar_graph, add_rating_background, create_star_plot
 from strep.labels.label_generation import PropertyLabel
-from strep.index_scale import scale_and_rate
+from strep.index_scale import scale_and_rate, _extract_weights
 from strep.unit_reformatting import CustomUnitReformater
 from strep.util import lookup_meta, PatchedJSONEncoder, fill_meta, find_sub_db
 
@@ -194,6 +194,10 @@ class Visualization(dash.Dash):
         axis_options = [{'label': lookup_meta(self.meta, metr, subdict='properties'), 'value': metr} for metr in self.state['metrics']]
         self.state['xaxis'] = self.defaults['x'][self.state['task_ds']]
         self.state['yaxis'] = self.defaults['y'][self.state['task_ds']]
+        if 'weight' not in self.state['metrics'][self.state['xaxis']]: # safe defaults
+            weights = _extract_weights(self.state['metrics'])
+            for prop, weight in zip(self.state['metrics'], weights):
+                self.state['metrics'][prop]['weight'] = weight
         # find corresponding sub database and models
         self.state['sub_database'] = find_sub_db(self.database, self.state['ds'], self.state['task'])
         models = self.state['sub_database']['model'].values
@@ -238,7 +242,7 @@ class Visualization(dash.Dash):
                 self.update_database()
         self.state['xaxis'] = xaxis or self.state['xaxis']
         self.state['yaxis'] = yaxis or self.state['yaxis']
-        return self.meta['properties'][self.state['xaxis']]['weight'], self.meta['properties'][self.state['yaxis']]['weight']
+        return self.state['metrics'][self.state['xaxis']]['weight'], self.state['metrics'][self.state['yaxis']]['weight']
 
     def save_weights(self, save_weights_clicks=None):
         if save_weights_clicks is not None:

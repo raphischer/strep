@@ -51,12 +51,21 @@ def _rate(input, ___unused=None, boundaries=None):
     results = {prop: np.digitize(input[prop], bins) for prop, bins in boundaries.items()}
     return pd.DataFrame(results, index=input.index), boundaries
 
-def _compound_single(input, mode, properties_meta):
-    props = list(properties_meta.keys())
-    weights = np.array([meta['weight'] for meta in properties_meta.values()])
+def _extract_weights(prop_meta):
+    try:
+        return np.array([vals['weight'] for vals in prop_meta.values()])
+    except KeyError: # instead use defaults
+        groups, counts = np.unique([vals['group'] for prop, vals in prop_meta.items()], return_counts=True)
+        groups = {g: c for g, c in zip(groups, counts)}
+        weights = [1 / (len(groups) * groups[vals['group']]) for vals in prop_meta.values()]
+        return np.array(weights)
+
+def _compound_single(input, mode, prop_meta):
+    props = list(prop_meta.keys())
+    values = input[props].fillna(0)
+    weights =  _extract_weights(prop_meta)
     assert np.all(weights >= 0)
     weights_norm = weights / weights.sum()
-    values = input[props].fillna(0)
     if mode == 'mean':
         return np.matmul(values, weights_norm)
     if mode == 'median':
@@ -71,8 +80,8 @@ def _compound_single(input, mode, properties_meta):
 def _compound(input, properties_meta, boundaries, mode):
     index_vals = {}
     index_vals['compound_index'] = _compound_single(input, mode, properties_meta)
-    index_vals['resource_index'] = _compound_single(input, mode, {p: v for p, v in properties_meta.items() if v['group'] != 'Quality'})
-    index_vals['quality_index'] = _compound_single(input, mode, {p: v for p, v in properties_meta.items() if v['group'] == 'Quality'})
+    for group in pd.unique(np.array([prop['group'] for prop in properties_meta.values()])):
+        index_vals[f'{group}_index'] = _compound_single(input, mode, {p: v for p, v in properties_meta.items() if v['group'] == group})
     index_vals = pd.DataFrame(index_vals, index=input.index)
     boundaries = _prepare_boundaries(index_vals, boundaries) # either provided from outside, or calculated based on quantiles
     rated, _ = _rate(index_vals, boundaries=boundaries)
@@ -91,7 +100,7 @@ def _real_boundaries_and_defaults(input, boundaries, meta, reference=None):
             # calculate the real-valued bounds, based on the index-value bounds
             if sub_config not in real_bounds:
                 real_bounds[sub_config] = {}
-            sub_props = [prop for prop in boundaries[sub_config].keys() if prop not in ['compound_index', 'resource_index', 'quality_index']]
+            sub_props = [prop for prop in boundaries[sub_config].keys() if prop in meta]
             for prop in sub_props:
                 prop_bounds = boundaries[sub_config][prop]
                 if reference is not None:
@@ -105,7 +114,8 @@ def _real_boundaries_and_defaults(input, boundaries, meta, reference=None):
             if task_ds in defaults['x']: # not necessary for each individual data set!
                 continue
             sub_props = list(reversed(sub_props)) # makes sure that equally weighted properties stay in right order (top down in json)
-            weights, groups = zip(*[(meta[prop]['weight'], meta[prop]['group']) for prop in sub_props])            
+            groups = [meta[prop]['group'] for prop in sub_props]
+            weights = [meta[prop]['weight'] for prop in sub_props] if 'weight' in meta[sub_props[0]] else np.ones((len(sub_props))) / len(sub_props)
             argsort = np.argsort(weights)
             groups = np.array(groups)[argsort]
             metrics = np.array(sub_props)[argsort]
@@ -144,7 +154,7 @@ def _scale_single(input, scale_m, meta, reference, mode):
     if mode == 'rating':
         assert not np.any(np.logical_or(input[sub_meta.keys()] > 1, input[sub_meta.keys()] < 0)), f'Found values outside of the interval (0, 1] - please properly index-scale your results first!'
         reference_input = _prepare_boundaries(input[sub_meta.keys()], reference) # reference now controls the rating boundaries per property
-    if mode == 'compound':
+    if 'compound' in mode:
         assert not np.any(np.logical_or(input[sub_meta.keys()] > 1, input[sub_meta.keys()] < 0)), f'Found values outside of the interval (0, 1] - please properly index-scale your results first!'
     results, boundaries = scale_m(input, sub_meta, reference_input)
     return results, boundaries, sub_meta

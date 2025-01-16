@@ -141,7 +141,7 @@ def create_bar_graph(plot_data, dark_mode, discard_y_axis):
     return fig
 
 
-def create_star_plot(summary, metrics, scale='index', name=None, color=None, showlegend=True, return_trace=False):
+def create_star_plot(summary, meta, scale='index', name=None, color=None, showlegend=True, return_trace=False):
     if scale == 'index':
         scale = '_index'
     elif scale == 'value':
@@ -150,9 +150,9 @@ def create_star_plot(summary, metrics, scale='index', name=None, color=None, sho
         raise NotImplementedError(f'Unsupported scale {scale}')
     name = name or summary['model']['name']
     color = color or RATING_COLORS[summary['compound_rating']]
-    star_cols = list(metrics.keys())
-    star_cols = star_cols + [star_cols[0]]
-    star_cols_short = [metrics[col]['shortname'] for col in star_cols]
+    star_cols = [key for key in meta.keys() if key in summary]
+    star_cols.append(star_cols[0])
+    star_cols_short = [meta[col]['shortname'] for col in star_cols]
     trace = go.Scatterpolar(
         r=[summary[f'{col}{scale}'] for col in star_cols], theta=star_cols_short,
         line={'color': color}, fillcolor=rgb_to_rgba(color, 0.1), fill='toself', name=name, showlegend=showlegend
