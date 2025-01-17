@@ -27,33 +27,6 @@ def find_sub_db(database, dataset=None, task=None, environment=None, model=None)
     return drop_na_properties(database) # drop columns with full NA
 
 
-def identify_all_correlations(db, all_metrics, scale='index'):
-    corr = {}
-    for ds_task, data in db.groupby(['dataset', 'task']):
-        # init correlation table
-        metrics = all_metrics[ds_task]
-        corr[ds_task] = (np.full((metrics.size, metrics.size), fill_value=np.nan), metrics)
-        np.fill_diagonal(corr[ds_task][0], 1)
-        # assess correlation between properties
-        props = prop_dict_to_val(data[metrics], scale)
-        for idx_a, idx_b in itertools.combinations(np.arange(metrics.size), 2):
-            if scale == 'index': # these originally were nan values!
-                props[props == 0] = np.nan
-            cols = props.iloc[:, [idx_a, idx_b]].dropna().values
-            if cols.size > 4:
-                corr[ds_task][0][idx_a, idx_b] = pearsonr(cols[:,0], cols[:,1])[0]
-                corr[ds_task][0][idx_b, idx_a] = corr[ds_task][0][idx_a, idx_b]
-    return corr
-
-
-def identify_correlation(db):
-    correlation = np.zeros((len(db.columns), len(db.columns)))
-    for col_a, col_b in itertools.combinations(np.arange(len(db.columns)), 2):
-        correlation[col_a, col_b] = pearsonr(db.iloc[:, col_a], db.iloc[:, col_b])[0]
-        correlation[col_b, col_a] = correlation[col_a, col_b]
-    return correlation, db.columns.tolist()
-
-
 def load_meta(directory=None):
     if directory is None:
         directory = os.getcwd()
@@ -68,6 +41,10 @@ def load_meta(directory=None):
         print('Could not find any meta information - assuming all numeric properties relate to Quality and want to be maximized.')
     meta['meta_dir'] = os.path.abspath(directory)
     return meta
+
+
+def loopup_task_ds_metrics(val_bounds):
+    return { (task, ds): list(prop_bounds.keys()) for (task, ds, _), prop_bounds in val_bounds.items() }
 
 
 def lookup_meta(meta, element_name, key='name', subdict=None):
@@ -174,10 +151,14 @@ def create_output_dir(dir=None, prefix='', config=None):
 
 
 def prop_dict_to_val(df, key='value'):
-    try:
-        return df.map(lambda val: val[key] if isinstance(val, dict) and key in val else val)
-    except (AttributeError, TypeError):
-        return df.applymap(lambda val: val[key] if isinstance(val, dict) and key in val else val)
+    df = df.dropna(how='all', axis=1)
+    properties = [col for col in df.columns if f'{col}_index' in df.columns]
+    if key == 'value':
+        return df[properties]
+    elif key == 'index':
+        return df[[f'{col}_index' for col in properties]]
+    else:
+        raise RuntimeError('unknown key', key)
 
 
 def drop_na_properties(df):
