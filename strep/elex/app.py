@@ -191,7 +191,6 @@ class Visualization(dash.Dash):
         sel_env = [avail_envs[0]['value']]
         avail_metrics = self.boundaries_real[(self.state['task'], self.state['ds'], sel_env[0])].keys()
         self.state['metrics'] = {prop: self.meta['properties'][prop] for prop in avail_metrics}
-        axis_options = [{'label': lookup_meta(self.meta, metr, subdict='properties'), 'value': metr} for metr in self.state['metrics']]
         self.state['xaxis'] = self.defaults['x'][self.state['task_ds']]
         self.state['yaxis'] = self.defaults['y'][self.state['task_ds']]
         if 'weight' not in self.state['metrics'][self.state['xaxis']]: # safe defaults
@@ -203,6 +202,7 @@ class Visualization(dash.Dash):
         models = self.state['sub_database']['model'].values
         ref_options = [{'label': mod, 'value': mod} for mod in models]
         curr_ref = self.references[self.state['ds']] if self.references is not None and self.state['ds'] in self.references else models[0]
+        axis_options = [{'label': lookup_meta(self.meta, metr, subdict='properties'), 'value': metr} for metr in self.state['metrics']]
         return avail_envs, sel_env, axis_options, self.state['xaxis'], axis_options, self.state['yaxis'], ref_options, curr_ref
 
     def display_model(self, hover_data=None, env_names=None, compound_mode=None):

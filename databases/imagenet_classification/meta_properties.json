@@ -4,7 +4,6 @@
         "shortname": "ACC1",
         "unit": "percent",
         "group": "Quality",
-        "weight": 0.1666666,
         "maximize": true,
         "independent_of_task": true
     },
@@ -13,7 +12,6 @@
         "shortname": "ACC5",
         "unit": "percent",
         "group": "Quality",
-        "weight": 0.1666666,
         "maximize": true,
         "independent_of_task": true
     },
@@ -22,7 +20,6 @@
         "shortname": "PAR",
         "unit": "number",
         "group": "Complexity",
-        "weight": 0.111111,
         "independent_of_task": true
     },
     "flops": {
@@ -30,7 +27,6 @@
         "shortname": "FLOP",
         "unit": "number",
         "group": "Complexity",
-        "weight": 0.111111,
         "independent_of_task": true
     },
     "fsize": {
@@ -38,35 +34,30 @@
         "shortname": "FS",
         "unit": "byte",
         "group": "Complexity",
-        "weight": 0.111111,
         "independent_of_task": true
     },
     "train_power_draw": {
         "name": "Training Energy Draw",
         "shortname": "ENT",
         "unit": "kilowatthours",
-        "group": "Resources",
-        "weight": 0.2
+        "group": "Resources"
     },
     "train_running_time": {
         "name": "Training Time",
         "shortname": "RTT",
         "unit": "seconds",
-        "group": "Resources",
-        "weight": 0.1333333333
+        "group": "Resources"
     },
     "power_draw": {
         "name": "Energy Draw Per Batch",
         "shortname": "ENI",
         "unit": "wattseconds",
-        "group": "Resources",
-        "weight": 0.2
+        "group": "Resources"
     },
     "running_time": {
         "name": "Running Time per Batch",
         "shortname": "RTI",
         "unit": "seconds",
-        "group": "Resources",
-        "weight": 0.1333333333
+        "group": "Resources"
     }
 }

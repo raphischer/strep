@@ -5,7 +5,8 @@ import time
 from itertools import product
 
 # STREP imports
-from main import DATABASES, load_database, scale_and_rate
+from main import DATABASES
+from strep.index_scale import load_database, scale_and_rate, _extract_weights
 from strep.util import lookup_meta, find_sub_db, fill_meta
 from strep.elex.util import RATING_COLORS, RATING_COLOR_SCALE
 from strep.elex.graphs import assemble_scatter_data, create_scatter_graph, add_rating_background, create_star_plot
@@ -23,7 +24,6 @@ from plotly.colors import sample_colorscale, make_colorscale
 PLOT_WIDTH = 800
 PLOT_HEIGHT = PLOT_WIDTH // 3
 
-COLORS = ['#009ee3', '#983082', '#ffbc29', '#35cdb4', '#e82e82', '#59bdf7', '#ec6469', '#706f6f', '#4a4ad8', '#0c122b', '#ffffff']
 LAMARR_COLORS = [
     '#009ee3', # aqua
     '#983082', # fresh violet
@@ -275,6 +275,9 @@ def chapter3(show):
     MOD_SEL = 'EfficientNetB2', 'VGG16', 'MobileNetV3Small'
     ENV_SEL = pd.unique(db['environment'])[:2]
     task_props = {prop: meta for prop, meta in meta['properties'].items() if prop in idx_bounds[task, ds, ENV_SEL[0]]}
+    weights = _extract_weights(task_props)
+    for prop, weight in zip(task_props, weights):
+        task_props[prop]['weight'] = weight
 
     fname = print_init('ch3_imagenet_stars') ###############################################################################
     fig = make_subplots(rows=1, cols=len(MOD_SEL), specs=[[{'type': 'polar'}] * len(MOD_SEL)], subplot_titles=MOD_SEL)
