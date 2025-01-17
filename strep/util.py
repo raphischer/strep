@@ -10,7 +10,6 @@ import pathlib
 
 import numpy as np
 import pandas as pd
-from scipy.stats.stats import pearsonr
 
 from strep.monitoring import log_system_info
 
@@ -161,8 +160,10 @@ def prop_dict_to_val(df, key='value'):
         raise RuntimeError('unknown key', key)
 
 
-def drop_na_properties(df):
-    valid_cols = prop_dict_to_val(df).dropna(how='all', axis=1).columns
+def drop_na_properties(df, reduce_to_index=False):
+    if reduce_to_index:
+        df = prop_dict_to_val(df)
+    valid_cols = df.dropna(how='all', axis=1).columns
     return df[valid_cols]
 
 
