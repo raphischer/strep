@@ -4,7 +4,6 @@
         "shortname": "MASE",
         "unit": "number",
         "group": "Quality",
-        "weight": 0.111111111,
         "independent_of_task": true
     },
     "RMSE": {
@@ -12,7 +11,6 @@
         "shortname": "RMSE",
         "unit": "number",
         "group": "Quality",
-        "weight": 0.111111111,
         "independent_of_task": true
     },
     "MAPE": {
@@ -20,51 +18,44 @@
         "shortname": "MAPE",
         "unit": "number",
         "group": "Quality",
-        "weight": 0.111111111,
-        "independent_of_task": true
-    },
-    "parameters": {
-        "name": "Number of Parameters",
-        "shortname": "Params",
-        "unit": "number",
-        "group": "Complexity",
-        "weight": 0.166666667,
-        "independent_of_task": true
-    },
-    "fsize": {
-        "name": "Model Size on Disc",
-        "shortname": "Size",
-        "unit": "byte",
-        "group": "Complexity",
-        "weight": 0.166666667,
         "independent_of_task": true
     },
     "running_time": {
         "name": "Running Time per Inference",
-        "shortname": "I Time",
+        "shortname": "RTI",
         "unit": "seconds",
-        "group": "Resources",
-        "weight": 0.0833333333
+        "group": "Resources"
+    },
+    "power_draw": {
+        "name": "Energy Draw per Inference",
+        "shortname": "ENI",
+        "unit": "wattseconds",
+        "group": "Resources"
+    },
+    "parameters": {
+        "name": "Number of Parameters",
+        "shortname": "PAR",
+        "unit": "number",
+        "group": "Complexity",
+        "independent_of_task": true
+    },
+    "fsize": {
+        "name": "Model Size on Disc",
+        "shortname": "FS",
+        "unit": "byte",
+        "group": "Complexity",
+        "independent_of_task": true
     },
     "train_power_draw": {
         "name": "Training Power Draw",
-        "shortname": "T Power",
+        "shortname": "ENT",
         "unit": "wattseconds",
-        "group": "Resources",
-        "weight": 0.0833333333
+        "group": "Resources"
     },
     "train_running_time": {
         "name": "Training Time",
-        "shortname": "T Time",
+        "shortname": "RTT",
         "unit": "seconds",
-        "group": "Resources",
-        "weight": 0.0833333333
-    },
-    "power_draw": {
-        "name": "Power Draw per Inference",
-        "shortname": "I Power",
-        "unit": "wattseconds",
-        "group": "Resources",
-        "weight": 0.0833333333
+        "group": "Resources"
     }
 }

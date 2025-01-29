@@ -6,10 +6,11 @@ from strep.elex.app import Visualization
 DATABASES = {
     'ImageNetEff22': 'databases/imagenet_classification/database.pkl',
     'EdgeAccUSB': 'databases/edge_acc/database.pkl',
-    'XPCR-Forecasting': 'databases/xpcr/database.pkl',
+    'XPCR': 'databases/xpcr/database.pkl',
     'MetaQuRe': 'databases/metaqure/database.pkl',
     'RobustBench': 'databases/robustbench/database.pkl',
-    'Papers With Code': 'databases/paperswithcode/database.pkl'
+    'PWC': 'databases/paperswithcode/database.pkl',
+    # 'PWC_FULL': 'databases/paperswithcode/database_complete.pkl'
 }
 
 if __name__ == '__main__':

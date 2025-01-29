@@ -7,7 +7,7 @@ from itertools import product
 # STREP imports
 from main import DATABASES
 from strep.index_scale import load_database, scale_and_rate, _extract_weights
-from strep.correlations import identify_all_correlations
+from strep.correlations import calc_correlation, calc_all_correlations
 from strep.util import lookup_meta, find_sub_db, fill_meta, loopup_task_ds_metrics, prop_dict_to_val
 from strep.elex.util import RATING_COLORS, RATING_COLOR_SCALE, RATING_COLOR_SCALE_REV
 from strep.elex.graphs import assemble_scatter_data, create_scatter_graph, add_rating_background, create_star_plot
@@ -317,65 +317,61 @@ def chapter3(show):
     finalize(fig, fname, show)
 
     ############################### Biases Results (Section 3.3.3) #######################################################
-    # for db_name in ['XPCR-Forecasting', 'MetaQuRe']:
-    #     DBS[db_name] = load_db(DATABASES[db_name])
 
-    fname = print_init('ch3_bias_correlation_matrix') ###############################################################################
+    fname = print_init('ch3_bias_correlation_imagenet') ###############################################################################
     correlations = {}
-    fig_prop_corr = go.Figure()
-    fig_pwc_comp_impact = go.Figure()
-    task_ds_env_sel = {db_name: list(bounds.keys())[0] for db_name, (_, _, _, _, bounds, _) in DBS.items()}
-    titles = [f"{task} on {lookup_meta(DBS[db][1], ds, subdict='dataset')}<br>({env})" for db, (task, ds, env) in task_ds_env_sel.items()]
-    fig = make_subplots(rows=2, cols=len(DBS), subplot_titles=titles, horizontal_spacing=0.1, vertical_spacing=0.1)
+    task_ds_env_sel = {
+        'ImageNetEff22': ('ImageNet Models on A100 x8 [Fis+22]', 'infer', 'imagenet', 'A100 x8 - PyTorch 1.10.2+cu113'),
+        'EdgeAccUSB': ('ImageNet Models on Laptop NCS [SFB24]', 'infer', 'imagenet', 'Laptop NCS')
+    }
+    titles = [title for title, _, _, _ in task_ds_env_sel.values()]
+    fig = make_subplots(rows=2, cols=len(DBS), subplot_titles=titles, horizontal_spacing=0.14, vertical_spacing=0.05, row_heights=[0.6, 0.4])
     for idx, (name, (db, meta, _, _, _, _)) in enumerate(DBS.items()):
-        correlations[name] = { scale: identify_all_correlations(db, scale) for scale in ['index', 'value'] }
-        corr = correlations[name]['index'][task_ds_env_sel[name]]
+        correlations[name] = calc_all_correlations(db, 'index')
+        corr = correlations[name][task_ds_env_sel[name][1:]]
         prop_names = [lookup_meta(meta, prop, 'shortname', 'properties') for prop in corr.columns]
         fig.add_trace(go.Heatmap(z=corr, x=prop_names, y=prop_names, coloraxis="coloraxis"), row=1, col=1+idx)
         above_diag = corr.values[np.triu_indices(corr.shape[0], k=1)]
-        # fig.add_trace(go.Violin(x=above_diag, y=[1]*above_diag.size, orientation='h', spanmode='hard',
-        #                         showlegend=False, line={'color': LAM_COL_FIVE[0]}), row=2, col=1+idx)
-                                # , box_visible=True, meanline_visible=True,
-        fig.add_trace(go.Box(x=above_diag, y=[1]*above_diag.size, orientation='h',
-                             showlegend=False, marker_color=LAM_COL_FIVE[0], boxmean='sd'), row=2, col=1+idx)
-        fig.add_annotation(x=np.mean(above_diag), y=1, ay=-90, text=r"$\bar{R}$", row=2, col=1+idx)
+        fig.add_trace(go.Violin(x=above_diag, y=[1]*above_diag.size, orientation='h', spanmode='hard',
+                                showlegend=False, line={'color': LAMARR_COLORS[1]}), row=2, col=1+idx)
+        fig.add_trace(go.Box(x=above_diag, y=[0]*above_diag.size, orientation='h',
+                             showlegend=False, marker_color=LAMARR_COLORS[1], boxmean='sd'), row=2, col=1+idx)
+        fig.add_annotation(x=np.mean(above_diag), y=0, ay=-40, text=r"$\bar{R}$", row=2, col=1+idx)
         for f in [1, -1]:
             arr_head_x = np.mean(above_diag) + np.std(above_diag) * f
-            fig.add_annotation(x=arr_head_x, y=1, ay=90, text=r"$\text{std}(R)$", row=2, col=1+idx)
-    fig.update_layout(width=PLOT_WIDTH, height=PLOT_HEIGHT*2, margin={'l': 0, 'r': 0, 'b': 0, 't': 40},
+            fig.add_annotation(x=arr_head_x, y=0, ay=40, text=r"$\text{std}(R)$", row=2, col=1+idx)
+    fig.update_layout(width=PLOT_WIDTH, height=PLOT_HEIGHT*2, margin={'l': 0, 'r': 0, 'b': 0, 't': 20},
                       coloraxis={'colorscale': LAM_COL_SCALE, 'colorbar': {'title': 'Correlation'}},
                       xaxis3={'title': r'$\text{Correlation } r(\tilde{\mu}_i, \tilde{\mu}_j, E)$'}, xaxis4={'title': r'$\text{Correlation } r(\tilde{\mu}_i, \tilde{\mu}_j, E)$'}, yaxis3={'visible': False}, yaxis4={'visible': False})
     finalize(fig, fname, show)
 
-    #     # assess property correlation
-    #     for scale, corrs in correlations[name].items():
-    #         all_corr = []
-    #         for _, corr in corrs.items():
-    #             all_corr = all_corr + corr[0].flatten().tolist()
-    #         trace = go.Violin(y=all_corr, x=[f'{idx}_{scale.capitalize()}'] * len(all_corr), spanmode='hard',
-    #                           name=f'{name} (N={len(all_corr)})', box_visible=True, meanline_visible=True,
-    #                           legendgroup=name, showlegend=scale=='index', line={'color': RATING_COLORS[idx]})
-    #         fig_prop_corr.add_trace(trace)
-            
-    #     # assess difference of using weighted compound or single property
-    #     corr_spearmen = []
-    #     for task_ds, data in db.groupby(['task', 'dataset']):
-    #         data_val = prop_dict_to_val(data[task_ds_props[task_ds]])
-    #         data_ind = prop_dict_to_val(data[task_ds_props[task_ds]], 'index')
-    #         if np.all(data_ind.min() >= 0) and np.all(data_ind.max() <= 1):
-    #             prop_pop = [data_val[col].dropna().size for col in task_ds_props[task_ds]]
-    #             most_pop = data_ind.iloc[:,np.argmax(prop_pop)]
-    #             equally = data_ind.mean(axis=1)
-    #             # corr_ken.append(kendalltau(most_pop.values, equally.values)[0])
-    #             corr_spearmen.append(spearmanr(most_pop.values, equally.values)[0])
-    #     fig_pwc_comp_impact.add_trace( go.Violin(y=corr_spearmen, spanmode='hard', name=f'{name} (N={len(corr_spearmen)})', line={'color': RATING_COLORS[idx]}, box_visible=True, meanline_visible=True) )
-    # # write images
-    # fig_prop_corr.update_layout(width=PLOT_WIDTH, height=PLOT_HEIGHT, legend=dict(orientation="h", yanchor="bottom", y=-0.2, xanchor="center", x=0.5), margin={'l': 0, 'r': 0, 'b': 0, 't': 0}, xaxis={'tickmode': 'array', 'tickvals': [0, 1, 2, 3, 4, 5, 6, 7], 'ticktext': ['Index-scaled', 'Original values'] * 4})
-    # finalize(fig_prop_corr, fname, show)
-    # fname = print_init('ch3_bias_other') ###############################################################################
-    # fig_pwc_comp_impact.update_layout(width=PLOT_WIDTH / 2, height=PLOT_HEIGHT, xaxis={'visible': False, 'showticklabels': False},
-    #                   legend=dict(orientation="h", yanchor="bottom", y=0.0, xanchor="center", x=0.5), margin={'l': 0, 'r': 0, 'b': 0, 't': 0} )
-    # finalize(fig_pwc_comp_impact, fname, show)
+    fname = print_init('ch3_bias_correlation_others') ###############################################################################
+    other_dbs = {
+        'XPCR': [("Train and Test", "hospital_dataset", "Intel i9-13900K"), ("Train and Test", "car_parts_dataset_without_missing_values", "Intel i9-13900K")],
+        'MetaQuRe': [("train", "parkinsons", "Intel i7-6700 - Scikit-learn 1.4.0"), ("train", "breast_cancer", "Intel i7-6700 - Scikit-learn 1.4.0")],
+        'PWC': [("semi-supervised-video-object-segmentation", "davis-2017-val", "unknown"), ("image-classification", "imagenet", "unknown")],
+    }
+    subplot_titles = [f'{"_".join(ds.split("_")[:2])} ({db})' for db, sel in other_dbs.items() for (_, ds, _) in sel]
+    subplot_titles = np.array(subplot_titles).reshape((3, 2)).transpose().flatten() # bring in correct order
+    fig = make_subplots(rows=2, cols=len(other_dbs), horizontal_spacing=0.08, vertical_spacing=0.18, subplot_titles=subplot_titles)
+    for col, (db_name, to_display_keys) in enumerate(other_dbs.items()):
+        db, meta, _, _, _, _ = load_db(DATABASES[db_name])
+        # correlations[db_name] = identify_all_correlations(db, 'index')
+        # for index, (key, corr) in enumerate(correlations[db_name].items()):
+        #     if index > 50:
+        #         break
+        #     prop_names = [lookup_meta(meta, prop, 'shortname', 'properties') for prop in corr.columns]
+        #     fig = go.Figure(go.Heatmap(z=corr, x=prop_names, y=prop_names, coloraxis="coloraxis"))
+        #     fig.update_layout(title="   ".join(key))
+        #     fig.write_image(os.path.join(DISS_FIGURES, f'test_{db_name.replace(" ", "_")}_{str(index).zfill(3)}_{"__".join(key).replace(" ", "_")}.pdf'))
+        for row, (task, ds, env) in enumerate(to_display_keys):
+            corr = calc_correlation(find_sub_db(db, task=task, dataset=ds, environment=env))
+            prop_names = [lookup_meta(meta, prop, 'shortname', 'properties') for prop in corr.columns]
+            fig.add_trace(go.Heatmap(z=corr, x=prop_names, y=prop_names, coloraxis="coloraxis"), row=1+row, col=1+col)
+    fig.update_xaxes(tickangle=90)
+    fig.update_layout(width=PLOT_WIDTH, height=PLOT_HEIGHT*2, margin={'l': 0, 'r': 0, 'b': 0, 't': 20},
+                      coloraxis={'colorscale': LAM_COL_SCALE, 'colorbar': {'title': 'Correlation'}})
+    finalize(fig, fname, show)
 
     print(1)
 
