@@ -171,6 +171,25 @@ def load_database(fname):
     for field in ['environment', 'task', 'dataset']:
         if field not in database.columns:
             database[field] = 'unknown'
+    if 'properties' in meta: # order properties in alignment with meta file
+        prop_cols = [prop for prop in meta['properties'].keys() if prop in database.columns]
+        non_prop_cols = [col for col in database.columns if col not in prop_cols]
+        database = database[non_prop_cols + prop_cols]
+    else:
+        prop_cols = database.select_dtypes('number').columns.tolist() # used for stats
+    stats = {
+        'tasks': ('task', 2),
+        'ds': ('dataset', 4),
+        'envs': ('environment', 2),
+    }
+    # assess some general statistics over the database
+    stats = [f'#{skey}: {str(pd.unique(database[key]).size).rjust(l)}' for skey, (key, l) in stats.items()]
+    incompl = []
+    for _, data in database.groupby(['task', 'dataset', 'environment']):
+        data = data[prop_cols].dropna(how='all', axis=1)
+        incompl.append(data.isna().values.sum() / data.size)
+    stats = stats + [f'#props: {len(prop_cols):<3}', f'#incompleteness: {np.mean(incompl)*100:4.2f}%']
+    print('        ' + '  '.join(stats))
     return database, meta
 
 def scale(input, meta=None, reference=None, mode='index', verbose=True):
