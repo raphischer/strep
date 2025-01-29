@@ -9,7 +9,7 @@ import dash_bootstrap_components as dbc
 
 from strep.elex.pages import create_page
 from strep.elex.util import summary_to_html_tables, toggle_element_visibility
-from strep.elex.graphs import assemble_scatter_data, create_scatter_graph, create_bar_graph, add_rating_background, create_star_plot
+from strep.elex.graphs import assemble_scatter_data, create_scatter_graph, create_correlation_graph, create_bar_graph, add_rating_background, create_star_plot
 from strep.labels.label_generation import PropertyLabel
 from strep.index_scale import scale_and_rate, _extract_weights
 from strep.unit_reformatting import CustomUnitReformater
@@ -137,8 +137,10 @@ class Visualization(dash.Dash):
         self.state['sub_database'] = self.database.loc[self.state['sub_database'].index]
 
     def update_bars_graph(self, scatter_graph=None, discard_y_axis=False):
-        bars = create_bar_graph(self.plot_data, self.dark_mode, discard_y_axis)
-        return bars
+        db = self.state['sub_database'][self.state['sub_database']['environment'].isin(self.plot_data.keys())]
+        graph = create_correlation_graph(db, self.state['metrics'], self.dark_mode)
+        # graph = create_bar_graph(self.plot_data, self.dark_mode, discard_y_axis)
+        return graph
 
     def update_boundary_sliders(self, xaxis=None, yaxis=None, uploaded_boundaries=None, calculated_boundaries=None, reference=None):
         self.triggered_graph_prop = dash.callback_context.triggered[0]['prop_id']

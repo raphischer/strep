@@ -2,6 +2,7 @@ import os
 from itertools import pairwise
 
 import numpy as np
+import pandas as pd
 import plotly.graph_objects as go
 from plotly.express.colors import sample_colorscale
 from PIL import Image
@@ -9,6 +10,7 @@ import base64
 
 from strep.util import lookup_meta, find_sub_db
 from strep.elex.util import RATING_COLORS, ENV_SYMBOLS, PATTERNS, RATING_COLOR_SCALE, rgb_to_rgba
+from strep.correlations import calc_all_correlations
 
 GRAD = Image.open(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'assets', 'grad.png'))
 
@@ -119,6 +121,18 @@ def create_scatter_graph(plot_data, axis_title, dark_mode, ax_border=0.1, marker
         margin={'l': 10, 'r': 10, 'b': 10, 't': 10}
     )
     return fig
+
+def create_correlation_graph(db, metrics, dark_mode):
+    corr = calc_all_correlations(db)
+    prop_names = [metrics[prop]['shortname'] for prop in list(corr.values())[0].columns]
+    # take the average correlation across the different environments ( no effect if len(corr) == 1 )
+    corr = pd.DataFrame(np.array(list(corr.values())).mean(axis=0), index=prop_names, columns=prop_names)
+    fig = go.Figure(go.Heatmap(z=corr, x=prop_names, y=prop_names, coloraxis="coloraxis"))
+    fig.update_layout(coloraxis={'colorscale': RATING_COLOR_SCALE, 'colorbar': {'title': 'Correlation'}},
+                      margin={'l': 10, 'r': 10, 'b': 10, 't': 10})
+    if dark_mode:
+        fig.update_layout(template='plotly_dark', paper_bgcolor="#0c122b", plot_bgcolor="#0c122b")
+    return fig    
 
 def create_bar_graph(plot_data, dark_mode, discard_y_axis):
     fig = go.Figure()
