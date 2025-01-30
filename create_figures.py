@@ -327,7 +327,7 @@ def chapter3(show):
     titles = [title for title, _, _, _ in task_ds_env_sel.values()]
     fig = make_subplots(rows=2, cols=len(DBS), subplot_titles=titles, horizontal_spacing=0.14, vertical_spacing=0.05, row_heights=[0.6, 0.4])
     for idx, (name, (db, meta, _, _, _, _)) in enumerate(DBS.items()):
-        correlations[name] = calc_all_correlations(db, 'index')
+        correlations[name] = calc_all_correlations(db)
         corr = correlations[name][task_ds_env_sel[name][1:]]
         prop_names = [lookup_meta(meta, prop, 'shortname', 'properties') for prop in corr.columns]
         fig.add_trace(go.Heatmap(z=corr, x=prop_names, y=prop_names, coloraxis="coloraxis"), row=1, col=1+idx)
@@ -347,15 +347,16 @@ def chapter3(show):
 
     fname = print_init('ch3_bias_correlation_others') ###############################################################################
     other_dbs = {
-        'XPCR': [("Train and Test", "hospital_dataset", "Intel i9-13900K"), ("Train and Test", "car_parts_dataset_without_missing_values", "Intel i9-13900K")],
-        'MetaQuRe': [("train", "parkinsons", "Intel i7-6700 - Scikit-learn 1.4.0"), ("train", "breast_cancer", "Intel i7-6700 - Scikit-learn 1.4.0")],
-        'PWC': [("semi-supervised-video-object-segmentation", "davis-2017-val", "unknown"), ("image-classification", "imagenet", "unknown")],
+        'XPCR': [("Train and Test", "hospital_dataset", "Intel i9-13900K"), ("Train and Test", "fred_md_dataset", "Intel i9-13900K"), ("Train and Test", "car_parts_dataset_without_missing_values", "Intel i9-13900K")],
+        'MetaQuRe': [("train", "parkinsons", "Intel i7-6700 - Scikit-learn 1.4.0"), ("train", "breast_cancer", "Intel i7-6700 - Scikit-learn 1.4.0"), ("train", "Titanic", "Intel i7-6700 - Scikit-learn 1.4.0")],
+        'PWC': [("image-classification", "imagenet", "unknown"), ("3d-human-pose-estimation", "mpi-inf-3dhp", "unknown"), ("3d-human-pose-estimation", "mpi-inf-3dhp", "unknown")] # ("semi-supervised-video-object-segmentation", "davis-2017-val", "unknown"), 
     }
-    subplot_titles = [f'{"_".join(ds.split("_")[:2])} ({db})' for db, sel in other_dbs.items() for (_, ds, _) in sel]
-    subplot_titles = np.array(subplot_titles).reshape((3, 2)).transpose().flatten() # bring in correct order
-    fig = make_subplots(rows=2, cols=len(other_dbs), horizontal_spacing=0.08, vertical_spacing=0.18, subplot_titles=subplot_titles)
-    for col, (db_name, to_display_keys) in enumerate(other_dbs.items()):
+    subplot_titles = [f'{"_".join(ds.split("_")[:2]).replace("_dataset", "")} ({db})' for db, sel in other_dbs.items() for (_, ds, _) in sel]
+    subplot_titles[-1] = "CIFAR-100 (RobBench)"
+    fig = make_subplots(rows=3, cols=len(other_dbs), horizontal_spacing=0.07, vertical_spacing=0.09, subplot_titles=subplot_titles)
+    for row, (db_name, to_display_keys) in enumerate(other_dbs.items()):
         db, meta, _, _, _, _ = load_db(DATABASES[db_name])
+        correlations[db_name] = calc_all_correlations(db)
         # correlations[db_name] = identify_all_correlations(db, 'index')
         # for index, (key, corr) in enumerate(correlations[db_name].items()):
         #     if index > 50:
@@ -364,16 +365,40 @@ def chapter3(show):
         #     fig = go.Figure(go.Heatmap(z=corr, x=prop_names, y=prop_names, coloraxis="coloraxis"))
         #     fig.update_layout(title="   ".join(key))
         #     fig.write_image(os.path.join(DISS_FIGURES, f'test_{db_name.replace(" ", "_")}_{str(index).zfill(3)}_{"__".join(key).replace(" ", "_")}.pdf'))
-        for row, (task, ds, env) in enumerate(to_display_keys):
-            corr = calc_correlation(find_sub_db(db, task=task, dataset=ds, environment=env))
+        for col, task_ds_env in enumerate(to_display_keys):
+            if (row+1) * (col+1) < len(subplot_titles):
+                corr = correlations[db_name][task_ds_env]
+            else: # use RobustBench for last plot
+                db, meta, _, _, _, _ = load_db(DATABASES["RobBench"])
+                correlations["RobBench"] = calc_all_correlations(db)
+                corr = correlations["RobBench"][("Robustness Test", "cifar100", "Tesla V100 - PyTorch 1.7.1")]
             prop_names = [lookup_meta(meta, prop, 'shortname', 'properties') for prop in corr.columns]
             fig.add_trace(go.Heatmap(z=corr, x=prop_names, y=prop_names, coloraxis="coloraxis"), row=1+row, col=1+col)
+    # finalize
     fig.update_xaxes(tickangle=90)
-    fig.update_layout(width=PLOT_WIDTH, height=PLOT_HEIGHT*2, margin={'l': 0, 'r': 0, 'b': 0, 't': 20},
+    fig.update_layout(width=PLOT_WIDTH, height=PLOT_HEIGHT*2.5, margin={'l': 0, 'r': 0, 'b': 0, 't': 20},
                       coloraxis={'colorscale': LAM_COL_SCALE, 'colorbar': {'title': 'Correlation'}})
     finalize(fig, fname, show)
 
-    print(1)
+    fname = print_init('ch3_bias_correlation_violins') ###############################################################################
+    # assess the correlations for PWC_FULL, based on the pre-calculated index values 
+    db = pd.read_pickle("databases/paperswithcode/database_complete_index.pkl")
+    rename = {col: f"{col}_index" for col in db.select_dtypes("number").columns}
+    db = db.rename(rename, axis=1)
+    place_holder = np.full((db.shape[0], len(rename)), fill_value="abc")
+    db = pd.concat([db, pd.DataFrame(place_holder, index=db.index, columns=list(rename.keys()))], axis=1)
+    correlations["PWC_FULL"] = calc_all_correlations(db, progress_bar=True)
+    # plot violins (in correct order)
+    fig = go.Figure()
+    for db_name in DATABASES.keys():
+        if db_name in correlations:
+            all_corr_vals = np.concat([ matrix.values[np.triu_indices(matrix.shape[0], k=1)] for matrix in correlations[db_name].values() ])
+            fig.add_trace(go.Violin(x=[db_name]*all_corr_vals.size, y=all_corr_vals, spanmode='hard',
+                                    box_visible=True, meanline_visible=True,
+                                    showlegend=False, line={'color': LAMARR_COLORS[1]}))
+    fig.update_layout(width=PLOT_WIDTH, height=PLOT_HEIGHT, margin={'l': 0, 'r': 0, 'b': 0, 't': 20},
+                      yaxis={'title': r'$\text{Correlation } r(\tilde{\mu}_i, \tilde{\mu}_j, E)$'})
+    finalize(fig, fname, show)
 
 
 def chapter4(show):

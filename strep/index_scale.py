@@ -119,19 +119,19 @@ def _real_boundaries_and_defaults(input, boundaries, meta, reference=None):
             argsort = np.argsort(weights)
             groups = np.array(groups)[argsort]
             metrics = np.array(sub_props)[argsort]
-            # use most influential Performance property on y-axis
-            if 'Quality' not in groups:
-                raise RuntimeError(f'Could not find quality property for {task_ds}!')
-            defaults['y'][task_ds] = metrics[groups == 'Quality'][0]
-            if 'Resources' in groups: # use the most influential resource property on x-axis
-                defaults['x'][task_ds] = metrics[groups == 'Resources'][0]
-            elif 'Complexity' in groups: # use most influential complexity
-                defaults['x'][task_ds] = metrics[groups == 'Complexity'][0]
-            else:
-                try:
-                    defaults['x'][task_ds] = metrics[groups == 'Quality'][1]
-                except IndexError:
-                    raise RuntimeError(f'No second Performance property and no Resources or Complexity properties were found for {task_ds}!')
+            # use first and second if default
+            defaults['x'][task_ds], defaults['y'][task_ds] = metrics[0], metrics[1]
+            if 'Quality' in groups: # use most influential Quality property on y-axis
+                defaults['y'][task_ds] = metrics[groups == 'Quality'][0]
+                if 'Resources' in groups: # use the most influential resource property on x-axis
+                    defaults['x'][task_ds] = metrics[groups == 'Resources'][0]
+                elif 'Complexity' in groups: # use most influential complexity
+                    defaults['x'][task_ds] = metrics[groups == 'Complexity'][0]
+                else:
+                    try: # use second influential Quality property on y-axis
+                        defaults['x'][task_ds] = metrics[groups == 'Quality'][1]
+                    except IndexError:
+                        raise RuntimeError(f'No second Performance property and no Resources or Complexity properties were found for {task_ds}!')
     return real_bounds, defaults
 
 def _prepare_boundaries(input, boundaries=None):
@@ -181,6 +181,7 @@ def load_database(fname):
         'tasks': ('task', 2),
         'ds': ('dataset', 4),
         'envs': ('environment', 2),
+        'models': ('model', 4)
     }
     # assess some general statistics over the database
     stats = [f'#{skey}: {str(pd.unique(database[key]).size).rjust(l)}' for skey, (key, l) in stats.items()]
@@ -261,6 +262,7 @@ def scale_and_rate(input, meta, reference=None, boundaries=None, compound_mode='
         input = input.drop(columns=_scaled_cols(input))
     # compute index values
     scaled, meta_ret = scale(input, meta, reference=reference, verbose=verbose)
+    # scaled.to_pickle("PWC_INDEX")
     if len(meta['properties']) == 0:
         meta['properties'] = meta_ret
     # compute ratings and compounds

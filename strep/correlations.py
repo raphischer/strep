@@ -2,6 +2,7 @@ import itertools
 
 from strep.util import prop_dict_to_val
 
+from tqdm import tqdm
 import numpy as np
 import pandas as pd
 from scipy.stats import spearmanr, pearsonr
@@ -22,8 +23,12 @@ def calc_correlation(data, scale='index'):
             corrs[idx_b, idx_a] = corrs[idx_a, idx_b]
     return pd.DataFrame(corrs, index=props.columns, columns=props.columns)
 
-def calc_all_correlations(db, scale='index'):
+def calc_all_correlations(db, scale='index', progress_bar=False):
     corr = {}
-    for lookup, data in db.groupby(['task', 'dataset', 'environment']):
-        corr[lookup] = calc_correlation(data, scale)
+    if progress_bar:
+        for lookup, data in tqdm(db.groupby(['task', 'dataset', 'environment'])):
+            corr[lookup] = calc_correlation(data, scale)
+    else:
+        for lookup, data in db.groupby(['task', 'dataset', 'environment']):
+            corr[lookup] = calc_correlation(data, scale)
     return corr
