@@ -61,9 +61,11 @@ def add_rating_background(fig, rating_pos, use_grad=False, mode='mean', dark_mod
         else:
             fig.add_layout_image(row=rowcol[0], col=rowcol[1], source=grad, xref="x domain", yref="y domain", x=1, y=1, xanchor="right", yanchor="top", sizex=1.0, sizey=1.0, sizing="stretch", opacity=0.75, layer="below")
     else:
-        # add values for bordering rectangles
         for idx, (vals, min_v, max_v) in enumerate(zip(rating_pos, [min_x, min_y], [max_x, max_y])):
-            rating_pos[idx] = [min_v] + vals + [max_v] if axis_sorted[idx] else [max_v] + vals + [min_v]            
+            if len(rating_pos[idx]) == 6: # remove old border values
+                vals = vals[1:5]
+            # add values for bordering rectangles
+            rating_pos[idx] = [min_v] + vals + [max_v] if axis_sorted[idx] else [max_v] + vals + [min_v]
         # plot each rectangle
         for xi, (x0, x1) in enumerate(pairwise(rating_pos[0])):
             for yi, (y0, y1) in enumerate(pairwise(rating_pos[1])):
@@ -71,7 +73,7 @@ def add_rating_background(fig, rating_pos, use_grad=False, mode='mean', dark_mod
                 fig.add_shape(type="rect", layer='below', fillcolor=color, x0=x0, x1=x1, y0=y0, y1=y1, opacity=.75, **add_args)
 
 
-def create_scatter_graph(plot_data, axis_title, dark_mode, ax_border=0.1, marker_width=15, norm_colors=True, display_text=False, return_traces=False):
+def create_scatter_graph(plot_data, axis_title, dark_mode, ax_border=0.1, marker_width=15, norm_colors=True, display_text=True, return_traces=False):
     traces = []
     i_min, i_max = min([min(vals['index']) for vals in plot_data.values()]), max([max(vals['index']) for vals in plot_data.values()])
      # link model scatter points across multiple environment
@@ -124,7 +126,7 @@ def create_scatter_graph(plot_data, axis_title, dark_mode, ax_border=0.1, marker
 
 def create_correlation_graph(db, metrics, dark_mode):
     corr = calc_all_correlations(db)
-    prop_names = [metrics[prop]['shortname'] for prop in list(corr.values())[0].columns]
+    prop_names = [lookup_meta(metrics, prop, "shortname") for prop in list(corr.values())[0].columns]
     # take the average correlation across the different environments ( no effect if len(corr) == 1 )
     corr = pd.DataFrame(np.array(list(corr.values())).mean(axis=0), index=prop_names, columns=prop_names)
     fig = go.Figure(go.Heatmap(z=corr, x=prop_names, y=prop_names, coloraxis="coloraxis"))
@@ -166,7 +168,7 @@ def create_star_plot(summary, meta, scale='index', name=None, color=None, showle
     color = color or RATING_COLORS[summary['compound_rating']]
     star_cols = [key for key in meta.keys() if key in summary]
     star_cols.append(star_cols[0])
-    star_cols_short = [meta[col]['shortname'] for col in star_cols]
+    star_cols_short = [lookup_meta(meta, col, 'shortname') for col in star_cols]
     trace = go.Scatterpolar(
         r=[summary[f'{col}{scale}'] for col in star_cols], theta=star_cols_short,
         line={'color': color}, fillcolor=rgb_to_rgba(color, 0.1), fill='toself', name=name, showlegend=showlegend

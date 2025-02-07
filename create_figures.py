@@ -8,8 +8,8 @@ from itertools import product
 from main import DATABASES
 from strep.index_scale import load_database, scale_and_rate, _extract_weights
 from strep.correlations import calc_correlation, calc_all_correlations
-from strep.util import lookup_meta, find_sub_db, fill_meta, loopup_task_ds_metrics, prop_dict_to_val
-from strep.elex.util import RATING_COLORS, RATING_COLOR_SCALE, RATING_COLOR_SCALE_REV
+from strep.util import lookup_meta, find_sub_db, fill_meta, loopup_task_ds_metrics, prop_dict_to_val, read_json
+from strep.elex.util import RATING_COLORS, RATING_COLOR_SCALE, RATING_COLOR_SCALE_REV, rgb_to_rgba, hex_to_alpha
 from strep.elex.graphs import assemble_scatter_data, create_scatter_graph, add_rating_background, create_star_plot
 from strep.unit_reformatting import CustomUnitReformater
 from strep.labels.label_generation import PropertyLabel
@@ -40,37 +40,56 @@ LAMARR_COLORS = [
     '#ffffff'
 ]
 LAM_COL_SCALE = make_colorscale([LAMARR_COLORS[0], LAMARR_COLORS[2], LAMARR_COLORS[4]])
+LAM_COL_SCALE_REV = make_colorscale([LAMARR_COLORS[4], LAMARR_COLORS[2], LAMARR_COLORS[0]])
 LAM_COL_FIVE = sample_colorscale(LAM_COL_SCALE, np.linspace(0, 1, 5))
 LAM_COL_TEN = sample_colorscale(LAM_COL_SCALE, np.linspace(0, 1, 10))
+LAM_SPEC, LAM_SPEC_TRANSP = LAMARR_COLORS[1], hex_to_alpha(LAMARR_COLORS[0], 0.3)
 
 UNIT_FMT = CustomUnitReformater()
 
 DISS_MATERIAL = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'materials', 'dissertation', 'scripts_and_data')
 DISS_FIGURES = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'materials', 'dissertation', 'figures')
 
-
 def load_db(db):
     database, meta = load_database(db)
     return scale_and_rate(database, meta)
 
-
 def tex(text):
     return r'$\text{' + text + r'}$'
 
+def format_val(value):
+    if value >= 1000000:
+        return f'{np.round(value/1000000, 1)}e6'
+    if value >= 100000:
+        return f'{np.round(value/100000, 1)}e5'
+    if value >= 10000:
+        return f'{np.round(value/10000, 1)}e4'
+    if value >= 100:
+        return str(np.round(value))[:-2]
+    return f'{value:4.2f}'[:4]
 
 def print_init(fname):
     print(f'                 - -- ---  {fname:<20}  --- -- -                 ')
     return fname
 
-
 def finalize(fig, fname, show):
+    fig.update_layout(font_family='Open-Sherif')
+    fig.update_annotations(yshift=3) # to adapt tex titles
     if show:
         fig.show()
     fig.write_image(os.path.join(DISS_FIGURES, f"{fname}.pdf"))
 
-
-def finalize_tex(data, fname):
-    print(1)
+def finalize_tex(fname, rows, align):
+    TEX_TABLE_GENERAL = r'''
+    \begin{tabular}$ALIGN
+        \toprule 
+        $DATA
+        \bottomrule
+    \end{tabular}'''
+    final_text = TEX_TABLE_GENERAL.replace('$DATA', '\n        '.join(rows))
+    final_text = final_text.replace('$ALIGN', align)
+    with open(os.path.join(DISS_FIGURES, f"tab_{fname}.tex"), 'w') as outf:
+        outf.write(final_text)
 
 
 def chapter1(show):
@@ -333,9 +352,9 @@ def chapter3(show):
         fig.add_trace(go.Heatmap(z=corr, x=prop_names, y=prop_names, coloraxis="coloraxis"), row=1, col=1+idx)
         above_diag = corr.values[np.triu_indices(corr.shape[0], k=1)]
         fig.add_trace(go.Violin(x=above_diag, y=[1]*above_diag.size, orientation='h', spanmode='hard',
-                                showlegend=False, line={'color': LAMARR_COLORS[1]}), row=2, col=1+idx)
+                                showlegend=False, line={'color': LAM_SPEC}), row=2, col=1+idx)
         fig.add_trace(go.Box(x=above_diag, y=[0]*above_diag.size, orientation='h',
-                             showlegend=False, marker_color=LAMARR_COLORS[1], boxmean='sd'), row=2, col=1+idx)
+                             showlegend=False, marker_color=LAM_SPEC, boxmean='sd'), row=2, col=1+idx)
         fig.add_annotation(x=np.mean(above_diag), y=0, ay=-40, text=r"$\bar{R}$", row=2, col=1+idx)
         for f in [1, -1]:
             arr_head_x = np.mean(above_diag) + np.std(above_diag) * f
@@ -347,7 +366,7 @@ def chapter3(show):
 
     fname = print_init('ch3_bias_correlation_others') ###############################################################################
     other_dbs = {
-        'XPCR': [("Train and Test", "hospital_dataset", "Intel i9-13900K"), ("Train and Test", "fred_md_dataset", "Intel i9-13900K"), ("Train and Test", "car_parts_dataset_without_missing_values", "Intel i9-13900K")],
+        'XPCR': [("Train and Test", "hospital_dataset", "Intel i9-13900K"), ("Train and Test", "car_parts_dataset_without_missing_values", "Intel i9-13900K"), ("Train and Test", "m1_monthly_dataset", "Intel i9-13900K")],
         'MetaQuRe': [("train", "parkinsons", "Intel i7-6700 - Scikit-learn 1.4.0"), ("train", "breast_cancer", "Intel i7-6700 - Scikit-learn 1.4.0"), ("train", "Titanic", "Intel i7-6700 - Scikit-learn 1.4.0")],
         'PWC': [("image-classification", "imagenet", "unknown"), ("3d-human-pose-estimation", "mpi-inf-3dhp", "unknown"), ("3d-human-pose-estimation", "mpi-inf-3dhp", "unknown")] # ("semi-supervised-video-object-segmentation", "davis-2017-val", "unknown"), 
     }
@@ -395,18 +414,244 @@ def chapter3(show):
             all_corr_vals = np.concat([ matrix.values[np.triu_indices(matrix.shape[0], k=1)] for matrix in correlations[db_name].values() ])
             fig.add_trace(go.Violin(x=[db_name]*all_corr_vals.size, y=all_corr_vals, spanmode='hard',
                                     box_visible=True, meanline_visible=True,
-                                    showlegend=False, line={'color': LAMARR_COLORS[1]}))
+                                    showlegend=False, line={'color': LAM_SPEC}))
     fig.update_layout(width=PLOT_WIDTH, height=PLOT_HEIGHT, margin={'l': 0, 'r': 0, 'b': 0, 't': 20},
                       yaxis={'title': r'$\text{Correlation } r(\tilde{\mu}_i, \tilde{\mu}_j, E)$'})
     finalize(fig, fname, show)
 
 
-def chapter4(show):
-    pass
-
-
 def chapter5(show):
-    pass
+
+    ######################################## XPCR
+    database, meta, _, idx_bounds, _, _ = load_db(DATABASES['XPCR_FULL'])
+    meta_learned_db = pd.read_pickle(DATABASES['XPCR_FULL'].replace(".pkl", "_meta.pkl"))
+    get_ds_short = lambda ds_name: ds_name[:4] + '..' + ds_name[-3:] if len(ds_name) > 9 else ds_name
+    DS_SEL, DS_SEL_2, COL_SEL = 'hospital_dataset', "car_parts_dataset_without_missing_values", 'MASE'
+
+    monash = pd.read_csv(os.path.join(DISS_MATERIAL, 'ch5_monash.csv'), delimiter=';', index_col='Dataset').replace('-', np.nan).astype(float)
+    dnns = sorted(pd.unique(meta_learned_db['model']).tolist())
+    pred_cols = list(meta['properties'].keys())
+
+    dnn_map = {meta['model'][mod]['name']: (mod, meta['model'][mod]['short']) for mod in dnns}
+    mod_map = {meta['model'][mod]['name']: (mod, meta['model'][mod]['short']) for mod in pd.unique(database['model'])}
+    ds_overlap = list(reversed([ds for ds in pd.unique(database['dataset']) if ds in monash.index]))
+    ds_short = [get_ds_short(meta['dataset'][ds]['name']) for ds in ds_overlap]
+
+    fname = print_init('ch5_xpcr_method_comparison') ###############################################################################
+    rows = [
+        ' & '.join(['Data set'] + [r'\multicolumn{3}{c}{' + mod + '}' for mod in [r'\texttt{AutoXPCR}', r'\texttt{AutoXP}', r'\texttt{AutoGluonTS}', r'\texttt{AutoKeras}', r'\texttt{AutoSklearn}']]) + r' \\',
+        ' & '.join([ ' ' ] + ['PCR', r'$\tilde{\mu}_{\text{MASE}}$', 'kWh'] * 5) + r' \\',
+        r'\midrule',
+    ]
+    for ds, data in meta_learned_db.groupby('dataset'):
+        if data['dataset_orig'].iloc[0] == ds:
+            row = [ get_ds_short(meta['dataset'][ds]['name']) ]
+
+            # best XPCR
+            xpcr_rec_config = data.sort_values(('index', 'compound_index_test_pred'), ascending=False).iloc[0]
+            xpcr = database[(database['dataset'] == xpcr_rec_config['dataset']) & (database['model'] == xpcr_rec_config['model'])].iloc[0]
+            values = [ (xpcr['compound_index'], xpcr[f"{COL_SEL}_index"], xpcr['train_power_draw'] / 3.6e3) ]
+
+            # AutoForecast / simulates metsa-learned selection based on best estimated error
+            aufo_rec_config = data.sort_values(('index', f'{COL_SEL}_test_pred'), ascending=False).iloc[0]
+            aufo = database[(database['dataset'] == aufo_rec_config['dataset']) & (database['model'] == aufo_rec_config['model'])].iloc[0]
+            values.append( (aufo['compound_index'], aufo[f"{COL_SEL}_index"], aufo['train_power_draw'] / 3.6e3) )
+    
+            # autokeras & autosklearn
+            for auto in ['autogluon', 'autokeras', 'autosklearn']:
+                try:
+                    auto_res = database[(database['dataset'] == ds) & (database['model'] == auto)].iloc[0]
+                    qual = auto_res[f"{COL_SEL}_index"]
+                    powr = auto_res['train_power_draw'] / 3.6e3
+                except:
+                    qual, powr = 0, 0
+                values.append( (auto_res['compound_index'], qual, powr) )
+            
+            # bold print best error
+            best_idx = np.max([val[0] for val in values])
+            best_err = np.max([val[1] for val in values])
+            best_ene = np.min([val[2] for val in values])
+            for idx, results in enumerate(values):
+                format_results = [ format_val(res) for res in results ]
+                format_results[0] = f'{results[0]:3.2f}'
+                format_results[1] = f'{results[1]:3.2f}'
+                for val_idx, best in enumerate([best_idx, best_err, best_ene]):
+                    if (val_idx < 2 and results[val_idx] == best) or (val_idx == 2 and results[val_idx] == best):
+                        format_results[val_idx] = r'\textbf{' + format_results[val_idx] + r'}'
+                row += format_results
+            rows.append(' & '.join(row) + r' \\')
+    finalize_tex(fname, rows, r'{l|ccc|ccc|ccc|ccc|ccc}')
+
+    fname = print_init('ch5_xpcr_model_perf_monash') ###############################################################################
+    for name, (code_name, short) in mod_map.items():
+        for ds in ds_overlap:
+            subdb = database[(database['model'] == code_name) & (database['dataset'] == ds)]
+            monash.loc[ds,f'{name}_mase'] = subdb['MASE'].iloc[0]
+            monash.loc[ds,f'{name}_compound'] = subdb['compound_index'].iloc[0]
+            if name in monash.columns:
+                monash.loc[ds, f'{name}_mase_diff'] = np.abs(monash.loc[ds,f'{name}_mase'] - monash.loc[ds,name])
+    min_max = {}
+    all_rel_cols = [[col for col in monash.columns if '_mase' in col], [col for col in monash.columns if '_compound' in col], [col for col in monash.columns if '_mase_diff' in col]]
+    fig = make_subplots(rows=1, cols=3, shared_yaxes=True, horizontal_spacing=0.07,
+                        subplot_titles=([r'$\mu_{\text{MASE}}$', r'$S_{\Omega_\text{PCR}}(m, C)$', tex('Diff to Monash MASE')]))
+    for idx, rel_cols in enumerate(all_rel_cols):
+        sub_monash = monash.loc[ds_overlap,rel_cols]
+        colorbar = {'x': 0.356*(idx+1)-0.078, "thickness": 15}
+        if idx==0:
+            sub_monash = np.log(sub_monash)
+            colorbar.update( dict(tick0=0, tickmode= 'array', tickvals=[-10, -5, 0, 5, 10, 15], ticktext=["e-10", "e-5", "1", "e5", "e10", "e15"]) )
+        min_max[idx] = sub_monash.values.min(), sub_monash.values.max()
+        fig.add_trace(go.Heatmap(z=sub_monash.values, x=[mod_map[mod.split('_')[0]][1] for mod in sub_monash], y=ds_short, colorscale=LAM_COL_SCALE, reversescale=idx==1, colorbar=colorbar, zmin=min_max[idx][0], zmax=min_max[idx][1]), row=1, col=idx+1)
+    fig.update_layout(width=PLOT_WIDTH, height=PLOT_HEIGHT*1.2, margin={'l': 0, 'r': 0, 'b': 0, 't': 20})
+    finalize(fig, fname, show)
+
+    fname = print_init('ch5_xpcr_cml_performance') ###############################################################################
+    for name, (code_name, short) in dnn_map.items():
+        for ds in ds_overlap:
+            sub_meta = meta_learned_db[(meta_learned_db['model'] == code_name) & (meta_learned_db['dataset'] == ds)]
+            monash.loc[ds,f'{name}_est_mase'] = sub_meta[('value', 'MASE_test_pred')].iloc[0]
+            monash.loc[ds,f'{name}_est_compound'] = sub_meta[('index', 'compound_index_test_pred')].iloc[0]
+            monash.loc[ds,f'{name}_est_compound_err'] = sub_meta[('index', 'compound_index_test_err')].iloc[0]
+    all_rel_cols2 = [[c for c in monash.columns if c.endswith('_est_mase')], [c for c in monash.columns if c.endswith('_est_compound')], [c for c in monash.columns if c.endswith('_est_compound_err')]]
+    fig = make_subplots(rows=1, cols=3, shared_yaxes=True, horizontal_spacing=0.07, 
+                        subplot_titles=([r'$\hat{\mu}_{\text{' + COL_SEL + '}}$', r'$\hat{S}_{\Omega_\text{PCR}}(m, C)$', r'$\text{MAE}_\mathfrak{D}(\hat{\mu}_{\text{' + COL_SEL + '}})$']))
+    for idx, rel_cols in enumerate(all_rel_cols2):
+        sub_monash = monash.loc[ds_overlap,rel_cols]
+        colorbar = {'x': 0.356*(idx+1)-0.078, "thickness": 15}
+        if idx==0:
+            sub_monash = np.log(sub_monash)
+            colorbar.update( dict(tick0=0, tickmode= 'array', tickvals=[-10, -5, 0, 5, 10, 15], ticktext=["e-10", "e-5", "1", "e5", "e10", "e15"]) )
+        if idx < 1:
+            zmin, zmax = min_max[idx]
+        else:
+            zmin, zmax = sub_monash.values.min(), sub_monash.values.max()
+        fig.add_trace(go.Heatmap(z=sub_monash.values, x=[mod_map[mod.split('_')[0]][1] for mod in sub_monash], y=ds_short, colorscale=LAM_COL_SCALE, reversescale=idx>0, colorbar=colorbar, zmin=zmin, zmax=zmax), row=1, col=idx+1)
+    fig.update_layout(width=PLOT_WIDTH, height=PLOT_HEIGHT*1.2, margin={'l': 0, 'r': 0, 'b': 0, 't': 20})
+    finalize(fig, fname, show)
+
+    # access statistics per data set
+    fname = print_init('ch5_xpcr_scatter_with_stars') ###############################################################################
+    xaxis, yaxis, env, t = "train_power_draw", COL_SEL, database["environment"].iloc[0], database["task"].iloc[0]
+    ax_bounds = [idx_bounds[(t, ds, env)][xaxis].tolist(), idx_bounds[(t, ds, env)][yaxis].tolist()]
+    top_increasing_k_stats = {}
+    fig = make_subplots(rows=2, cols=2, specs=[[{'type': 'scatter'}, {'type': 'polar'}], [{'type': 'scatter'}, {'type': 'polar'}]],
+                        column_widths=[0.6, 0.4], horizontal_spacing=.05, vertical_spacing=.1, shared_xaxes=True,
+                        subplot_titles=[r"$\texttt{" + DS_SEL.split('_dataset')[0] + r"}\text{ Model Performance}$", "", r"$\texttt{" + DS_SEL_2.split('_dataset')[0] + r"}\text{ Model Performance}$", ""])
+    for ds, data in database.groupby('dataset'):
+        meta_data = meta_learned_db[meta_learned_db['dataset'] == ds]
+        sorted_by_pred_err = meta_data.sort_values(('index', f'{COL_SEL}_test_pred'), ascending=False)
+        only_model_pool = data[data["model"].isin(sorted_by_pred_err["model"])]
+        lowest_err = min(only_model_pool[COL_SEL])
+        lowest_ene = sum(only_model_pool[xaxis])
+        # save ene and err for increasing k later
+        if not np.isinf(lowest_err) and not np.isinf(lowest_ene):
+            top_increasing_k_stats[ds] = {'err': [], 'ene': []}
+            for k in range(1, meta_data.shape[0] + 1):
+                model_results = data[data["model"].isin(sorted_by_pred_err.iloc[:k]['model'].values)]
+                top_increasing_k_stats[ds]['err'].append( lowest_err / min(model_results[COL_SEL]))
+                top_increasing_k_stats[ds]['ene'].append( sum(model_results[xaxis]) / lowest_ene )
+        if ds in [DS_SEL, DS_SEL_2]:
+            r_idx = 1 if ds == DS_SEL else 2
+            pred_afo = meta_data.sort_values(('index', f'{COL_SEL}_test_pred'), ascending=False).iloc[0]['model']
+            pred_xpcr = meta_data.sort_values(('index', 'compound_index_test_pred'), ascending=False).iloc[0]['model']
+            pred_afo_short, pred_xpcr_short = lookup_meta(meta, pred_afo, "short", "model"), lookup_meta(meta, pred_xpcr, "short", "model")
+            # add scatter plot
+            plot_data, axis_names = assemble_scatter_data([env], data, 'index', xaxis, yaxis, meta, UNIT_FMT)
+            for mod, add_annot in [(pred_afo_short, r"({\Omega_\text{MASE}})$"), (pred_xpcr_short, r"(\Omega_P)$")]:
+                to_change = plot_data[env]["names"].index(mod)
+                plot_data[env]["names"][to_change] = r'$\text{' + plot_data[env]["names"][to_change] + r' }' + add_annot
+            trace = create_scatter_graph(plot_data, axis_names, dark_mode=False, display_text=True, marker_width=8, return_traces=True)[0]
+            trace["showlegend"] = False
+            fig.add_trace(trace, row=r_idx, col=1)
+            min_x, max_x = np.min([min(data['x']) for data in plot_data.values()]), np.max([max(data['x']) for data in plot_data.values()])
+            min_y, max_y = np.min([min(data['y']) for data in plot_data.values()]), np.max([max(data['y']) for data in plot_data.values()])
+            diff_x, diff_y = max_x - min_x, max_y - min_y
+            x_title = r'$\hat{\mu}_{\text{ENT}}$' if r_idx==2 else ""
+            fig.update_xaxes(range=[min_x-0.1*diff_x, max_x+0.1*diff_x], showgrid=False, title=x_title, row=r_idx, col=1)
+            fig.update_yaxes(range=[min_y-0.1*diff_y, max_y+0.1*diff_y], showgrid=False, title=r'$\hat{\mu}_{\text{' + COL_SEL + '}}$', row=r_idx, col=1)
+            add_rating_background(fig, ax_bounds, rowcol=(r_idx, 1, 0 if r_idx==1 else 1))
+            # add star plot
+            for model, m_str, col_idx in zip([pred_xpcr, pred_afo, 'autogluon'], [r'$\texttt{CML}\text{ with }\Omega_\text{PCR}$', r'$\texttt{CML}\text{ with }\Omega_\text{MASE}$', r'$\texttt{AGl}$'], [0, 2, 4]):
+                model = find_sub_db(data, model=model).iloc[0].to_dict()
+                summary = fill_meta(model, meta)
+                trace = create_star_plot(summary, meta['properties'], name=m_str, color=LAM_COL_FIVE[col_idx], showlegend=r_idx==1, return_trace=True)
+                fig.add_trace(trace, row=r_idx, col=2)
+    fig.update_layout(width=PLOT_WIDTH, height=PLOT_HEIGHT*2, margin={'l': 0, 'r': 0, 'b': 15, 't': 20},
+                      legend=dict( title="Selected Models", yanchor="middle", y=0.5, xanchor="center", x=0.6))
+    fig.update_traces(textposition='top center')
+    finalize(fig, fname, show)
+
+    fname = print_init('ch5_xpcr_top_k') ###############################################################################
+    fig = make_subplots(rows=1, cols=2, shared_yaxes=True, subplot_titles=[f'Best-Possible {COL_SEL}', tex('Total Power Draw')], horizontal_spacing=0.05)
+    for ds, values in top_increasing_k_stats.items():
+        err = values['err']
+        ene = values['ene']
+        k = np.arange(1, len(err) + 1)
+        fig.add_trace(go.Scatter(x=k, y=err, mode='lines', line=dict(color=LAM_SPEC_TRANSP)), row=1, col=1)
+        fig.add_trace(go.Scatter(x=k, y=ene, mode='lines', line=dict(color=LAM_SPEC_TRANSP)), row=1, col=2)
+    avg_err = np.array([np.array(val['err']) for val in top_increasing_k_stats.values()]).mean(axis=0)
+    avg_ene = np.array([np.array(val['ene']) for val in top_increasing_k_stats.values()]).mean(axis=0)
+    fig.add_trace( go.Scatter(x=k, y=avg_err, mode='lines', line=dict(color='rgba(0,0,0,1.0)')), row=1, col=1)
+    fig.add_trace( go.Scatter(x=k, y=avg_ene, mode='lines', line=dict(color='rgba(0,0,0,1.0)')), row=1, col=2)
+    fig.update_layout( width=PLOT_WIDTH, height=PLOT_HEIGHT, showlegend=False, margin={'l': 0, 'r': 0, 'b': 20, 't': 20} )
+    fig.update_yaxes(title='Relative value [%]', row=1, col=1)
+    fig.update_xaxes(title='k (testing top-k recommendations)')
+    finalize(fig, fname, show)
+
+    fname = print_init('ch5_xpcr_error_estimates') ###############################################################################
+    weights = {p: w for p, w in zip(meta["properties"].keys(), _extract_weights(meta["properties"]))}
+    pred_cols = ['compound_index', 'compound_index_direct'] + pred_cols
+    db_raw, meta = load_database(DATABASES['XPCR_FULL'])
+    db_raw = db_raw[~db_raw["model"].isin(["autokeras", "autogluon", "autosklearn"])]
+    db_no_comp, meta, _, _, _, _ = scale_and_rate(db_raw, meta)
+    stat_str = [r'$\text{MAE}_\mathfrak{D}(\hat{\mu})$', r'$\text{ACC}_\mathfrak{D}(\hat{\mu})$', r'$\text{TOP-3 ACC}_\mathfrak{D}(\hat{\mu})$']
+    k_best, result_scores = 3, {s_str: {} for s_str in stat_str}
+    # assemble the error stats
+    for col in pred_cols:
+        for key in result_scores.keys():
+            result_scores[key][col] = []
+        for _, sub_data in iter(meta_learned_db.groupby(('split_index', ''))):
+            top_1, top_k, error = [], [], []
+            for ds, data in sub_data.groupby('dataset'):
+                sorted_by_true = db_no_comp.loc[data.index].sort_values('compound_index' if 'compound' in col else f'{col}_index', ascending=False)
+                sorted_by_pred = data.sort_values(('index', f'{col}_test_pred'), ascending=False)
+                top_k_pred = sorted_by_pred.iloc[:k_best]['model'].values
+                best_model = sorted_by_true.iloc[0]['model']
+                err = np.abs(data[('index', f'{col}_test_err')]).mean()
+                top_1.append(best_model == sorted_by_pred.iloc[0]['model'])
+                top_k.append(best_model in top_k_pred)
+                error.append(err)
+            for s_str, val in zip(stat_str, [np.mean(error), np.mean(top_1) * 100, np.mean(top_k) * 100]):
+                result_scores[s_str][col].append(val)
+    # plot data
+    fig = make_subplots(rows=1, cols=len(stat_str), subplot_titles=stat_str, shared_yaxes=True, horizontal_spacing=0.02)
+    max_x = []
+    meta['properties']['compound_index'] = {'shortname': r'$S_{\Omega_\text{PCR}}\text{ (CML)}$'}
+    meta['properties']['compound_index_direct'] = {'shortname': r'$S_{\Omega_\text{PCR}}\text{ (DML)}$'}
+    for plot_idx, results in enumerate(result_scores.values()):
+        x, y, e, w = zip(*reversed([(np.mean(vals), meta['properties'][key]['shortname'], np.std(vals), weights[key] if key in weights else 0) for key, vals in results.items()]))
+        c = sample_colorscale(LAM_COL_SCALE, np.array(w)*3)
+        trace = go.Bar(x=x, y=y, error_x=dict(type='data', array=e), orientation='h', marker_color=c)
+        fig.add_trace(trace, row=1, col=plot_idx + 1)
+        max_x.append(max(x) + (max(x) / 10))
+    fig.update_layout(width=PLOT_WIDTH, title_y=0.99, title_x=0.5, height=PLOT_HEIGHT, 
+                      showlegend=False, margin={'l': 0, 'r': 0, 'b': 0, 't': 20})
+    finalize(fig, fname, show)
+
+    # why recommendation?
+    fname = print_init('ch5_xpcr_explanations') ###############################################################################
+    why_data = read_json(os.path.join(DISS_MATERIAL, "ch5_xpcr_why.json"))
+    fig = make_subplots(rows=1, cols=2, shared_yaxes=True, subplot_titles=list(why_data.keys()), horizontal_spacing=0.05)
+    for col, data in enumerate(why_data.values()):
+        vals = np.array(list(data.values()))
+        if col == 1:
+            vals *= 100
+        fig.add_trace(go.Bar(x=list(data.keys()), y=vals, marker={"color": vals, "colorscale": LAM_COL_SCALE_REV}, showlegend=False), row=1, col=col+1)
+    fig.update_xaxes(title='Property', tickangle=90, row=1, col=1)
+    fig.update_xaxes(title='Meta-feature', tickangle=90, row=1, col=2)
+    fig.update_yaxes(title="Importance [%]", row=1, col=1)
+    fig.update_layout(width=PLOT_WIDTH, height=PLOT_HEIGHT, margin={'l': 0, 'r': 0, 'b': 0, 't': 20})
+    finalize(fig, fname, show)
 
 
 if __name__ == '__main__':
@@ -419,10 +664,11 @@ if __name__ == '__main__':
     fig = px.scatter(x=[0, 1, 2], y=[0, 1, 4])
     fig.write_image("dummy.pdf")
 
-    chapters = [chapter1, chapter2, chapter3, chapter4, chapter5]
+    chapters = [chapter1, chapter2, chapter3, None, chapter5]
     if args.chapter == -1:
         for i in range(5):
-            chapters[i](args.show)
+            if chapters[i]:
+                chapters[i](args.show)
 
     if args.chapter < 1 or args.chapter > 5:
         raise ValueError("Chapter number must be between 1 and 5")

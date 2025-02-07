@@ -65,17 +65,21 @@ def _compound_single(input, mode, prop_meta):
     values = input[props].fillna(0)
     weights =  _extract_weights(prop_meta)
     assert np.all(weights >= 0)
+    assert not np.any(np.logical_or(values > 1, values < 0))
     weights_norm = weights / weights.sum()
     if mode == 'mean':
-        return np.matmul(values, weights_norm)
-    if mode == 'median':
-        return np.array([weighted_median(row, weights_norm) for row in values.values])
+        comp = np.matmul(values, weights_norm)
+    elif mode == 'median':
+        comp = np.array([weighted_median(row, weights_norm) for row in values.values])
         # TODO implement this more efficiently
-    if mode == 'min':
-        return values.min()
-    if mode == 'max':
-        return values.max()
-    raise NotImplementedError(f'Mode {mode} not known for compound scoring!')
+    elif mode == 'min':
+        comp = values.min()
+    elif mode == 'max':
+        comp = values.max()
+    else:
+        raise NotImplementedError(f'Mode {mode} not known for compound scoring!')
+    comp = comp.clip(0, 1) # small outliers can occur due to weight normalization
+    return comp
 
 def _compound(input, properties_meta, boundaries, mode):
     index_vals = {}
@@ -122,14 +126,14 @@ def _real_boundaries_and_defaults(input, boundaries, meta, reference=None):
             # use first and second if default
             defaults['x'][task_ds], defaults['y'][task_ds] = metrics[0], metrics[1]
             if 'Quality' in groups: # use most influential Quality property on y-axis
-                defaults['y'][task_ds] = metrics[groups == 'Quality'][0]
+                defaults['y'][task_ds] = metrics[groups == 'Quality'][-1]
                 if 'Resources' in groups: # use the most influential resource property on x-axis
-                    defaults['x'][task_ds] = metrics[groups == 'Resources'][0]
+                    defaults['x'][task_ds] = metrics[groups == 'Resources'][-1]
                 elif 'Complexity' in groups: # use most influential complexity
-                    defaults['x'][task_ds] = metrics[groups == 'Complexity'][0]
+                    defaults['x'][task_ds] = metrics[groups == 'Complexity'][-1]
                 else:
                     try: # use second influential Quality property on y-axis
-                        defaults['x'][task_ds] = metrics[groups == 'Quality'][1]
+                        defaults['x'][task_ds] = metrics[groups == 'Quality'][-2]
                     except IndexError:
                         raise RuntimeError(f'No second Performance property and no Resources or Complexity properties were found for {task_ds}!')
     return real_bounds, defaults
@@ -164,7 +168,17 @@ def _scaled_cols(input):
 
 def load_database(fname):
     try:
-        database = pd.read_pickle(fname)
+        if ".pkl" in fname:
+            database = pd.read_pickle(fname)
+        elif ".csv" in fname:
+            database = pd.read_csv(fname, index_col=False)
+            if "run_id" in database.columns and "experiment_id" in database.columns and "status" in database.columns: # mlflow summary
+                database = database[database["status"] == "FINISHED"]
+                database = database.drop([col for col in database.columns if "params." not in col and "metrics." not in col], axis=1)
+                database = database.rename(lambda col: col.replace("metrics.", "").replace("params.", ""), axis=1)
+                database.reset_index(drop=True)
+        else:
+            raise RuntimeError
     except Exception:
         raise RuntimeError(f'Could not load database "{fname}"\nPlease check the given file path and make sure to pass a pickled pandas dataframe!')
     meta = load_meta(fname)
@@ -177,13 +191,13 @@ def load_database(fname):
         database = database[non_prop_cols + prop_cols]
     else:
         prop_cols = database.select_dtypes('number').columns.tolist() # used for stats
+    # assess some general statistics over the database
     stats = {
         'tasks': ('task', 2),
         'ds': ('dataset', 4),
         'envs': ('environment', 2),
         'models': ('model', 4)
     }
-    # assess some general statistics over the database
     stats = [f'#{skey}: {str(pd.unique(database[key]).size).rjust(l)}' for skey, (key, l) in stats.items()]
     incompl = []
     for _, data in database.groupby(['task', 'dataset', 'environment']):
@@ -260,6 +274,8 @@ def scale_and_rate(input, meta, reference=None, boundaries=None, compound_mode='
     # already processed db as input, so go back to original values
     if 'compound_rating' in input.columns:
         input = input.drop(columns=_scaled_cols(input))
+    if "compound_index" in meta["properties"]:
+        meta["properties"] = {key: val for key, val in meta["properties"].items() if "_index" not in key}
     # compute index values
     scaled, meta_ret = scale(input, meta, reference=reference, verbose=verbose)
     # scaled.to_pickle("PWC_INDEX")

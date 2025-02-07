@@ -20,25 +20,6 @@
         "group": "Quality",
         "independent_of_task": true
     },
-    "running_time": {
-        "name": "Running Time per Inference",
-        "shortname": "RTI",
-        "unit": "seconds",
-        "group": "Resources"
-    },
-    "power_draw": {
-        "name": "Energy Draw per Inference",
-        "shortname": "ENI",
-        "unit": "wattseconds",
-        "group": "Resources"
-    },
-    "parameters": {
-        "name": "Number of Parameters",
-        "shortname": "PAR",
-        "unit": "number",
-        "group": "Complexity",
-        "independent_of_task": true
-    },
     "fsize": {
         "name": "Model Size on Disc",
         "shortname": "FS",
@@ -57,5 +38,24 @@
         "shortname": "RTT",
         "unit": "seconds",
         "group": "Resources"
+    },
+    "running_time": {
+        "name": "Running Time per Inference",
+        "shortname": "RTI",
+        "unit": "seconds",
+        "group": "Resources"
+    },
+    "power_draw": {
+        "name": "Energy Draw per Inference",
+        "shortname": "ENI",
+        "unit": "wattseconds",
+        "group": "Resources"
+    },
+    "parameters": {
+        "name": "Number of Parameters",
+        "shortname": "PAR",
+        "unit": "number",
+        "group": "Complexity",
+        "independent_of_task": true
     }
 }

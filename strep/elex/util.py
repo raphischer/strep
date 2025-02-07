@@ -12,8 +12,18 @@ PATTERNS = ["", "/", ".", "x", "-", "\\", "|", "+", "."]
 RATING_MEANINGS = 'ABCDE'
 
 
+def hex_to_alpha(hex, alpha):
+    hex = hex.lstrip('#')
+    if len(hex) == 6:
+        hex += 'FF'
+    r, g, b, a = tuple(int(hex[i:i+2], 16) for i in (0, 2, 4, 6))
+    a = f"{alpha:3.1f}"
+    return f'rgba({r},{g},{b},{a})'
+
+
 def rgb_to_rgba(rgb, alpha):
     return rgb.replace('rgb', 'rgba').replace(')', f',{alpha:3.1f})')
+    
 
 
 # def summary_to_str(summary, rating_mode):
@@ -47,12 +57,13 @@ def summary_to_html_tables(summary, properties, unit_fmt):
     ]
     properties_rows = []
     for prop, meta in properties.items():
+        name = meta["name"] if "name" in meta else prop
         if np.isnan(summary[prop]):
             fmt_val, fmt_unit = 'N.A.', meta["unit"]
         else:
             fmt_val, fmt_unit = unit_fmt.reformat_value(summary[prop], meta["unit"])
         index, rating = summary[f'{prop}_index'], summary[f'{prop}_rating']
-        table_cells = [f'{meta["name"]} {fmt_unit}', fmt_val, f'{index:5.3f}'[:5], rating, f'{meta["weight"]:3.2f}']
+        table_cells = [f'{name} {fmt_unit}', fmt_val, f'{index:5.3f}'[:5], rating, f'{meta["weight"]:3.2f}']
         properties_rows.append(html.Tr([html.Td(field) for field in table_cells]))
 
     model = info_header + info_row
