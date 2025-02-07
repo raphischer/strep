@@ -74,7 +74,7 @@ def print_init(fname):
 
 def finalize(fig, fname, show):
     fig.update_layout(font_family='Open-Sherif')
-    fig.update_annotations(yshift=3) # to adapt tex titles
+    fig.update_annotations(yshift=2) # to adapt tex titles
     if show:
         fig.show()
     fig.write_image(os.path.join(DISS_FIGURES, f"{fname}.pdf"))
@@ -359,7 +359,7 @@ def chapter3(show):
         for f in [1, -1]:
             arr_head_x = np.mean(above_diag) + np.std(above_diag) * f
             fig.add_annotation(x=arr_head_x, y=0, ay=40, text=r"$\text{std}(R)$", row=2, col=1+idx)
-    fig.update_layout(width=PLOT_WIDTH, height=PLOT_HEIGHT*2, margin={'l': 0, 'r': 0, 'b': 0, 't': 20},
+    fig.update_layout(width=PLOT_WIDTH, height=PLOT_HEIGHT*2, margin={'l': 0, 'r': 0, 'b': 0, 't': 23},
                       coloraxis={'colorscale': LAM_COL_SCALE, 'colorbar': {'title': 'Correlation'}},
                       xaxis3={'title': r'$\text{Correlation } r(\tilde{\mu}_i, \tilde{\mu}_j, E)$'}, xaxis4={'title': r'$\text{Correlation } r(\tilde{\mu}_i, \tilde{\mu}_j, E)$'}, yaxis3={'visible': False}, yaxis4={'visible': False})
     finalize(fig, fname, show)
@@ -395,7 +395,7 @@ def chapter3(show):
             fig.add_trace(go.Heatmap(z=corr, x=prop_names, y=prop_names, coloraxis="coloraxis"), row=1+row, col=1+col)
     # finalize
     fig.update_xaxes(tickangle=90)
-    fig.update_layout(width=PLOT_WIDTH, height=PLOT_HEIGHT*2.5, margin={'l': 0, 'r': 0, 'b': 0, 't': 20},
+    fig.update_layout(width=PLOT_WIDTH, height=PLOT_HEIGHT*2.5, margin={'l': 0, 'r': 0, 'b': 0, 't': 23},
                       coloraxis={'colorscale': LAM_COL_SCALE, 'colorbar': {'title': 'Correlation'}})
     finalize(fig, fname, show)
 
@@ -415,7 +415,7 @@ def chapter3(show):
             fig.add_trace(go.Violin(x=[db_name]*all_corr_vals.size, y=all_corr_vals, spanmode='hard',
                                     box_visible=True, meanline_visible=True,
                                     showlegend=False, line={'color': LAM_SPEC}))
-    fig.update_layout(width=PLOT_WIDTH, height=PLOT_HEIGHT, margin={'l': 0, 'r': 0, 'b': 0, 't': 20},
+    fig.update_layout(width=PLOT_WIDTH, height=PLOT_HEIGHT, margin={'l': 0, 'r': 0, 'b': 0, 't': 23},
                       yaxis={'title': r'$\text{Correlation } r(\tilde{\mu}_i, \tilde{\mu}_j, E)$'})
     finalize(fig, fname, show)
 
@@ -491,18 +491,20 @@ def chapter5(show):
             if name in monash.columns:
                 monash.loc[ds, f'{name}_mase_diff'] = np.abs(monash.loc[ds,f'{name}_mase'] - monash.loc[ds,name])
     min_max = {}
-    all_rel_cols = [[col for col in monash.columns if '_mase' in col], [col for col in monash.columns if '_compound' in col], [col for col in monash.columns if '_mase_diff' in col]]
+    def custom_scaling(x): # Sigmoid-like scaling to compress larger values for MASE
+        return x / (1 + x)
+    all_rel_cols = [[col for col in monash.columns if '_mase' in col and 'diff' not in col], [col for col in monash.columns if '_compound' in col], [col for col in monash.columns if '_mase_diff' in col]]
     fig = make_subplots(rows=1, cols=3, shared_yaxes=True, horizontal_spacing=0.07,
                         subplot_titles=([r'$\mu_{\text{MASE}}$', r'$S_{\Omega_\text{PCR}}(m, C)$', tex('Diff to Monash MASE')]))
     for idx, rel_cols in enumerate(all_rel_cols):
         sub_monash = monash.loc[ds_overlap,rel_cols]
         colorbar = {'x': 0.356*(idx+1)-0.078, "thickness": 15}
         if idx==0:
-            sub_monash = np.log(sub_monash)
-            colorbar.update( dict(tick0=0, tickmode= 'array', tickvals=[-10, -5, 0, 5, 10, 15], ticktext=["e-10", "e-5", "1", "e5", "e10", "e15"]) )
+            sub_monash = custom_scaling(sub_monash)
+            colorbar.update( dict(tick0=0, tickmode= 'array', tickvals=custom_scaling(np.array([0.6, 1, 2, 10, 1000])), ticktext=["0.6", "1", "2", "10", ">1e3"]) )
         min_max[idx] = sub_monash.values.min(), sub_monash.values.max()
         fig.add_trace(go.Heatmap(z=sub_monash.values, x=[mod_map[mod.split('_')[0]][1] for mod in sub_monash], y=ds_short, colorscale=LAM_COL_SCALE, reversescale=idx==1, colorbar=colorbar, zmin=min_max[idx][0], zmax=min_max[idx][1]), row=1, col=idx+1)
-    fig.update_layout(width=PLOT_WIDTH, height=PLOT_HEIGHT*1.2, margin={'l': 0, 'r': 0, 'b': 0, 't': 20})
+    fig.update_layout(width=PLOT_WIDTH, height=PLOT_HEIGHT*1.2, margin={'l': 0, 'r': 0, 'b': 0, 't': 23})
     finalize(fig, fname, show)
 
     fname = print_init('ch5_xpcr_cml_performance') ###############################################################################
@@ -519,14 +521,13 @@ def chapter5(show):
         sub_monash = monash.loc[ds_overlap,rel_cols]
         colorbar = {'x': 0.356*(idx+1)-0.078, "thickness": 15}
         if idx==0:
-            sub_monash = np.log(sub_monash)
-            colorbar.update( dict(tick0=0, tickmode= 'array', tickvals=[-10, -5, 0, 5, 10, 15], ticktext=["e-10", "e-5", "1", "e5", "e10", "e15"]) )
-        if idx < 1:
+            sub_monash = custom_scaling(sub_monash)
+            colorbar.update( dict(tick0=0, tickmode='array', tickvals=custom_scaling(np.array([0.6, 1, 2, 10, 1000])), ticktext=["0.6", "1", "2", "10", ">1e3"]) )
             zmin, zmax = min_max[idx]
         else:
             zmin, zmax = sub_monash.values.min(), sub_monash.values.max()
         fig.add_trace(go.Heatmap(z=sub_monash.values, x=[mod_map[mod.split('_')[0]][1] for mod in sub_monash], y=ds_short, colorscale=LAM_COL_SCALE, reversescale=idx>0, colorbar=colorbar, zmin=zmin, zmax=zmax), row=1, col=idx+1)
-    fig.update_layout(width=PLOT_WIDTH, height=PLOT_HEIGHT*1.2, margin={'l': 0, 'r': 0, 'b': 0, 't': 20})
+    fig.update_layout(width=PLOT_WIDTH, height=PLOT_HEIGHT*1.2, margin={'l': 0, 'r': 0, 'b': 0, 't': 23})
     finalize(fig, fname, show)
 
     # access statistics per data set
@@ -576,7 +577,7 @@ def chapter5(show):
                 summary = fill_meta(model, meta)
                 trace = create_star_plot(summary, meta['properties'], name=m_str, color=LAM_COL_FIVE[col_idx], showlegend=r_idx==1, return_trace=True)
                 fig.add_trace(trace, row=r_idx, col=2)
-    fig.update_layout(width=PLOT_WIDTH, height=PLOT_HEIGHT*2, margin={'l': 0, 'r': 0, 'b': 15, 't': 20},
+    fig.update_layout(width=PLOT_WIDTH, height=PLOT_HEIGHT*2, margin={'l': 0, 'r': 0, 'b': 15, 't': 23},
                       legend=dict( title="Selected Models", yanchor="middle", y=0.5, xanchor="center", x=0.6))
     fig.update_traces(textposition='top center')
     finalize(fig, fname, show)
@@ -593,7 +594,7 @@ def chapter5(show):
     avg_ene = np.array([np.array(val['ene']) for val in top_increasing_k_stats.values()]).mean(axis=0)
     fig.add_trace( go.Scatter(x=k, y=avg_err, mode='lines', line=dict(color='rgba(0,0,0,1.0)')), row=1, col=1)
     fig.add_trace( go.Scatter(x=k, y=avg_ene, mode='lines', line=dict(color='rgba(0,0,0,1.0)')), row=1, col=2)
-    fig.update_layout( width=PLOT_WIDTH, height=PLOT_HEIGHT, showlegend=False, margin={'l': 0, 'r': 0, 'b': 20, 't': 20} )
+    fig.update_layout( width=PLOT_WIDTH, height=PLOT_HEIGHT, showlegend=False, margin={'l': 0, 'r': 0, 'b': 20, 't': 23} )
     fig.update_yaxes(title='Relative value [%]', row=1, col=1)
     fig.update_xaxes(title='k (testing top-k recommendations)')
     finalize(fig, fname, show)
@@ -635,7 +636,7 @@ def chapter5(show):
         fig.add_trace(trace, row=1, col=plot_idx + 1)
         max_x.append(max(x) + (max(x) / 10))
     fig.update_layout(width=PLOT_WIDTH, title_y=0.99, title_x=0.5, height=PLOT_HEIGHT, 
-                      showlegend=False, margin={'l': 0, 'r': 0, 'b': 0, 't': 20})
+                      showlegend=False, margin={'l': 0, 'r': 0, 'b': 0, 't': 23})
     finalize(fig, fname, show)
 
     # why recommendation?
@@ -650,7 +651,7 @@ def chapter5(show):
     fig.update_xaxes(title='Property', tickangle=90, row=1, col=1)
     fig.update_xaxes(title='Meta-feature', tickangle=90, row=1, col=2)
     fig.update_yaxes(title="Importance [%]", row=1, col=1)
-    fig.update_layout(width=PLOT_WIDTH, height=PLOT_HEIGHT, margin={'l': 0, 'r': 0, 'b': 0, 't': 20})
+    fig.update_layout(width=PLOT_WIDTH, height=PLOT_HEIGHT, margin={'l': 0, 'r': 0, 'b': 0, 't': 23})
     finalize(fig, fname, show)
 
 
