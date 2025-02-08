@@ -495,7 +495,7 @@ def chapter5(show):
         return x / (1 + x)
     all_rel_cols = [[col for col in monash.columns if '_mase' in col and 'diff' not in col], [col for col in monash.columns if '_compound' in col], [col for col in monash.columns if '_mase_diff' in col]]
     fig = make_subplots(rows=1, cols=3, shared_yaxes=True, horizontal_spacing=0.07,
-                        subplot_titles=([r'$\mu_{\text{MASE}}$', r'$S_{\Omega_\text{PCR}}(m, C)$', tex('Diff to Monash MASE')]))
+                        subplot_titles=([r'$\mu_{\text{MASE}}(m, C)$', r'$S_{\Omega_\text{PCR}}(m, C)$', tex('Diff to Monash MASE')]))
     for idx, rel_cols in enumerate(all_rel_cols):
         sub_monash = monash.loc[ds_overlap,rel_cols]
         colorbar = {'x': 0.356*(idx+1)-0.078, "thickness": 15}
@@ -516,7 +516,7 @@ def chapter5(show):
             monash.loc[ds,f'{name}_est_compound_err'] = sub_meta[('index', 'compound_index_test_err')].iloc[0]
     all_rel_cols2 = [[c for c in monash.columns if c.endswith('_est_mase')], [c for c in monash.columns if c.endswith('_est_compound')], [c for c in monash.columns if c.endswith('_est_compound_err')]]
     fig = make_subplots(rows=1, cols=3, shared_yaxes=True, horizontal_spacing=0.07, 
-                        subplot_titles=([r'$\hat{\mu}_{\text{' + COL_SEL + '}}$', r'$\hat{S}_{\Omega_\text{PCR}}(m, C)$', r'$\text{MAE}_\mathfrak{D}(\hat{\mu}_{\text{' + COL_SEL + '}})$']))
+                        subplot_titles=([r'$\hat{\mu}_{\text{' + COL_SEL + r'}}(m, X_C)$', r'$\hat{S}_{\Omega_\text{PCR}}(m, X_C)$', r'$\text{MAE}_\mathfrak{D}(\hat{\mu}_{\text{' + COL_SEL + '}})$']))
     for idx, rel_cols in enumerate(all_rel_cols2):
         sub_monash = monash.loc[ds_overlap,rel_cols]
         colorbar = {'x': 0.356*(idx+1)-0.078, "thickness": 15}
@@ -625,7 +625,7 @@ def chapter5(show):
             for s_str, val in zip(stat_str, [np.mean(error), np.mean(top_1) * 100, np.mean(top_k) * 100]):
                 result_scores[s_str][col].append(val)
     # plot data
-    fig = make_subplots(rows=1, cols=len(stat_str), subplot_titles=stat_str, shared_yaxes=True, horizontal_spacing=0.02)
+    fig = make_subplots(rows=1, cols=len(stat_str), shared_yaxes=True, horizontal_spacing=0.02)
     max_x = []
     meta['properties']['compound_index'] = {'shortname': r'$S_{\Omega_\text{PCR}}\text{ (CML)}$'}
     meta['properties']['compound_index_direct'] = {'shortname': r'$S_{\Omega_\text{PCR}}\text{ (DML)}$'}
@@ -633,10 +633,11 @@ def chapter5(show):
         x, y, e, w = zip(*reversed([(np.mean(vals), meta['properties'][key]['shortname'], np.std(vals), weights[key] if key in weights else 0) for key, vals in results.items()]))
         c = sample_colorscale(LAM_COL_SCALE, np.array(w)*3)
         trace = go.Bar(x=x, y=y, error_x=dict(type='data', array=e), orientation='h', marker_color=c)
-        fig.add_trace(trace, row=1, col=plot_idx + 1)
+        fig.add_trace(trace, row=1, col=plot_idx+1)
         max_x.append(max(x) + (max(x) / 10))
+        fig.update_xaxes(title=stat_str[plot_idx], row=1, col=plot_idx+1)
     fig.update_layout(width=PLOT_WIDTH, title_y=0.99, title_x=0.5, height=PLOT_HEIGHT, 
-                      showlegend=False, margin={'l': 0, 'r': 0, 'b': 0, 't': 23})
+                      showlegend=False, margin={'l': 0, 'r': 0, 'b': 0, 't': 0})
     finalize(fig, fname, show)
 
     # why recommendation?
