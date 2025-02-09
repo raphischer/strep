@@ -439,8 +439,8 @@ def chapter5(show):
 
     fname = print_init('ch5_xpcr_method_comparison') ###############################################################################
     rows = [
-        ' & '.join(['Data set'] + [r'\multicolumn{3}{c}{' + mod + '}' for mod in [r'\texttt{AutoXPCR}', r'\texttt{AutoXP}', r'\texttt{AutoGluonTS}', r'\texttt{AutoKeras}', r'\texttt{AutoSklearn}']]) + r' \\',
-        ' & '.join([ ' ' ] + ['PCR', r'$\tilde{\mu}_{\text{MASE}}$', 'kWh'] * 5) + r' \\',
+        ' & '.join(['Data set'] + [r'\multicolumn{3}{c}{' + mod + '}' for mod in [r'\text{CML + } \Omega_\text{PCR}', r'\text{CML + } \Omega_\text{MASE}', r'\texttt{AutoGluonTS}', r'\texttt{AutoKeras}', r'\texttt{AutoSklearn}']]) + r' \\',
+        ' & '.join([ ' ' ] + [r'$S$', r'$\tilde{\mu}_{\text{MASE}}$', r'$\mu_{\text{ENT}}$'] * 5) + r' \\',
         r'\midrule',
     ]
     for ds, data in meta_learned_db.groupby('dataset'):
@@ -537,19 +537,19 @@ def chapter5(show):
     top_increasing_k_stats = {}
     fig = make_subplots(rows=2, cols=2, specs=[[{'type': 'scatter'}, {'type': 'polar'}], [{'type': 'scatter'}, {'type': 'polar'}]],
                         column_widths=[0.6, 0.4], horizontal_spacing=.05, vertical_spacing=.1, shared_xaxes=True,
-                        subplot_titles=[r"$\texttt{" + DS_SEL.split('_dataset')[0] + r"}\text{ Model Performance}$", "", r"$\texttt{" + DS_SEL_2.split('_dataset')[0] + r"}\text{ Model Performance}$", ""])
+                        subplot_titles=[r"$\text{Model performance on }\texttt{" + lookup_meta(meta, DS_SEL, subdict='dataset') + r"}$", "", r"$\text{Model performance on }\texttt{" + lookup_meta(meta, DS_SEL_2, subdict='dataset') + r"}$", ""])
     for ds, data in database.groupby('dataset'):
         meta_data = meta_learned_db[meta_learned_db['dataset'] == ds]
         sorted_by_pred_err = meta_data.sort_values(('index', f'{COL_SEL}_test_pred'), ascending=False)
         only_model_pool = data[data["model"].isin(sorted_by_pred_err["model"])]
-        lowest_err = min(only_model_pool[COL_SEL])
+        lowest_err = max(only_model_pool['compound_index'])
         lowest_ene = sum(only_model_pool[xaxis])
         # save ene and err for increasing k later
         if not np.isinf(lowest_err) and not np.isinf(lowest_ene):
             top_increasing_k_stats[ds] = {'err': [], 'ene': []}
             for k in range(1, meta_data.shape[0] + 1):
                 model_results = data[data["model"].isin(sorted_by_pred_err.iloc[:k]['model'].values)]
-                top_increasing_k_stats[ds]['err'].append( lowest_err / min(model_results[COL_SEL]))
+                top_increasing_k_stats[ds]['err'].append( max(model_results["compound_index"] / lowest_err))
                 top_increasing_k_stats[ds]['ene'].append( sum(model_results[xaxis]) / lowest_ene )
         if ds in [DS_SEL, DS_SEL_2]:
             r_idx = 1 if ds == DS_SEL else 2
@@ -578,20 +578,20 @@ def chapter5(show):
                 trace = create_star_plot(summary, meta['properties'], name=m_str, color=LAM_COL_FIVE[col_idx], showlegend=r_idx==1, return_trace=True)
                 fig.add_trace(trace, row=r_idx, col=2)
     fig.update_layout(width=PLOT_WIDTH, height=PLOT_HEIGHT*2, margin={'l': 0, 'r': 0, 'b': 15, 't': 23},
-                      legend=dict( title="Selected Models", yanchor="middle", y=0.5, xanchor="center", x=0.6))
+                      legend=dict( title="Selected models", yanchor="middle", y=0.5, xanchor="center", x=0.6))
     fig.update_traces(textposition='top center')
     finalize(fig, fname, show)
 
     fname = print_init('ch5_xpcr_top_k') ###############################################################################
-    fig = make_subplots(rows=1, cols=2, shared_yaxes=True, subplot_titles=[f'Best-Possible {COL_SEL}', tex('Total Power Draw')], horizontal_spacing=0.05)
+    fig = make_subplots(rows=1, cols=2, shared_yaxes=True, subplot_titles=[r'$\text{Best }S_{\Omega_\text{PCR}}(m, C)$', tex('Total energy draw')], horizontal_spacing=0.05)
     for ds, values in top_increasing_k_stats.items():
-        err = values['err']
-        ene = values['ene']
+        err = np.array(values['err']) * 100
+        ene = np.array(values['ene']) * 100
         k = np.arange(1, len(err) + 1)
         fig.add_trace(go.Scatter(x=k, y=err, mode='lines', line=dict(color=LAM_SPEC_TRANSP)), row=1, col=1)
         fig.add_trace(go.Scatter(x=k, y=ene, mode='lines', line=dict(color=LAM_SPEC_TRANSP)), row=1, col=2)
-    avg_err = np.array([np.array(val['err']) for val in top_increasing_k_stats.values()]).mean(axis=0)
-    avg_ene = np.array([np.array(val['ene']) for val in top_increasing_k_stats.values()]).mean(axis=0)
+    avg_err = np.array([np.array(val['err']) for val in top_increasing_k_stats.values()]).mean(axis=0) * 100
+    avg_ene = np.array([np.array(val['ene']) for val in top_increasing_k_stats.values()]).mean(axis=0) * 100
     fig.add_trace( go.Scatter(x=k, y=avg_err, mode='lines', line=dict(color='rgba(0,0,0,1.0)')), row=1, col=1)
     fig.add_trace( go.Scatter(x=k, y=avg_ene, mode='lines', line=dict(color='rgba(0,0,0,1.0)')), row=1, col=2)
     fig.update_layout( width=PLOT_WIDTH, height=PLOT_HEIGHT, showlegend=False, margin={'l': 0, 'r': 0, 'b': 20, 't': 23} )
