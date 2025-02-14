@@ -10,6 +10,8 @@ from reportlab.lib.colors import black, white
 import fitz # install via PyMuPDF
 import qrcode
 
+from strep.util import lookup_meta
+
 C_SIZE = (1560, 2411)
 
 POS_GENERAL = {
@@ -181,12 +183,12 @@ class PropertyLabel(fitz.Document):
                 # TODO improve this by looking at the absolute height of the placed icon
                 place_relatively(canvas, rel_x, rel_y, 'drawInlineImage', icon)
                 try:
-                    fmt_val, fmt_unit = unit_fmt.reformat_value(value, meta[metric_key]['unit'])
+                    fmt_val, fmt_unit = unit_fmt.reformat_value(value, lookup_meta(meta, metric_key, key="unit"))
                     formatted = f"{fmt_val} {fmt_unit}"
                 except Exception:
                     formatted = 'N.A.'
                 place_relatively(canvas, rel_x, rel_y - 0.08, 'drawCentredString', formatted, '', 56)
-                place_relatively(canvas, rel_x, rel_y - 0.11, 'drawCentredString', meta[metric_key]['name'], '', 56)
+                place_relatively(canvas, rel_x, rel_y - 0.11, 'drawCentredString', lookup_meta(meta, metric_key), '', 56)
         
         super().__init__(stream=canvas.getpdfdata(), filetype='pdf')
     

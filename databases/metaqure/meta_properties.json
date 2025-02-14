@@ -1,10 +1,9 @@
 {
     "accuracy": {
         "name": "Accuracy",
-        "shortname": "ACC",
+        "shortname": "ACC1",
         "unit": "percent",
         "group": "Quality",
-        "weight": 0.125,
         "maximize": true,
         "independent_of_task": true
     },
@@ -13,16 +12,14 @@
         "shortname": "F1",
         "unit": "percent",
         "group": "Quality",
-        "weight": 0.125,
         "maximize": true,
         "independent_of_task": true
     },
     "precision": {
         "name": "Precision",
-        "shortname": "PRC",
+        "shortname": "PREC",
         "unit": "percent",
         "group": "Quality",
-        "weight": 0.125,
         "maximize": true,
         "independent_of_task": true
     },
@@ -31,7 +28,6 @@
         "shortname": "REC",
         "unit": "percent",
         "group": "Quality",
-        "weight": 0.125,
         "maximize": true,
         "independent_of_task": true
     },
@@ -39,22 +35,19 @@
         "name": "Energy Draw per Inference",
         "shortname": "ENI",
         "unit": "wattseconds",
-        "group": "Resources",
-        "weight": 0.0833333333
+        "group": "Resources"
     },
     "running_time": {
         "name": "Running Time per Inference",
         "shortname": "RTI",
         "unit": "seconds",
-        "group": "Resources",
-        "weight": 0.0833333333
+        "group": "Resources"
     },
     "fsize": {
         "name": "Model Size on Disc",
         "shortname": "FS",
         "unit": "byte",
         "group": "Resources",
-        "weight": 0.0833333333,
         "independent_of_task": true
     },
     "parameters": {
@@ -62,21 +55,18 @@
         "shortname": "PAR",
         "unit": "number",
         "group": "Resources",
-        "weight": 0.0833333333,
         "independent_of_task": true
     },
     "train_power_draw": {
         "name": "Training Energy Draw",
         "shortname": "ENT",
         "unit": "wattseconds",
-        "group": "Resources",
-        "weight": 0.0833333333
+        "group": "Resources"
     },
     "train_running_time": {
         "name": "Training Time",
         "shortname": "RTT",
         "unit": "seconds",
-        "group": "Resources",
-        "weight": 0.0833333333
+        "group": "Resources"
     }
 }
