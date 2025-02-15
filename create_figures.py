@@ -430,7 +430,7 @@ def chapter5(show):
     db, meta_info, _, idx_bounds, _, _ = load_db(DATABASES['MetaQuRe'])
     baselines, _ = load_database(os.path.join(os.path.dirname(DATABASES['MetaQuRe']), "baselines.pkl"))
     db['environment'] = db['environment'].map(lambda v: v.split(' - ')[0].replace(" rev 1 (v8l)", ""))
-    baselines['environment'] = baselines['environment'].map(lambda v: v.split(' - ')[0])
+    baselines['environment'] = baselines['environment'].map(lambda v: v.split(' - ')[0].replace(" rev 1 (v8l)", ""))
     meta_results = pd.read_pickle(os.path.join(os.path.dirname(DATABASES['MetaQuRe']), "meta_learned.pkl"))
     meta_errors = pd.read_pickle(os.path.join(os.path.dirname(DATABASES['MetaQuRe']), "meta_learned_errors.pkl"))
     env_cols = {env: LAM_COL_FIVE[4-idx] for idx, env in enumerate(['Intel i9-13900K', 'Intel i7-6700', 'Intel i7-10610U', 'ARMv8'])}
@@ -451,7 +451,8 @@ def chapter5(show):
         plot_data, axis_names = assemble_scatter_data(envs, data, 'index', xaxis, yaxis, meta_info, UNIT_FMT)
         traces = create_scatter_graph(plot_data, axis_names, dark_mode=False, display_text=True, marker_width=8, return_traces=True)
         for trace in traces:
-            trace["showlegend"] = False
+            if r_idx > 0:
+                trace["showlegend"] = False
             fig.add_trace(trace, row=r_idx+1, col=1)
         min_x, max_x = np.min([min(data['x']) for data in plot_data.values()]), np.max([max(data['x']) for data in plot_data.values()])
         min_y, max_y = np.min([min(data['y']) for data in plot_data.values()]), np.max([max(data['y']) for data in plot_data.values()])
@@ -467,7 +468,7 @@ def chapter5(show):
             trace = create_star_plot(summary, meta_info['properties'], name=f'{mod} on {env}', color=LAM_COL_FIVE[col_idx], showlegend=r_idx==0, return_trace=True)
             fig.add_trace(trace, row=r_idx+1, col=2)
     fig.update_layout(width=PLOT_WIDTH, height=PLOT_HEIGHT*2, margin={'l': 0, 'r': 0, 'b': 15, 't': 24},
-                      legend=dict( title="Selected models", yanchor="middle", y=0.5, xanchor="center", x=0.6))
+                      legend=dict( title="Selected models", yanchor="middle", y=0.5, xanchor="center", x=0.565))
     fig.update_traces(textposition='top center')
     finalize(fig, fname, show)
 
@@ -487,7 +488,7 @@ def chapter5(show):
         fig.add_trace( go.Scatter(x=embedding["x"], y=embedding["y"], mode='markers', showlegend=False, marker={'color': np.log(colors), 'size': np.log(sizes), 'coloraxis': 'coloraxis', 'sizemin': 1}), row=1, col=idx+1)
         # add bars for objective errors
         pred_error_mean = [meta_errors[(key, "index", f'{col}_test_err')].abs().mean() for col, _, in objectives]
-        fig.add_trace(go.Bar(x=list(zip(*objectives))[1], y=pred_error_mean, text=[f'{v:4.3f}' for v in pred_error_mean], textposition='auto', marker_color=LAM_COL_FIVE[2], showlegend=False), row=2, col=idx+1)
+        fig.add_trace(go.Bar(x=list(zip(*objectives))[1], y=pred_error_mean, text=[f'{v:4.3f}' for v in pred_error_mean], textposition='auto', marker_color=LAM_COL_FIVE[0], showlegend=False), row=2, col=idx+1)
         fig.update_yaxes(range=[0, 0.18], showticklabels=idx==0, row=2, col=idx+1)
     fig.update_yaxes(title=r'$\text{MAE}_\mathfrak{D}(S_{\Omega_\text{QR}})$', row=2, col=1)
     # add traces for the scatter size legend
@@ -505,7 +506,7 @@ def chapter5(show):
     traces, titles = [], []
     for idx, (prop, prop_meta) in enumerate(meta_info['properties'].items()):
         row, col = 2 if idx >= len(meta_info['properties']) / 2 else 1, int(idx % (len(meta_info['properties']) / 2)) + 1
-        for e_idx, (scale, trace, color) in enumerate(zip(['recalc_value', 'value'], ['Index', 'Value'], [LAM_COL_FIVE[2], LAM_COL_FIVE[0]])):
+        for e_idx, (scale, trace, color) in enumerate(zip(['recalc_value', 'value'], ['Index', 'Value'], [LAM_COL_FIVE[0], LAM_SPEC])):
             res = meta_results[(scale, f'{prop}_test_err')]
             if e_idx == 0: # use same target unit for both scales!
                 _, to_unit = UNIT_FMT.reformat_value(res.iloc[0], prop_meta['unit'])
@@ -553,8 +554,8 @@ def chapter5(show):
             baseline_results[mod]['acc'] = baseline_results[mod]['acc'] + data['accuracy'].values.tolist()
             baseline_results[mod]['env'] = baseline_results[mod]['env'] + [env] * data.shape[0]
         for idx, (mod, results) in enumerate( baseline_results.items() ):
-            fig.add_trace(go.Box(x=results['acc'], y=results['env'], offsetgroup=f'{mod}{mod}', name=mod, legendgroup=mod, marker_color=LAM_COL_FIVE[4-idx], showlegend=False), row=1+row_idx, col=1)
-            fig.add_trace(go.Box(x=results['ene'], y=results['env'], offsetgroup=f'{mod}{mod}', name=mod, legendgroup=mod, marker_color=LAM_COL_FIVE[4-idx], showlegend=row_idx==0), row=1+row_idx, col=2)
+            fig.add_trace(go.Box(x=results['acc'], y=results['env'], offsetgroup=f'{mod}{mod}', name=mod, legendgroup=mod, marker_color=LAM_COL_FIVE[idx], showlegend=False), row=1+row_idx, col=1)
+            fig.add_trace(go.Box(x=results['ene'], y=results['env'], offsetgroup=f'{mod}{mod}', name=mod, legendgroup=mod, marker_color=LAM_COL_FIVE[idx], showlegend=row_idx==0), row=1+row_idx, col=2)
     fig.update_layout(boxmode='group', width=PLOT_WIDTH, height=PLOT_HEIGHT*2.5, margin={'l': 0, 'r': 15, 'b': 46, 't': 0},
                       legend=dict(orientation="h", yanchor="bottom", y=1.0, xanchor="center", x=0.5))
     fig.update_traces(orientation='h')
@@ -574,7 +575,7 @@ def chapter5(show):
             true_best = gt_and_pred.sort_values(['dataset', gt_col], ascending=False).groupby('dataset').first()['model'].values
             pred_best = gt_and_pred.sort_values(['dataset', pred_col], ascending=False).groupby('dataset').first()['model'].values
             for bar_idx, (models, name) in enumerate(zip([true_best, pred_best], ['True best (exhaustive search)', 'Estimated best (via compositional meta-learning)'])):
-                col = LAM_COL_FIVE[2] if bar_idx == 0 else LAM_COL_FIVE[0]
+                col = LAM_COL_FIVE[1] if bar_idx == 0 else LAM_COL_FIVE[0]
                 mods, counts = np.unique(models, return_counts=True)
                 all_mod_counts = {mod: 0 for mod in model_colors.keys()}
                 for mod, cnt in zip(mods, counts):
