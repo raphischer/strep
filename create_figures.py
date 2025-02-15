@@ -490,7 +490,7 @@ def chapter5(show):
         pred_error_mean = [meta_errors[(key, "index", f'{col}_test_err')].abs().mean() for col, _, in objectives]
         fig.add_trace(go.Bar(x=list(zip(*objectives))[1], y=pred_error_mean, text=[f'{v:4.3f}' for v in pred_error_mean], textposition='auto', marker_color=LAM_COL_FIVE[0], showlegend=False), row=2, col=idx+1)
         fig.update_yaxes(range=[0, 0.18], showticklabels=idx==0, row=2, col=idx+1)
-    fig.update_yaxes(title=r'$\text{MAE}_\mathfrak{D}(S_{\Omega_\text{QR}})$', row=2, col=1)
+    fig.update_yaxes(title=r'$\text{MAE}_\mathfrak{D}(S_\Omega)$', row=2, col=1)
     # add traces for the scatter size legend
     for idx, n in enumerate([int(min(list(sizes))), 500, 5000, int(max(list(sizes)))]):
         fig.add_trace( go.Scatter(x=[-100], y=[-100], mode='markers', marker={'color': [1], 'size': [np.log(n)], 'colorscale': LAM_COL_SCALE, 'sizemin':1}, name=n), row=1, col=1)
@@ -524,46 +524,6 @@ def chapter5(show):
                       legend=dict(title='Meta-learning from values on scale:', orientation="h", yanchor="top", y=-0.02, xanchor="center", x=0.5))
     finalize(fig, fname, show)
 
-    fname = print_init('ch5_metaqure_baseline_comparisons') ###############################################################################
-    pfn_ds = pd.unique(baselines[baselines['model'] == 'PFN']['dataset'])
-    meta_results[['dataset', 'environment', 'model']] = db[['dataset', 'environment', 'model']]
-    comparison_data = {
-        'Small data sets (71)':  ( meta_results[meta_results['dataset'].isin(pfn_ds)], baselines[baselines['dataset'].isin(pfn_ds)], db[db['dataset'].isin(pfn_ds)] ),
-        'Large data sets (129)': ( meta_results[~meta_results['dataset'].isin(pfn_ds)], baselines[~baselines['dataset'].isin(pfn_ds)], db[~db['dataset'].isin(pfn_ds)] )
-    }
-    fig = make_subplots(rows=2, cols=2, shared_yaxes=True, horizontal_spacing=0.01, vertical_spacing=0.01, shared_xaxes=True, row_titles=list(comparison_data.keys()))
-    for row_idx, (meta_res, bl_res, exhau_res) in enumerate(comparison_data.values()):
-        baseline_results = {mod: {'ene': [], 'acc': [], 'env': []} for mod in ['CML', 'EXH'] + list(pd.unique(bl_res['model']))}
-        for env, mod in product(reversed(env_cols.keys()), baseline_results.keys()):
-            if mod == 'CML':
-                # access results of our method
-                sub_pred = meta_res[meta_res['environment'] == env]
-                rec_models = sub_pred.sort_values(['dataset', ('index', 'accuracy_test_pred')], ascending=False).groupby('dataset').first()['model']
-                data = pd.concat([db[(db['environment'] == env) & (db['dataset'] == ds) & (db['model'] == mod)] for ds, mod in rec_models.items()])
-            elif mod == 'EXH':
-                # access results of our method
-                sub_db = exhau_res[(exhau_res['environment'] == env)]
-                data = sub_db.sort_values(['dataset','accuracy'], ascending=False).groupby('dataset').first()
-                data['power_draw'] = sub_db.groupby('dataset')['power_draw'].sum()
-                data['train_power_draw'] = sub_db.groupby('dataset')['train_power_draw'].sum()
-            else:
-                data = bl_res.loc[(bl_res['model'] == mod) & (bl_res['environment'] == env),['train_power_draw', 'power_draw', 'accuracy']].dropna()
-                if data.size < 1:
-                    continue
-            baseline_results[mod]['ene'] = baseline_results[mod]['ene'] + data[['train_power_draw', 'power_draw']].sum(axis=1).values.tolist()
-            baseline_results[mod]['acc'] = baseline_results[mod]['acc'] + data['accuracy'].values.tolist()
-            baseline_results[mod]['env'] = baseline_results[mod]['env'] + [env] * data.shape[0]
-        for idx, (mod, results) in enumerate( baseline_results.items() ):
-            fig.add_trace(go.Box(x=results['acc'], y=results['env'], offsetgroup=f'{mod}{mod}', name=mod, legendgroup=mod, marker_color=LAM_COL_FIVE[idx], showlegend=False), row=1+row_idx, col=1)
-            fig.add_trace(go.Box(x=results['ene'], y=results['env'], offsetgroup=f'{mod}{mod}', name=mod, legendgroup=mod, marker_color=LAM_COL_FIVE[idx], showlegend=row_idx==0), row=1+row_idx, col=2)
-    fig.update_layout(boxmode='group', width=PLOT_WIDTH, height=PLOT_HEIGHT*2.5, margin={'l': 0, 'r': 15, 'b': 46, 't': 0},
-                      legend=dict(orientation="h", yanchor="bottom", y=1.0, xanchor="center", x=0.5))
-    fig.update_traces(orientation='h')
-    fig.update_xaxes(type="log", title='', row=1, col=2)
-    fig.update_xaxes(title='Accuracy [%]', row=2, col=1)
-    fig.update_xaxes(type="log", title='Energy Draw [Ws]', row=2, col=2)
-    finalize(fig, fname, show)
-
     fname = print_init('ch5_metaqure_optimal_model_choice') ###############################################################################
     fig = make_subplots(rows=len(objectives), cols=len(env_cols), shared_yaxes=True, shared_xaxes=True, horizontal_spacing=0.01, vertical_spacing=0.01, subplot_titles=list(env_cols.keys()))
     for row_idx, (sort_col, text) in enumerate(objectives):
@@ -586,7 +546,52 @@ def chapter5(show):
                       legend=dict(orientation="h", yanchor="top", y=-0.1, xanchor="center", x=0.5))
     finalize(fig, fname, show)
 
-    ######################################## XPCR
+    fname = print_init('ch5_metaqure_baseline_comparisons') ###############################################################################
+    pfn_ds = pd.unique(baselines[baselines['model'] == 'PFN']['dataset'])
+    meta_results[['dataset', 'environment', 'model']] = db[['dataset', 'environment', 'model']]
+    # instead of per batch inference energy, use the inference energy for the complete test split for this comparison
+    dataset_split_sizes = read_json(os.path.join(os.path.dirname(DATABASES['MetaQuRe']), "dataset_split_sizes.json"))
+    for db_ in [baselines, db]:
+        db_["test_size"] = db_["dataset"].map(lambda ds: int(dataset_split_sizes[ds]["test"][0]))
+        db_["power_draw"] = db_["power_draw"] * db_["test_size"]
+    comparison_data = {
+        'Small data sets (71)':  ( meta_results[meta_results['dataset'].isin(pfn_ds)], baselines[baselines['dataset'].isin(pfn_ds)], db[db['dataset'].isin(pfn_ds)] ),
+        'Large data sets (129)': ( meta_results[~meta_results['dataset'].isin(pfn_ds)], baselines[~baselines['dataset'].isin(pfn_ds)], db[~db['dataset'].isin(pfn_ds)] )
+    }
+    fig = make_subplots(rows=2, cols=2, shared_yaxes=True, horizontal_spacing=0.01, vertical_spacing=0.01, shared_xaxes=True, row_titles=list(comparison_data.keys()))
+    for row_idx, (meta_res, bl_res, exhau_res) in enumerate(comparison_data.values()):
+        baseline_results = {mod: {'ene': [], 'acc': [], 'env': []} for mod in ['CML', 'EXH'] + list(pd.unique(bl_res['model']))}
+        for env, mod in product(reversed(env_cols.keys()), baseline_results.keys()):
+            if mod == 'CML':
+                # access results of our method
+                sub_pred = meta_res[meta_res['environment'] == env]
+                rec_models = sub_pred.sort_values(['dataset', ('index', 'accuracy_test_pred')], ascending=False).groupby('dataset').first()['model']
+                data = pd.concat([db[(db['environment'] == env) & (db['dataset'] == ds) & (db['model'] == mod)] for ds, mod in rec_models.items()])
+            elif mod == 'EXH':
+                # access results of via exhaustive search
+                sub_db = exhau_res[(exhau_res['environment'] == env)]
+                data = sub_db.sort_values(['dataset','accuracy'], ascending=False).groupby('dataset').first()
+                data['power_draw'] = sub_db.groupby('dataset')['power_draw'].sum()
+                data['train_power_draw'] = sub_db.groupby('dataset')['train_power_draw'].sum()
+            else:
+                data = bl_res.loc[(bl_res['model'] == mod) & (bl_res['environment'] == env),['train_power_draw', 'power_draw', 'accuracy']].dropna()
+                if data.size < 1:
+                    continue
+            baseline_results[mod]['ene'] = baseline_results[mod]['ene'] + data[['train_power_draw', 'power_draw']].sum(axis=1).values.tolist()
+            baseline_results[mod]['acc'] = baseline_results[mod]['acc'] + data['accuracy'].values.tolist()
+            baseline_results[mod]['env'] = baseline_results[mod]['env'] + [env] * data.shape[0]
+        for idx, (mod, results) in enumerate( baseline_results.items() ):
+            fig.add_trace(go.Box(x=results['acc'], y=results['env'], offsetgroup=f'{mod}{mod}', name=mod, legendgroup=mod, marker_color=LAM_COL_FIVE[idx], showlegend=False), row=1+row_idx, col=1)
+            fig.add_trace(go.Box(x=results['ene'], y=results['env'], offsetgroup=f'{mod}{mod}', name=mod, legendgroup=mod, marker_color=LAM_COL_FIVE[idx], showlegend=row_idx==0), row=1+row_idx, col=2)
+    fig.update_layout(boxmode='group', width=PLOT_WIDTH, height=PLOT_HEIGHT*2.5, margin={'l': 0, 'r': 15, 'b': 46, 't': 0},
+                      legend=dict(orientation="h", yanchor="bottom", y=1.0, xanchor="center", x=0.5))
+    fig.update_traces(orientation='h')
+    fig.update_xaxes(type="log", title='', row=1, col=2)
+    fig.update_xaxes(title='Accuracy [%]', row=2, col=1)
+    fig.update_xaxes(type="log", title='Energy Draw [Ws]', row=2, col=2)
+    finalize(fig, fname, show)
+
+    ######################################## XPCR ########################################
     database, meta, _, idx_bounds, _, _ = load_db(DATABASES['XPCR_FULL'])
     meta_learned_db = pd.read_pickle(DATABASES['XPCR_FULL'].replace(".pkl", "_meta.pkl"))
     get_ds_short = lambda ds_name: ds_name[:4] + '..' + ds_name[-3:] if len(ds_name) > 9 else ds_name

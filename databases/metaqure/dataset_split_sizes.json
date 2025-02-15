@@ -1,0 +1,2002 @@
+{
+    "lung_cancer": {
+        "train": [
+            24,
+            56
+        ],
+        "test": [
+            8,
+            56
+        ]
+    },
+    "zoo": {
+        "train": [
+            75,
+            16
+        ],
+        "test": [
+            26,
+            16
+        ]
+    },
+    "iris": {
+        "train": [
+            112,
+            4
+        ],
+        "test": [
+            38,
+            4
+        ]
+    },
+    "hepatitis": {
+        "train": [
+            116,
+            19
+        ],
+        "test": [
+            39,
+            19
+        ]
+    },
+    "wine": {
+        "train": [
+            133,
+            13
+        ],
+        "test": [
+            45,
+            13
+        ]
+    },
+    "bone_marrow_transplant_children": {
+        "train": [
+            140,
+            40
+        ],
+        "test": [
+            47,
+            40
+        ]
+    },
+    "parkinsons": {
+        "train": [
+            146,
+            22
+        ],
+        "test": [
+            49,
+            22
+        ]
+    },
+    "breast_cancer_wisconsin_prognostic": {
+        "train": [
+            148,
+            33
+        ],
+        "test": [
+            50,
+            33
+        ]
+    },
+    "connectionist_bench_sonar_mines_vs_rocks": {
+        "train": [
+            156,
+            60
+        ],
+        "test": [
+            52,
+            60
+        ]
+    },
+    "image_segmentation": {
+        "train": [
+            157,
+            19
+        ],
+        "test": [
+            53,
+            19
+        ]
+    },
+    "glass_identification": {
+        "train": [
+            160,
+            9
+        ],
+        "test": [
+            54,
+            9
+        ]
+    },
+    "statlog_heart": {
+        "train": [
+            202,
+            13
+        ],
+        "test": [
+            68,
+            13
+        ]
+    },
+    "breast_cancer": {
+        "train": [
+            214,
+            39
+        ],
+        "test": [
+            72,
+            39
+        ]
+    },
+    "heart_failure_clinical_records": {
+        "train": [
+            224,
+            12
+        ],
+        "test": [
+            75,
+            12
+        ]
+    },
+    "heart_disease": {
+        "train": [
+            227,
+            13
+        ],
+        "test": [
+            76,
+            13
+        ]
+    },
+    "ecoli": {
+        "train": [
+            252,
+            7
+        ],
+        "test": [
+            84,
+            7
+        ]
+    },
+    "ionosphere": {
+        "train": [
+            263,
+            34
+        ],
+        "test": [
+            88,
+            34
+        ]
+    },
+    "dermatology": {
+        "train": [
+            274,
+            34
+        ],
+        "test": [
+            92,
+            34
+        ]
+    },
+    "olivetti_faces": {
+        "train": [
+            300,
+            4096
+        ],
+        "test": [
+            100,
+            4096
+        ]
+    },
+    "cirrhosis_patient_survival_prediction": {
+        "train": [
+            313,
+            776
+        ],
+        "test": [
+            105,
+            776
+        ]
+    },
+    "congressional_voting_records": {
+        "train": [
+            326,
+            32
+        ],
+        "test": [
+            109,
+            32
+        ]
+    },
+    "wholesale_customers": {
+        "train": [
+            330,
+            7
+        ],
+        "test": [
+            110,
+            7
+        ]
+    },
+    "arrhythmia": {
+        "train": [
+            339,
+            343
+        ],
+        "test": [
+            113,
+            343
+        ]
+    },
+    "thoracic_surgery_data": {
+        "train": [
+            352,
+            37
+        ],
+        "test": [
+            118,
+            37
+        ]
+    },
+    "kc2": {
+        "train": [
+            391,
+            21
+        ],
+        "test": [
+            131,
+            21
+        ]
+    },
+    "climate-model-simulation-crashes": {
+        "train": [
+            405,
+            20
+        ],
+        "test": [
+            135,
+            20
+        ]
+    },
+    "monks-problems-1": {
+        "train": [
+            417,
+            17
+        ],
+        "test": [
+            139,
+            17
+        ]
+    },
+    "wdbc": {
+        "train": [
+            426,
+            30
+        ],
+        "test": [
+            143,
+            30
+        ]
+    },
+    "ilpd": {
+        "train": [
+            437,
+            11
+        ],
+        "test": [
+            146,
+            11
+        ]
+    },
+    "monks-problems-2": {
+        "train": [
+            450,
+            17
+        ],
+        "test": [
+            151,
+            17
+        ]
+    },
+    "hcv_data": {
+        "train": [
+            461,
+            13
+        ],
+        "test": [
+            154,
+            13
+        ]
+    },
+    "balance_scale": {
+        "train": [
+            468,
+            4
+        ],
+        "test": [
+            157,
+            4
+        ]
+    },
+    "student_performance": {
+        "train": [
+            486,
+            58
+        ],
+        "test": [
+            163,
+            58
+        ]
+    },
+    "credit_approval": {
+        "train": [
+            517,
+            46
+        ],
+        "test": [
+            173,
+            46
+        ]
+    },
+    "breast_cancer_wisconsin_original": {
+        "train": [
+            524,
+            9
+        ],
+        "test": [
+            175,
+            9
+        ]
+    },
+    "national_poll_on_healthy_aging_npha": {
+        "train": [
+            535,
+            14
+        ],
+        "test": [
+            179,
+            14
+        ]
+    },
+    "blood-transfusion-service-center": {
+        "train": [
+            561,
+            4
+        ],
+        "test": [
+            187,
+            4
+        ]
+    },
+    "diabetes": {
+        "train": [
+            576,
+            8
+        ],
+        "test": [
+            192,
+            8
+        ]
+    },
+    "regensburg_pediatric_appendicitis": {
+        "train": [
+            586,
+            153
+        ],
+        "test": [
+            196,
+            153
+        ]
+    },
+    "glioma_grading_clinical_and_mutation_features": {
+        "train": [
+            629,
+            26
+        ],
+        "test": [
+            210,
+            26
+        ]
+    },
+    "statlog_vehicle_silhouettes": {
+        "train": [
+            634,
+            18
+        ],
+        "test": [
+            212,
+            18
+        ]
+    },
+    "raisin": {
+        "train": [
+            675,
+            7
+        ],
+        "test": [
+            225,
+            7
+        ]
+    },
+    "tic-tac-toe": {
+        "train": [
+            718,
+            27
+        ],
+        "test": [
+            240,
+            27
+        ]
+    },
+    "credit-g": {
+        "train": [
+            750,
+            61
+        ],
+        "test": [
+            250,
+            61
+        ]
+    },
+    "qsar-biodeg": {
+        "train": [
+            791,
+            41
+        ],
+        "test": [
+            264,
+            41
+        ]
+    },
+    "pc1": {
+        "train": [
+            831,
+            21
+        ],
+        "test": [
+            278,
+            21
+        ]
+    },
+    "diabetic_retinopathy_debrecen": {
+        "train": [
+            863,
+            19
+        ],
+        "test": [
+            288,
+            19
+        ]
+    },
+    "hill-valley": {
+        "train": [
+            909,
+            100
+        ],
+        "test": [
+            303,
+            100
+        ]
+    },
+    "banknote-authentication": {
+        "train": [
+            1029,
+            4
+        ],
+        "test": [
+            343,
+            4
+        ]
+    },
+    "contraceptive_method_choice": {
+        "train": [
+            1104,
+            9
+        ],
+        "test": [
+            369,
+            9
+        ]
+    },
+    "yeast": {
+        "train": [
+            1113,
+            8
+        ],
+        "test": [
+            371,
+            8
+        ]
+    },
+    "amazon-commerce-reviews": {
+        "train": [
+            1125,
+            10000
+        ],
+        "test": [
+            375,
+            10000
+        ]
+    },
+    "pc3": {
+        "train": [
+            1172,
+            37
+        ],
+        "test": [
+            391,
+            37
+        ]
+    },
+    "one-hundred-plants-texture": {
+        "train": [
+            1199,
+            64
+        ],
+        "test": [
+            400,
+            64
+        ]
+    },
+    "one-hundred-plants-shape": {
+        "train": [
+            1200,
+            64
+        ],
+        "test": [
+            400,
+            64
+        ]
+    },
+    "car_evaluation": {
+        "train": [
+            1296,
+            21
+        ],
+        "test": [
+            432,
+            21
+        ]
+    },
+    "steel-plates-fault": {
+        "train": [
+            1455,
+            33
+        ],
+        "test": [
+            486,
+            33
+        ]
+    },
+    "kc1": {
+        "train": [
+            1581,
+            21
+        ],
+        "test": [
+            528,
+            21
+        ]
+    },
+    "estimation_of_obesity_levels_based_on_eating_habits_and_physical_condition": {
+        "train": [
+            1583,
+            31
+        ],
+        "test": [
+            528,
+            31
+        ]
+    },
+    "aids_clinical_trials_group_study_175": {
+        "train": [
+            1604,
+            23
+        ],
+        "test": [
+            535,
+            23
+        ]
+    },
+    "Titanic": {
+        "train": [
+            1650,
+            3
+        ],
+        "test": [
+            551,
+            3
+        ]
+    },
+    "national_health_and_nutrition_health_survey_2013-2014_nhanes_age_prediction_subset": {
+        "train": [
+            1708,
+            7
+        ],
+        "test": [
+            570,
+            7
+        ]
+    },
+    "ozone-level-8hr": {
+        "train": [
+            1900,
+            72
+        ],
+        "test": [
+            634,
+            72
+        ]
+    },
+    "kr-vs-kp": {
+        "train": [
+            2397,
+            73
+        ],
+        "test": [
+            799,
+            73
+        ]
+    },
+    "Bioresponse": {
+        "train": [
+            2813,
+            1776
+        ],
+        "test": [
+            938,
+            1776
+        ]
+    },
+    "rice_cammeo_and_osmancik": {
+        "train": [
+            2857,
+            7
+        ],
+        "test": [
+            953,
+            7
+        ]
+    },
+    "abalone": {
+        "train": [
+            3132,
+            10
+        ],
+        "test": [
+            1045,
+            10
+        ]
+    },
+    "predict_students_dropout_and_academic_success": {
+        "train": [
+            3318,
+            36
+        ],
+        "test": [
+            1106,
+            36
+        ]
+    },
+    "spambase": {
+        "train": [
+            3450,
+            57
+        ],
+        "test": [
+            1151,
+            57
+        ]
+    },
+    "Satellite": {
+        "train": [
+            3825,
+            36
+        ],
+        "test": [
+            1275,
+            36
+        ]
+    },
+    "phoneme": {
+        "train": [
+            4053,
+            5
+        ],
+        "test": [
+            1351,
+            5
+        ]
+    },
+    "optical_recognition_of_handwritten_digits": {
+        "train": [
+            4215,
+            64
+        ],
+        "test": [
+            1405,
+            64
+        ]
+    },
+    "statlog_landsat_satellite": {
+        "train": [
+            4826,
+            36
+        ],
+        "test": [
+            1609,
+            36
+        ]
+    },
+    "wine_quality": {
+        "train": [
+            4872,
+            11
+        ],
+        "test": [
+            1625,
+            11
+        ]
+    },
+    "isolet": {
+        "train": [
+            5847,
+            617
+        ],
+        "test": [
+            1950,
+            617
+        ]
+    },
+    "mushroom": {
+        "train": [
+            6093,
+            116
+        ],
+        "test": [
+            2031,
+            116
+        ]
+    },
+    "SpeedDating": {
+        "train": [
+            6283,
+            500
+        ],
+        "test": [
+            2095,
+            500
+        ]
+    },
+    "support2": {
+        "train": [
+            6828,
+            66
+        ],
+        "test": [
+            2277,
+            66
+        ]
+    },
+    "ai4i_2020_predictive_maintenance_dataset": {
+        "train": [
+            7500,
+            13
+        ],
+        "test": [
+            2500,
+            13
+        ]
+    },
+    "electrical_grid_stability_simulated_data": {
+        "train": [
+            7500,
+            13
+        ],
+        "test": [
+            2500,
+            13
+        ]
+    },
+    "pen-based_recognition_of_handwritten_digits": {
+        "train": [
+            8244,
+            16
+        ],
+        "test": [
+            2748,
+            16
+        ]
+    },
+    "online_shoppers_purchasing_intention_dataset": {
+        "train": [
+            9247,
+            28
+        ],
+        "test": [
+            3083,
+            28
+        ]
+    },
+    "dry_bean_dataset": {
+        "train": [
+            10208,
+            16
+        ],
+        "test": [
+            3403,
+            16
+        ]
+    },
+    "eeg-eye-state": {
+        "train": [
+            11235,
+            14
+        ],
+        "test": [
+            3745,
+            14
+        ]
+    },
+    "magic_gamma_telescope": {
+        "train": [
+            14265,
+            10
+        ],
+        "test": [
+            4755,
+            10
+        ]
+    },
+    "letter_recognition": {
+        "train": [
+            15000,
+            16
+        ],
+        "test": [
+            5000,
+            16
+        ]
+    },
+    "default_of_credit_card_clients": {
+        "train": [
+            22500,
+            23
+        ],
+        "test": [
+            7500,
+            23
+        ]
+    },
+    "bank-marketing": {
+        "train": [
+            33908,
+            51
+        ],
+        "test": [
+            11303,
+            51
+        ]
+    },
+    "adult": {
+        "train": [
+            36631,
+            108
+        ],
+        "test": [
+            12211,
+            108
+        ]
+    },
+    "statlog_shuttle": {
+        "train": [
+            43500,
+            7
+        ],
+        "test": [
+            14500,
+            7
+        ]
+    },
+    "mnist_784": {
+        "train": [
+            52500,
+            784
+        ],
+        "test": [
+            17500,
+            784
+        ]
+    },
+    "sepsis_survival_minimal_clinical_records": {
+        "train": [
+            82755,
+            3
+        ],
+        "test": [
+            27586,
+            3
+        ]
+    },
+    "make_classification_500_10_8_1_4_2_1-0": {
+        "train": [
+            375,
+            10
+        ],
+        "test": [
+            125,
+            10
+        ]
+    },
+    "make_classification_1000_20_10_10_5_2_1-0": {
+        "train": [
+            750,
+            20
+        ],
+        "test": [
+            250,
+            20
+        ]
+    },
+    "make_classification_2000_30_5_5_6_3_1-0": {
+        "train": [
+            1500,
+            30
+        ],
+        "test": [
+            500,
+            30
+        ]
+    },
+    "make_classification_500_40_10_5_5_10_1-0": {
+        "train": [
+            375,
+            40
+        ],
+        "test": [
+            125,
+            40
+        ]
+    },
+    "make_classification_1000_50_10_10_5_2_0-7": {
+        "train": [
+            750,
+            50
+        ],
+        "test": [
+            250,
+            50
+        ]
+    },
+    "make_classification_2000_60_5_5_6_3_0-7": {
+        "train": [
+            1500,
+            60
+        ],
+        "test": [
+            500,
+            60
+        ]
+    },
+    "make_classification_5000_50_40_5_30_1_1-3": {
+        "train": [
+            3750,
+            50
+        ],
+        "test": [
+            1250,
+            50
+        ]
+    },
+    "make_classification_10000_70_50_10_50_1_1-3": {
+        "train": [
+            7500,
+            70
+        ],
+        "test": [
+            2500,
+            70
+        ]
+    },
+    "make_classification_20000_50_30_5_15_2_1-3": {
+        "train": [
+            15000,
+            50
+        ],
+        "test": [
+            5000,
+            50
+        ]
+    },
+    "make_classification_60000_30_10_5_20_3_0-9": {
+        "train": [
+            45000,
+            30
+        ],
+        "test": [
+            15000,
+            30
+        ]
+    },
+    "make_circles_200_0-3_0-7": {
+        "train": [
+            150,
+            2
+        ],
+        "test": [
+            50,
+            2
+        ]
+    },
+    "make_circles_800_0-2_0-8": {
+        "train": [
+            600,
+            2
+        ],
+        "test": [
+            200,
+            2
+        ]
+    },
+    "make_moons_500_0-3": {
+        "train": [
+            375,
+            2
+        ],
+        "test": [
+            125,
+            2
+        ]
+    },
+    "make_moons_900_0-5": {
+        "train": [
+            675,
+            2
+        ],
+        "test": [
+            225,
+            2
+        ]
+    },
+    "make_hastie_10_2_1000": {
+        "train": [
+            750,
+            10
+        ],
+        "test": [
+            250,
+            10
+        ]
+    },
+    "v0_2___lung_cancer": {
+        "train": [
+            24,
+            28
+        ],
+        "test": [
+            8,
+            28
+        ]
+    },
+    "v1_2___lung_cancer": {
+        "train": [
+            24,
+            28
+        ],
+        "test": [
+            8,
+            28
+        ]
+    },
+    "v0_2___connectionist_bench_sonar_mines_vs_rocks": {
+        "train": [
+            156,
+            30
+        ],
+        "test": [
+            52,
+            30
+        ]
+    },
+    "v1_2___connectionist_bench_sonar_mines_vs_rocks": {
+        "train": [
+            156,
+            30
+        ],
+        "test": [
+            52,
+            30
+        ]
+    },
+    "v0_2___student_performance": {
+        "train": [
+            486,
+            29
+        ],
+        "test": [
+            163,
+            29
+        ]
+    },
+    "v1_2___student_performance": {
+        "train": [
+            486,
+            29
+        ],
+        "test": [
+            163,
+            29
+        ]
+    },
+    "v0_2___credit_approval": {
+        "train": [
+            517,
+            23
+        ],
+        "test": [
+            173,
+            23
+        ]
+    },
+    "v1_2___credit_approval": {
+        "train": [
+            517,
+            23
+        ],
+        "test": [
+            173,
+            23
+        ]
+    },
+    "v0_2___qsar-biodeg": {
+        "train": [
+            791,
+            21
+        ],
+        "test": [
+            264,
+            21
+        ]
+    },
+    "v1_2___qsar-biodeg": {
+        "train": [
+            791,
+            20
+        ],
+        "test": [
+            264,
+            20
+        ]
+    },
+    "v0_2___spambase": {
+        "train": [
+            3450,
+            29
+        ],
+        "test": [
+            1151,
+            29
+        ]
+    },
+    "v1_2___spambase": {
+        "train": [
+            3450,
+            28
+        ],
+        "test": [
+            1151,
+            28
+        ]
+    },
+    "v0_2___bank-marketing": {
+        "train": [
+            33908,
+            26
+        ],
+        "test": [
+            11303,
+            26
+        ]
+    },
+    "v1_2___bank-marketing": {
+        "train": [
+            33908,
+            25
+        ],
+        "test": [
+            11303,
+            25
+        ]
+    },
+    "v0_3___credit-g": {
+        "train": [
+            750,
+            21
+        ],
+        "test": [
+            250,
+            21
+        ]
+    },
+    "v1_3___credit-g": {
+        "train": [
+            750,
+            20
+        ],
+        "test": [
+            250,
+            20
+        ]
+    },
+    "v2_3___credit-g": {
+        "train": [
+            750,
+            20
+        ],
+        "test": [
+            250,
+            20
+        ]
+    },
+    "v0_3___hill-valley": {
+        "train": [
+            909,
+            34
+        ],
+        "test": [
+            303,
+            34
+        ]
+    },
+    "v1_3___hill-valley": {
+        "train": [
+            909,
+            33
+        ],
+        "test": [
+            303,
+            33
+        ]
+    },
+    "v2_3___hill-valley": {
+        "train": [
+            909,
+            33
+        ],
+        "test": [
+            303,
+            33
+        ]
+    },
+    "v0_3___one-hundred-plants-texture": {
+        "train": [
+            1199,
+            22
+        ],
+        "test": [
+            400,
+            22
+        ]
+    },
+    "v1_3___one-hundred-plants-texture": {
+        "train": [
+            1199,
+            21
+        ],
+        "test": [
+            400,
+            21
+        ]
+    },
+    "v2_3___one-hundred-plants-texture": {
+        "train": [
+            1199,
+            21
+        ],
+        "test": [
+            400,
+            21
+        ]
+    },
+    "v0_3___one-hundred-plants-shape": {
+        "train": [
+            1200,
+            22
+        ],
+        "test": [
+            400,
+            22
+        ]
+    },
+    "v1_3___one-hundred-plants-shape": {
+        "train": [
+            1200,
+            21
+        ],
+        "test": [
+            400,
+            21
+        ]
+    },
+    "v2_3___one-hundred-plants-shape": {
+        "train": [
+            1200,
+            21
+        ],
+        "test": [
+            400,
+            21
+        ]
+    },
+    "v0_3___ozone-level-8hr": {
+        "train": [
+            1900,
+            24
+        ],
+        "test": [
+            634,
+            24
+        ]
+    },
+    "v1_3___ozone-level-8hr": {
+        "train": [
+            1900,
+            24
+        ],
+        "test": [
+            634,
+            24
+        ]
+    },
+    "v2_3___ozone-level-8hr": {
+        "train": [
+            1900,
+            24
+        ],
+        "test": [
+            634,
+            24
+        ]
+    },
+    "v0_3___kr-vs-kp": {
+        "train": [
+            2397,
+            25
+        ],
+        "test": [
+            799,
+            25
+        ]
+    },
+    "v1_3___kr-vs-kp": {
+        "train": [
+            2397,
+            24
+        ],
+        "test": [
+            799,
+            24
+        ]
+    },
+    "v2_3___kr-vs-kp": {
+        "train": [
+            2397,
+            24
+        ],
+        "test": [
+            799,
+            24
+        ]
+    },
+    "v0_3___optical_recognition_of_handwritten_digits": {
+        "train": [
+            4215,
+            22
+        ],
+        "test": [
+            1405,
+            22
+        ]
+    },
+    "v1_3___optical_recognition_of_handwritten_digits": {
+        "train": [
+            4215,
+            21
+        ],
+        "test": [
+            1405,
+            21
+        ]
+    },
+    "v2_3___optical_recognition_of_handwritten_digits": {
+        "train": [
+            4215,
+            21
+        ],
+        "test": [
+            1405,
+            21
+        ]
+    },
+    "v0_3___support2": {
+        "train": [
+            6828,
+            22
+        ],
+        "test": [
+            2277,
+            22
+        ]
+    },
+    "v1_3___support2": {
+        "train": [
+            6828,
+            22
+        ],
+        "test": [
+            2277,
+            22
+        ]
+    },
+    "v2_3___support2": {
+        "train": [
+            6828,
+            22
+        ],
+        "test": [
+            2277,
+            22
+        ]
+    },
+    "v0_5___olivetti_faces": {
+        "train": [
+            300,
+            820
+        ],
+        "test": [
+            100,
+            820
+        ]
+    },
+    "v1_5___olivetti_faces": {
+        "train": [
+            300,
+            819
+        ],
+        "test": [
+            100,
+            819
+        ]
+    },
+    "v2_5___olivetti_faces": {
+        "train": [
+            300,
+            819
+        ],
+        "test": [
+            100,
+            819
+        ]
+    },
+    "v3_5___olivetti_faces": {
+        "train": [
+            300,
+            819
+        ],
+        "test": [
+            100,
+            819
+        ]
+    },
+    "v4_5___olivetti_faces": {
+        "train": [
+            300,
+            819
+        ],
+        "test": [
+            100,
+            819
+        ]
+    },
+    "v0_5___cirrhosis_patient_survival_prediction": {
+        "train": [
+            313,
+            156
+        ],
+        "test": [
+            105,
+            156
+        ]
+    },
+    "v1_5___cirrhosis_patient_survival_prediction": {
+        "train": [
+            313,
+            155
+        ],
+        "test": [
+            105,
+            155
+        ]
+    },
+    "v2_5___cirrhosis_patient_survival_prediction": {
+        "train": [
+            313,
+            155
+        ],
+        "test": [
+            105,
+            155
+        ]
+    },
+    "v3_5___cirrhosis_patient_survival_prediction": {
+        "train": [
+            313,
+            155
+        ],
+        "test": [
+            105,
+            155
+        ]
+    },
+    "v4_5___cirrhosis_patient_survival_prediction": {
+        "train": [
+            313,
+            155
+        ],
+        "test": [
+            105,
+            155
+        ]
+    },
+    "v0_5___arrhythmia": {
+        "train": [
+            339,
+            69
+        ],
+        "test": [
+            113,
+            69
+        ]
+    },
+    "v1_5___arrhythmia": {
+        "train": [
+            339,
+            69
+        ],
+        "test": [
+            113,
+            69
+        ]
+    },
+    "v2_5___arrhythmia": {
+        "train": [
+            339,
+            69
+        ],
+        "test": [
+            113,
+            69
+        ]
+    },
+    "v3_5___arrhythmia": {
+        "train": [
+            339,
+            68
+        ],
+        "test": [
+            113,
+            68
+        ]
+    },
+    "v4_5___arrhythmia": {
+        "train": [
+            339,
+            68
+        ],
+        "test": [
+            113,
+            68
+        ]
+    },
+    "v0_5___regensburg_pediatric_appendicitis": {
+        "train": [
+            586,
+            31
+        ],
+        "test": [
+            196,
+            31
+        ]
+    },
+    "v1_5___regensburg_pediatric_appendicitis": {
+        "train": [
+            586,
+            31
+        ],
+        "test": [
+            196,
+            31
+        ]
+    },
+    "v2_5___regensburg_pediatric_appendicitis": {
+        "train": [
+            586,
+            31
+        ],
+        "test": [
+            196,
+            31
+        ]
+    },
+    "v3_5___regensburg_pediatric_appendicitis": {
+        "train": [
+            586,
+            30
+        ],
+        "test": [
+            196,
+            30
+        ]
+    },
+    "v4_5___regensburg_pediatric_appendicitis": {
+        "train": [
+            586,
+            30
+        ],
+        "test": [
+            196,
+            30
+        ]
+    },
+    "v0_5___amazon-commerce-reviews": {
+        "train": [
+            1125,
+            2000
+        ],
+        "test": [
+            375,
+            2000
+        ]
+    },
+    "v1_5___amazon-commerce-reviews": {
+        "train": [
+            1125,
+            2000
+        ],
+        "test": [
+            375,
+            2000
+        ]
+    },
+    "v2_5___amazon-commerce-reviews": {
+        "train": [
+            1125,
+            2000
+        ],
+        "test": [
+            375,
+            2000
+        ]
+    },
+    "v3_5___amazon-commerce-reviews": {
+        "train": [
+            1125,
+            2000
+        ],
+        "test": [
+            375,
+            2000
+        ]
+    },
+    "v4_5___amazon-commerce-reviews": {
+        "train": [
+            1125,
+            2000
+        ],
+        "test": [
+            375,
+            2000
+        ]
+    },
+    "v0_5___Bioresponse": {
+        "train": [
+            2813,
+            356
+        ],
+        "test": [
+            938,
+            356
+        ]
+    },
+    "v1_5___Bioresponse": {
+        "train": [
+            2813,
+            355
+        ],
+        "test": [
+            938,
+            355
+        ]
+    },
+    "v2_5___Bioresponse": {
+        "train": [
+            2813,
+            355
+        ],
+        "test": [
+            938,
+            355
+        ]
+    },
+    "v3_5___Bioresponse": {
+        "train": [
+            2813,
+            355
+        ],
+        "test": [
+            938,
+            355
+        ]
+    },
+    "v4_5___Bioresponse": {
+        "train": [
+            2813,
+            355
+        ],
+        "test": [
+            938,
+            355
+        ]
+    },
+    "v0_5___isolet": {
+        "train": [
+            5847,
+            124
+        ],
+        "test": [
+            1950,
+            124
+        ]
+    },
+    "v1_5___isolet": {
+        "train": [
+            5847,
+            124
+        ],
+        "test": [
+            1950,
+            124
+        ]
+    },
+    "v2_5___isolet": {
+        "train": [
+            5847,
+            123
+        ],
+        "test": [
+            1950,
+            123
+        ]
+    },
+    "v3_5___isolet": {
+        "train": [
+            5847,
+            123
+        ],
+        "test": [
+            1950,
+            123
+        ]
+    },
+    "v4_5___isolet": {
+        "train": [
+            5847,
+            123
+        ],
+        "test": [
+            1950,
+            123
+        ]
+    },
+    "v0_5___mushroom": {
+        "train": [
+            6093,
+            24
+        ],
+        "test": [
+            2031,
+            24
+        ]
+    },
+    "v1_5___mushroom": {
+        "train": [
+            6093,
+            23
+        ],
+        "test": [
+            2031,
+            23
+        ]
+    },
+    "v2_5___mushroom": {
+        "train": [
+            6093,
+            23
+        ],
+        "test": [
+            2031,
+            23
+        ]
+    },
+    "v3_5___mushroom": {
+        "train": [
+            6093,
+            23
+        ],
+        "test": [
+            2031,
+            23
+        ]
+    },
+    "v4_5___mushroom": {
+        "train": [
+            6093,
+            23
+        ],
+        "test": [
+            2031,
+            23
+        ]
+    },
+    "v0_5___SpeedDating": {
+        "train": [
+            6283,
+            100
+        ],
+        "test": [
+            2095,
+            100
+        ]
+    },
+    "v1_5___SpeedDating": {
+        "train": [
+            6283,
+            100
+        ],
+        "test": [
+            2095,
+            100
+        ]
+    },
+    "v2_5___SpeedDating": {
+        "train": [
+            6283,
+            100
+        ],
+        "test": [
+            2095,
+            100
+        ]
+    },
+    "v3_5___SpeedDating": {
+        "train": [
+            6283,
+            100
+        ],
+        "test": [
+            2095,
+            100
+        ]
+    },
+    "v4_5___SpeedDating": {
+        "train": [
+            6283,
+            100
+        ],
+        "test": [
+            2095,
+            100
+        ]
+    },
+    "v0_5___adult": {
+        "train": [
+            36631,
+            22
+        ],
+        "test": [
+            12211,
+            22
+        ]
+    },
+    "v1_5___adult": {
+        "train": [
+            36631,
+            22
+        ],
+        "test": [
+            12211,
+            22
+        ]
+    },
+    "v2_5___adult": {
+        "train": [
+            36631,
+            22
+        ],
+        "test": [
+            12211,
+            22
+        ]
+    },
+    "v3_5___adult": {
+        "train": [
+            36631,
+            21
+        ],
+        "test": [
+            12211,
+            21
+        ]
+    },
+    "v4_5___adult": {
+        "train": [
+            36631,
+            21
+        ],
+        "test": [
+            12211,
+            21
+        ]
+    },
+    "v0_5___mnist_784": {
+        "train": [
+            52500,
+            157
+        ],
+        "test": [
+            17500,
+            157
+        ]
+    },
+    "v1_5___mnist_784": {
+        "train": [
+            52500,
+            157
+        ],
+        "test": [
+            17500,
+            157
+        ]
+    },
+    "v2_5___mnist_784": {
+        "train": [
+            52500,
+            157
+        ],
+        "test": [
+            17500,
+            157
+        ]
+    },
+    "v3_5___mnist_784": {
+        "train": [
+            52500,
+            157
+        ],
+        "test": [
+            17500,
+            157
+        ]
+    },
+    "v4_5___mnist_784": {
+        "train": [
+            52500,
+            156
+        ],
+        "test": [
+            17500,
+            156
+        ]
+    }
+}
