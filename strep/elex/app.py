@@ -12,7 +12,7 @@ from strep.elex.util import summary_to_html_tables, toggle_element_visibility
 from strep.elex.graphs import assemble_scatter_data, create_scatter_graph, create_correlation_graph, create_bar_graph, add_rating_background, create_star_plot
 from strep.labels.generator import PropertyLabel
 from strep.index_scale import scale_and_rate, _extract_weights
-from strep.unit_formater import CustomUnitReformater
+from strep.unit_formatter import CustomUnitReformater
 from strep.util import lookup_meta, PatchedJSONEncoder, fill_meta, find_sub_db
 
 

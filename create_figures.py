@@ -10,7 +10,7 @@ from strep.index_scale import load_database, scale_and_rate, _extract_weights, c
 from strep.util import lookup_meta, find_sub_db, fill_meta, loopup_task_ds_metrics, prop_dict_to_val, read_json
 from strep.elex.util import RATING_COLORS, RATING_COLOR_SCALE, RATING_COLOR_SCALE_REV, rgb_to_rgba, hex_to_alpha
 from strep.elex.graphs import assemble_scatter_data, create_scatter_graph, add_rating_background, create_star_plot
-from strep.unit_formater import CustomUnitReformater
+from strep.unit_formatter import CustomUnitReformater
 from strep.labels.generator import PropertyLabel
 
 # external libraries
