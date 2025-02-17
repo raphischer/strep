@@ -1,6 +1,6 @@
 {
     "top-1_val": {
-        "name": "Average Top-1 Accuracy",
+        "name": "Average top-1 accuracy",
         "shortname": "ACC1",
         "unit": "percent",
         "group": "Quality",
@@ -8,7 +8,7 @@
         "independent_of_task": true
     },
     "top-5_val": {
-        "name": "Average Top-5 Accuracy",
+        "name": "Average top-5 accuracy",
         "shortname": "ACC5",
         "unit": "percent",
         "group": "Quality",
@@ -16,46 +16,46 @@
         "independent_of_task": true
     },
     "parameters": {
-        "name": "Number of Parameters",
+        "name": "Number of parameters",
         "shortname": "PAR",
         "unit": "number",
         "group": "Complexity",
         "independent_of_task": true
     },
     "flops": {
-        "name": "Floating Point Operations",
+        "name": "Floating point operations",
         "shortname": "FLOP",
         "unit": "number",
         "group": "Complexity",
         "independent_of_task": true
     },
     "fsize": {
-        "name": "File Size on Disk",
+        "name": "File size on disk",
         "shortname": "FS",
         "unit": "byte",
         "group": "Complexity",
         "independent_of_task": true
     },
     "train_power_draw": {
-        "name": "Training Energy Draw",
+        "name": "Training energy draw",
         "shortname": "ENT",
         "unit": "kilowatthours",
         "group": "Resources"
     },
     "train_running_time": {
-        "name": "Training Time",
+        "name": "Training time",
         "shortname": "RTT",
         "unit": "seconds",
         "group": "Resources"
     },
     "power_draw": {
-        "name": "Energy Draw Per Batch",
+        "name": "Energy draw per batch",
         "shortname": "ENI",
         "unit": "wattseconds",
         "group": "Resources"
     },
     "running_time": {
-        "name": "Running Time per Batch",
+        "name": "Running time per batch",
         "shortname": "RTI",
         "unit": "seconds",
         "group": "Resources"

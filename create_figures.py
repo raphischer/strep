@@ -6,12 +6,12 @@ from itertools import product
 
 # STREP imports
 from main import DATABASES
-from strep.index_scale import load_database, scale_and_rate, _extract_weights, calc_correlation, calc_all_correlations
+from strep.index_scale import load_database, scale_and_rate, _extract_weights, calc_all_correlations
 from strep.util import lookup_meta, find_sub_db, fill_meta, loopup_task_ds_metrics, prop_dict_to_val, read_json
 from strep.elex.util import RATING_COLORS, RATING_COLOR_SCALE, RATING_COLOR_SCALE_REV, rgb_to_rgba, hex_to_alpha
 from strep.elex.graphs import assemble_scatter_data, create_scatter_graph, add_rating_background, create_star_plot
-from strep.unit_reformatting import CustomUnitReformater
-from strep.labels.label_generation import PropertyLabel
+from strep.unit_formater import CustomUnitReformater
+from strep.labels.generator import PropertyLabel
 
 # external libraries
 import numpy as np
@@ -73,9 +73,9 @@ def print_init(fname):
     print(f'                 - -- ---  {fname:<20}  --- -- -                 ')
     return fname
 
-def finalize(fig, fname, show):
+def finalize(fig, fname, show, yshift=0):
     fig.update_layout(font_family='Open-Sherif')
-    fig.update_annotations(yshift=2) # to adapt tex titles
+    fig.update_annotations(yshift=2+yshift) # to adapt tex titles
     if show:
         fig.show()
     fig.write_image(os.path.join(DISS_FIGURES, f"{fname}.pdf"))
@@ -158,20 +158,20 @@ def chapter3(show):
             if e_idx == 0:
                 label = PropertyLabel(summary, task_props, UNIT_FMT)
                 label.save(os.path.join(DISS_FIGURES, f'ch3_label_{mod}.pdf'))
-    fig.update_annotations(yshift=20)
     fig.update_layout(
         polar=dict(radialaxis=dict(visible=True)), width=PLOT_WIDTH, height=PLOT_HEIGHT,
-        legend=dict( yanchor="top", y=-0.1, xanchor="center", x=0.5, orientation='h'), margin={'l': 10, 'r': 10, 'b': 0, 't': 40}
+        legend=dict( yanchor="top", y=-0.1, xanchor="center", x=0.5, orientation='h'), margin={'l': 10, 'r': 10, 'b': 0, 't': 26}
     )
-    finalize(fig, fname, show)
+    finalize(fig, fname, show, yshift=6)
 
     fname = print_init('ch3_imagenet_tradeoffs') ###############################################################################
     env = pd.unique(db['environment'])[0]
+    db_without_eff = db[~db["model"].str.contains("Effi")]
     scatter = make_subplots(rows=2, cols=2, shared_yaxes=True, horizontal_spacing=.02, vertical_spacing=.1)
     for idx, (xaxis, yaxis, t) in enumerate([['power_draw', 'top-1_val', 'infer'], ['train_power_draw', 'top-1_val', 'train'], ['running_time', 'parameters', 'infer'], ['fsize', 'parameters', 'train']]):
         row, col = (idx // 2) + 1, (idx % 2) + 1
         ax_bounds = [val_bounds[(t, ds, env)][xaxis].tolist(), val_bounds[(t, ds, env)][yaxis].tolist()]
-        plot_data, axis_names = assemble_scatter_data([env], db, 'value', xaxis, yaxis, meta, UNIT_FMT)
+        plot_data, axis_names = assemble_scatter_data([env], db_without_eff, 'value', xaxis, yaxis, meta, UNIT_FMT)
         traces = create_scatter_graph(plot_data, axis_names, dark_mode=False, display_text=True, marker_width=8, return_traces=True)
         scatter.add_traces(traces, rows=[row]*len(traces), cols=[col]*len(traces))
         min_x, max_x = np.min([min(data['x']) for data in plot_data.values()]), np.max([max(data['x']) for data in plot_data.values()])
@@ -183,7 +183,7 @@ def chapter3(show):
             scatter.update_yaxes(title=tex(axis_names[1]), row=row, col=col)
         add_rating_background(scatter, ax_bounds, rowcol=(row, col, idx))
         scatter.data[idx]['showlegend'] = False
-    # scatter.update_traces(textposition='top center')
+    scatter.update_traces(textposition='top center')
     scatter.update_layout(width=PLOT_WIDTH, height=PLOT_HEIGHT*2, margin={'l': 0, 'r': 0, 'b': 0, 't': 0},
                           legend=dict(x=.5, y=0.05, orientation="h", xanchor="center", yanchor="bottom"))
     finalize(scatter, fname, show)
@@ -194,7 +194,7 @@ def chapter3(show):
     scatter = make_subplots(rows=1, cols=2, horizontal_spacing=.02, subplot_titles=[r'$\text{Real-values properties }\mu$', r'$\text{Index-scaled properties }\tilde{\mu}$'])
     for idx, scale in enumerate(['value', 'index']):
         plot_data, axis_names = assemble_scatter_data(ENV_SEL, db, scale, xaxis, yaxis, meta, UNIT_FMT)
-        traces = create_scatter_graph(plot_data, axis_names, dark_mode=False, display_text=False, marker_width=8, return_traces=True)
+        traces = create_scatter_graph(plot_data, axis_names, dark_mode=False, display_text=True, marker_width=8, return_traces=True)
         scatter.add_traces(traces, rows=[1]*len(traces), cols=[idx+1]*len(traces))
         min_x, max_x = np.min([min(data['x']) for data in plot_data.values()]), np.max([max(data['x']) for data in plot_data.values()])
         min_y, max_y = np.min([min(data['y']) for data in plot_data.values()]), np.max([max(data['y']) for data in plot_data.values()])
@@ -205,8 +205,9 @@ def chapter3(show):
         add_rating_background(scatter, ax_bounds, True, 'mean', dark_mode=False, rowcol=(1, idx+1, idx))
     for idx in [1, 2]:
         scatter.data[idx]['showlegend'] = False
+    scatter.update_traces(textposition='top center')
     scatter.update_yaxes(side='right', row=1, col=2)
-    scatter.update_layout(width=PLOT_WIDTH, height=PLOT_HEIGHT, margin={'l': 0, 'r': 0, 'b': 0, 't': 25},
+    scatter.update_layout(width=PLOT_WIDTH, height=PLOT_HEIGHT*1.3, margin={'l': 0, 'r': 0, 'b': 0, 't': 24},
                             legend=dict(x=.5, y=0.05, orientation="h", xanchor="center", yanchor="bottom"))
     finalize(scatter, fname, show)
 
@@ -232,7 +233,7 @@ def chapter3(show):
     host_envs = { host: [env for env in envs if host in env] for host in ['Desktop', 'Laptop', 'RasPi'] }
     for ds in pd.unique(full_db['dataset']):
         subdb = full_db[full_db['dataset'] == ds]
-        models[ds] = sorted(pd.unique(subdb['model']).tolist()) # [mod for mod in pd.unique(subdb['model']) if subdb[subdb['model'] == mod].shape[0] > 3])
+        models[ds] = sorted(pd.unique(subdb['model']).tolist())
     models_cls, models_seg = models['imagenet'], models['coco']
     models = models_cls + [None] + models_seg
     model_names = [f'{mod[:4]}..{mod[-6:]}' if mod is not None and len(mod) > 12 else mod for mod in models]
@@ -269,14 +270,13 @@ def chapter3(show):
             x = x + [lookup_meta(meta, metric, key='shortname', subdict='properties')] * len(dropped)
         fig.add_trace(go.Box(x=x, y=y, name=proc, marker_color=env_cols[f'Laptop {proc}']))
     fig.update_layout(
-        yaxis_title=tex('Relative consumption [\%]'), boxmode='group',
+        yaxis_title=tex('Relative energy consumption [%]'), boxmode='group',
         width=PLOT_WIDTH*0.5, height=PLOT_HEIGHT, margin={'l': 0, 'r': 0, 'b': 0, 't': 0},
         legend=dict(title='Acceleration via', yanchor="top", y=1, xanchor="right", x=0.975, orientation="h", )
     )
     finalize(fig, fname, show)
 
     fname = print_init('ch3_edge_stars') ###############################################################################
-    # fig = make_subplots(rows=len(host_envs), cols=len(MOD_SEL), specs=[[{'type': 'polar'}] * len(MOD_SEL)] * len(host_envs), subplot_titles=MOD_SEL)
     fig = make_subplots(rows=1, cols=len(host_envs), specs=[[{'type': 'polar'}] * len(MOD_SEL)], subplot_titles=[tex(f'{mod} on {e}') for mod, e in MOD_SEL.items()])
     for idx, (mod, host) in enumerate(MOD_SEL.items()):
         for e_idx, env in enumerate(host_envs[host]):
@@ -377,14 +377,6 @@ def chapter3(show):
     for row, (db_name, to_display_keys) in enumerate(other_dbs.items()):
         db, meta, _, _, _, _ = load_db(DATABASES[db_name])
         correlations[db_name] = calc_all_correlations(db)
-        # correlations[db_name] = identify_all_correlations(db, 'index')
-        # for index, (key, corr) in enumerate(correlations[db_name].items()):
-        #     if index > 50:
-        #         break
-        #     prop_names = [lookup_meta(meta, prop, 'shortname', 'properties') for prop in corr.columns]
-        #     fig = go.Figure(go.Heatmap(z=corr, x=prop_names, y=prop_names, coloraxis="coloraxis"))
-        #     fig.update_layout(title="   ".join(key))
-        #     fig.write_image(os.path.join(DISS_FIGURES, f'test_{db_name.replace(" ", "_")}_{str(index).zfill(3)}_{"__".join(key).replace(" ", "_")}.pdf'))
         for col, task_ds_env in enumerate(to_display_keys):
             if (row+1) * (col+1) < len(subplot_titles):
                 corr = correlations[db_name][task_ds_env]
