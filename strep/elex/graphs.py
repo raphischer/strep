@@ -6,11 +6,10 @@ import pandas as pd
 import plotly.graph_objects as go
 from plotly.express.colors import sample_colorscale
 from PIL import Image
-import base64
 
 from strep.util import lookup_meta, find_sub_db
 from strep.elex.util import RATING_COLORS, ENV_SYMBOLS, PATTERNS, RATING_COLOR_SCALE, rgb_to_rgba
-from strep.correlations import calc_all_correlations
+from strep.index_scale import calc_all_correlations
 
 GRAD = Image.open(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'assets', 'grad.png'))
 

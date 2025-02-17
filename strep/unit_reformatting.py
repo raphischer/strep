@@ -1,6 +1,5 @@
 import pint
 
-
 SPECIAL_SYMBOLS = {
     'NUMBER': r'#',
     'PERCENT': r'%',

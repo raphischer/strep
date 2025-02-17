@@ -1,17 +1,11 @@
-from datetime import datetime
-import itertools
 import json
 import os
 import random as python_random
-import sys
-import pkg_resources
 import re
 import pathlib
 
 import numpy as np
 import pandas as pd
-
-from strep.monitoring import log_system_info
 
 
 def find_sub_db(database, dataset=None, task=None, environment=None, model=None):
@@ -123,32 +117,6 @@ def fix_seed(seed):
     return seed
 
 
-def create_output_dir(dir=None, prefix='', config=None):
-    if dir is None:
-        dir = os.path.join(os.getcwd())
-    # create log dir
-    timestamp = datetime.now().strftime('%Y_%m_%d_%H_%M_%S')
-    if len(prefix) > 0:
-        timestamp = f'{prefix}_{timestamp}'
-    dir = os.path.join(dir, timestamp)
-    while os.path.exists(dir):
-        dir += '_'
-    os.makedirs(dir)
-    # write config
-    if config is not None: 
-        with open(os.path.join(dir, 'config.json'), 'w') as cfg:
-            config['timestamp'] = timestamp.replace(f'{prefix}_', '')
-            json.dump(config, cfg, indent=4)
-    # write installed packages
-    with open(os.path.join(dir, 'requirements.txt'), 'w') as req:
-        for v in sys.version.split('\n'):
-            req.write(f'# {v}\n')
-        for pkg in pkg_resources.working_set:
-            req.write(f'{pkg.key}=={pkg.version}\n')
-    log_system_info(os.path.join(dir, 'execution_platform.json'))
-    return dir
-
-
 def prop_dict_to_val(df, key='value'):
     df = df.dropna(how='all', axis=1)
     properties = [col for col in df.columns if f'{col}_index' in df.columns]
@@ -165,54 +133,6 @@ def drop_na_properties(df, reduce_to_index=False):
         df = prop_dict_to_val(df)
     valid_cols = df.dropna(how='all', axis=1).columns
     return df[valid_cols]
-
-
-class Logger(object):
-    def __init__(self, fname='logfile.txt'):
-        self.terminal = sys.stdout
-        self.log = open(fname, 'a')
-   
-    def write(self, message):
-        self.terminal.write(message)
-        self.log.write(message)  
-
-    def flush(self):
-        # needed for python 3 compatibility.
-        # this handles the flush command by doing nothing.
-        # you might want to specify some extra behavior here.
-        pass
-
-    def close(self):
-        self.log.close()
-        sys.stdout = self.terminal
-
-
-def format_software(backend, requirements):
-    backend_version = 'n.a.'
-    for req in requirements:
-        if req.split('==')[0].replace('-', '_').lower() == backend.replace('-', '_').lower():
-            backend_version = req.split('==')[1]
-            break
-    return f'{backend} {backend_version}'
-
-
-def format_hardware(cpu, gpu=None):
-    if gpu is not None:
-        raise NotImplementedError
-    else:
-        cpu_regex = [
-            r'.*(Intel)\(R\) \S* (\S*).*', # Intel
-            r'\S* (AMD) \S* (\S*) .*', # AMD
-            r'(ARM\S+) Processor (.*)' # ARM
-        ]
-        hardware_short = cpu[:13] + '..'
-        for regex in cpu_regex:
-            try:
-                hardware_short =  ' '.join(re.match(regex, cpu).groups())
-                break
-            except AttributeError:
-                pass
-    return hardware_short
 
 
 def weighted_median(values, weights):

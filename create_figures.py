@@ -6,8 +6,7 @@ from itertools import product
 
 # STREP imports
 from main import DATABASES
-from strep.index_scale import load_database, scale_and_rate, _extract_weights
-from strep.correlations import calc_correlation, calc_all_correlations
+from strep.index_scale import load_database, scale_and_rate, _extract_weights, calc_correlation, calc_all_correlations
 from strep.util import lookup_meta, find_sub_db, fill_meta, loopup_task_ds_metrics, prop_dict_to_val, read_json
 from strep.elex.util import RATING_COLORS, RATING_COLOR_SCALE, RATING_COLOR_SCALE_REV, rgb_to_rgba, hex_to_alpha
 from strep.elex.graphs import assemble_scatter_data, create_scatter_graph, add_rating_background, create_star_plot
@@ -555,8 +554,8 @@ def chapter5(show):
         db_["test_size"] = db_["dataset"].map(lambda ds: int(dataset_split_sizes[ds]["test"][0]))
         db_["power_draw"] = db_["power_draw"] * db_["test_size"]
     comparison_data = {
-        'Small data sets (71)':  ( meta_results[meta_results['dataset'].isin(pfn_ds)], baselines[baselines['dataset'].isin(pfn_ds)], db[db['dataset'].isin(pfn_ds)] ),
-        'Large data sets (129)': ( meta_results[~meta_results['dataset'].isin(pfn_ds)], baselines[~baselines['dataset'].isin(pfn_ds)], db[~db['dataset'].isin(pfn_ds)] )
+        'Small datasets (71)':  ( meta_results[meta_results['dataset'].isin(pfn_ds)], baselines[baselines['dataset'].isin(pfn_ds)], db[db['dataset'].isin(pfn_ds)] ),
+        'Large datasets (129)': ( meta_results[~meta_results['dataset'].isin(pfn_ds)], baselines[~baselines['dataset'].isin(pfn_ds)], db[~db['dataset'].isin(pfn_ds)] )
     }
     fig = make_subplots(rows=2, cols=2, shared_yaxes=True, horizontal_spacing=0.01, vertical_spacing=0.01, shared_xaxes=True, row_titles=list(comparison_data.keys()))
     for row_idx, (meta_res, bl_res, exhau_res) in enumerate(comparison_data.values()):
@@ -588,7 +587,7 @@ def chapter5(show):
     fig.update_traces(orientation='h')
     fig.update_xaxes(type="log", title='', row=1, col=2)
     fig.update_xaxes(title='Accuracy [%]', row=2, col=1)
-    fig.update_xaxes(type="log", title='Energy Draw [Ws]', row=2, col=2)
+    fig.update_xaxes(type="log", title='Energy draw [Ws]', row=2, col=2)
     finalize(fig, fname, show)
 
     ######################################## XPCR ########################################
@@ -607,7 +606,7 @@ def chapter5(show):
 
     fname = print_init('ch5_xpcr_method_comparison') ###############################################################################
     rows = [
-        ' & '.join(['Data set'] + [r'\multicolumn{3}{c}{' + mod + '}' for mod in [r'\text{CML + } \Omega_\text{PCR}', r'\text{CML + } \Omega_\text{MASE}', r'\texttt{AutoGluonTS}', r'\texttt{AutoKeras}', r'\texttt{AutoSklearn}']]) + r' \\',
+        ' & '.join(['Dataset'] + [r'\multicolumn{3}{c}{$' + mod + r'$}' for mod in [r'\text{CML + } \Omega_\text{PCR}', r'\text{CML + } \Omega_\text{MASE}', r'\texttt{AutoGluonTS}', r'\texttt{AutoKeras}', r'\texttt{AutoSklearn}']]) + r' \\',
         ' & '.join([ ' ' ] + [r'$S$', r'$\tilde{\mu}_{\text{MASE}}$', r'$\mu_{\text{ENT}}$'] * 5) + r' \\',
         r'\midrule',
     ]

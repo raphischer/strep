@@ -1,10 +1,9 @@
 # general functionality
 pandas==2.2.3
-scipy
-pint
 tqdm
 
 # visualization
+pint
 dash
 plotly
 dash-bootstrap-components

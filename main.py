@@ -6,8 +6,8 @@ from strep.elex.app import Visualization
 DATABASES = {
     'ImageNetEff22': 'databases/imagenet_classification/database.pkl',
     'EdgeAccUSB': 'databases/edge_acc/database.pkl',
-    'XPCR': 'databases/xpcr/database.pkl',
-    'XPCR_WITH_COMPS': 'databases/xpcr/database.pkl',
+    'XPCR': 'databases/xpcr/database.pkl', # only DNN model pool on original data sets
+    'XPCR_FULL': 'databases/xpcr/database.pkl',
     'MetaQuRe': 'databases/metaqure/database.pkl',
     'PWC': 'databases/paperswithcode/database.pkl',
     # 'PWC_FULL': 'databases/paperswithcode/database_complete.pkl', # disabled because it takes very long to load
@@ -15,7 +15,7 @@ DATABASES = {
 }
 
 CUSTOM_DB_CHANGES = {
-    "XPCR": lambda db: db[~db["model"].isin(["autokeras", "autogluon", "autosklearn"])]
+    "XPCR": lambda db: db[(~db["model"].isin(["autokeras", "autogluon", "autosklearn"])) & (db["dataset"] == db["dataset_orig"])]
 }
 
 if __name__ == '__main__':
