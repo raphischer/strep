@@ -160,9 +160,9 @@ def chapter3(show):
                 label.save(os.path.join(DISS_FIGURES, f'ch3_label_{mod}.pdf'))
     fig.update_layout(
         polar=dict(radialaxis=dict(visible=True)), width=PLOT_WIDTH, height=PLOT_HEIGHT,
-        legend=dict( yanchor="top", y=-0.1, xanchor="center", x=0.5, orientation='h'), margin={'l': 10, 'r': 10, 'b': 0, 't': 26}
+        legend=dict( yanchor="top", y=-0.1, xanchor="center", x=0.5, orientation='h'), margin={'l': 30, 'r': 30, 'b': 0, 't': 34}
     )
-    finalize(fig, fname, show, yshift=6)
+    finalize(fig, fname, show, yshift=10)
 
     fname = print_init('ch3_imagenet_tradeoffs') ###############################################################################
     env = pd.unique(db['environment'])[0]
@@ -277,7 +277,7 @@ def chapter3(show):
     finalize(fig, fname, show)
 
     fname = print_init('ch3_edge_stars') ###############################################################################
-    fig = make_subplots(rows=1, cols=len(host_envs), specs=[[{'type': 'polar'}] * len(MOD_SEL)], subplot_titles=[tex(f'{mod} on {e}') for mod, e in MOD_SEL.items()])
+    fig = make_subplots(rows=1, cols=len(host_envs), specs=[[{'type': 'polar'}] * len(MOD_SEL)], subplot_titles=[f'{mod} on {e}' for mod, e in MOD_SEL.items()])
     for idx, (mod, host) in enumerate(MOD_SEL.items()):
         for e_idx, env in enumerate(host_envs[host]):
             model = find_sub_db(full_db, environment=env, model=mod).iloc[0].to_dict()
@@ -286,10 +286,9 @@ def chapter3(show):
             fig.add_trace(trace, row=1, col=idx+1)
     fig.update_layout(
         polar=dict(radialaxis=dict(visible=True)), width=PLOT_WIDTH, height=PLOT_HEIGHT,
-        legend=dict( yanchor="bottom", y=-0.25, xanchor="center", x=0.5, orientation='h'), margin={'l': 50, 'r': 50, 'b': 0, 't': 40}
+        legend=dict( yanchor="bottom", y=-0.25, xanchor="center", x=0.5, orientation='h'), margin={'l': 30, 'r': 30, 'b': 0, 't': 34}
     )
-    fig.update_annotations(yshift=20)
-    finalize(fig, fname, show)
+    finalize(fig, fname, show, yshift=10)
 
     fname = print_init('ch3_edge_compound') ###############################################################################
     fig = go.Figure(layout={'width': PLOT_WIDTH, 'height': PLOT_HEIGHT*1.5, 'margin': {'l': 0, 'r': 0, 'b': 0, 't': 0},
@@ -400,6 +399,10 @@ def chapter3(show):
     place_holder = np.full((db.shape[0], len(rename)), fill_value="abc")
     db = pd.concat([db, pd.DataFrame(place_holder, index=db.index, columns=list(rename.keys()))], axis=1)
     correlations["PWC_FULL"] = calc_all_correlations(db, progress_bar=True)
+    # make sure that all databases are plotted in the right order
+    del(DATABASES["RobBench"])
+    DATABASES["PWC_FULL"] = None
+    DATABASES["RobBench"] = None
     # plot violins (in correct order)
     fig = go.Figure()
     for db_name in DATABASES.keys():
@@ -408,7 +411,7 @@ def chapter3(show):
             fig.add_trace(go.Violin(x=[db_name]*all_corr_vals.size, y=all_corr_vals, spanmode='hard',
                                     box_visible=True, meanline_visible=True,
                                     showlegend=False, line={'color': LAM_SPEC}))
-    fig.update_layout(width=PLOT_WIDTH, height=PLOT_HEIGHT, margin={'l': 0, 'r': 0, 'b': 0, 't': 24},
+    fig.update_layout(width=PLOT_WIDTH, height=PLOT_HEIGHT, margin={'l': 0, 'r': 0, 'b': 0, 't': 0},
                       yaxis={'title': r'$\text{Correlation } r(\tilde{\mu}_i, \tilde{\mu}_j, E)$'})
     finalize(fig, fname, show)
 
