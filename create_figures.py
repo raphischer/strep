@@ -110,18 +110,18 @@ def chapter2(show):
     for kw, term in module.KEYWORDS.items():
         if term not in dblp_df.columns:
             dblp_df[term] = 0
-        dblp_df[term] += dblp_df['title'].map(lambda t: 1 if kw in t.lower() else 0)
+        dblp_df[term] += dblp_df['title'].map(lambda t: 1 if kw in t.lower() else 0).sum()
     terms = [col for col in dblp_df.columns if col not in ['author', 'title']]
     for term in terms:
         dblp_df[term] = dblp_df[term].astype(bool)
-    dblp_df['overlapping fields'] = dblp_df[terms].sum(axis=1) > 1
+    dblp_df['Overlapping fields'] = dblp_df[terms].sum(axis=1) > 1
     to_plot = dblp_df.groupby('year').sum().drop(['title', 'author'], axis=1)
     # plot
     to_plot[to_plot == 0] = 1
     fig = px.line(to_plot, color_discrete_sequence=LAMARR_COLORS, markers=True, log_y=True)
-    fig.update_layout(width=PLOT_WIDTH, height=PLOT_HEIGHT, margin={'l': 0, 'r': 0, 'b': 0, 't': 24},
+    fig.update_layout(width=PLOT_WIDTH, height=PLOT_HEIGHT*1.2, margin={'l': 0, 'r': 0, 'b': 0, 't': 24},
                       title='Paper titles mentioning AI and...',
-                      xaxis_title="Year", yaxis_title="Number of publications", yaxis_range=[-0.1, 4],
+                      xaxis_title="Year", yaxis_title="Number of publications", yaxis_range=[-0.1, 3.85],
                       legend=dict(title='', itemwidth=80, bgcolor='rgba(0,0,0,0)', orientation='h', yanchor="top", y=0.98, xanchor="center", x=0.5)
     )
     # fig = px.bar(to_plot, orientation='h')
