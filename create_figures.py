@@ -119,7 +119,7 @@ def chapter2(show):
     # plot
     to_plot[to_plot == 0] = 1
     fig = px.line(to_plot, color_discrete_sequence=LAMARR_COLORS, markers=True, log_y=True)
-    fig.update_layout(width=PLOT_WIDTH, height=PLOT_HEIGHT, margin={'l': 0, 'r': 0, 'b': 0, 't': 26},
+    fig.update_layout(width=PLOT_WIDTH, height=PLOT_HEIGHT, margin={'l': 0, 'r': 0, 'b': 0, 't': 24},
                       title='Paper titles mentioning AI and...',
                       xaxis_title="Year", yaxis_title="Number of publications", yaxis_range=[-0.1, 4],
                       legend=dict(title='', itemwidth=80, bgcolor='rgba(0,0,0,0)', orientation='h', yanchor="top", y=0.98, xanchor="center", x=0.5)
@@ -130,6 +130,7 @@ def chapter2(show):
     #                   xaxis_title="Number of publications", yaxis_title="Year"
     # )
     finalize(fig, fname, show)
+    print(1)
 
 
 def chapter3(show):
