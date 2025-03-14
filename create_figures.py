@@ -1,5 +1,6 @@
 import argparse
 import importlib
+import math
 import os
 import time
 from itertools import product
@@ -25,18 +26,19 @@ PLOT_WIDTH = 800
 PLOT_HEIGHT = PLOT_WIDTH // 3
 
 LAMARR_COLORS = [
-    '#009ee3', # aqua
-    '#983082', # fresh violet
-    '#ffbc29', # sunshine
-    '#35cdb4', # carribean
-    '#e82e82', # fuchsia
-    '#59bdf7', # sky blue
-    '#ec6469', # indian red
-    '#706f6f', # gray
-    '#4a4ad8', # corn flower
-    '#0c122b', # dark corn flower
+    '#009ee3', #0 aqua
+    '#983082', #1 fresh violet
+    '#ffbc29', #2 sunshine
+    '#35cdb4', #3 carribean
+    '#e82e82', #4 fuchsia
+    '#59bdf7', #5 sky blue
+    '#ec6469', #6 indian red
+    '#706f6f', #7 gray
+    '#4a4ad8', #8 corn flower
+    '#0c122b', #9 dark corn flower
     '#ffffff'
 ]
+LAMARR_COL_SEL = LAMARR_COLORS[:5] + LAMARR_COLORS[6:9]
 LAM_COL_SCALE = make_colorscale([LAMARR_COLORS[0], LAMARR_COLORS[2], LAMARR_COLORS[4]])
 LAM_COL_SCALE_REV = make_colorscale([LAMARR_COLORS[4], LAMARR_COLORS[2], LAMARR_COLORS[0]])
 LAM_COL_FIVE = sample_colorscale(LAM_COL_SCALE, np.linspace(0, 1, 5))
@@ -98,6 +100,39 @@ def chapter1(show):
 
 
 def chapter2(show):
+    fname = print_init('ch2_model_sizes') ###############################################################################
+    sevilla_df = pd.read_csv(os.path.join(DISS_MATERIAL, "ch2_notable_ai_models.csv"), sep=',')
+    x_axis, y_axis, dom, mod = 'Publication date', 'Training compute (FLOP)', 'Domain', 'Model'
+    display = ["Theseus", "Pandemonium (morse)", "LSTM", "Neocognitron", "Handwritten Digit Recognition System", "Neural LM", "SB-LM", "VGG16", "AlphaGo Zero", "GPT-3.5", "Grok-3"]
+    # only display relevant domains
+    sevilla_df[dom] = sevilla_df[dom].apply(lambda v: v.split(',')[0] if isinstance(v, str) else "Other")
+    domains, dom_cnt = np.unique(sevilla_df[dom], return_counts=True)
+    for idx, domain in enumerate(domains[np.argsort(-dom_cnt)]):
+        if idx > 6:
+            sevilla_df.loc[sevilla_df[sevilla_df[dom] == domain].index,dom] = 'Other'
+        else:
+            sevilla_df.loc[sevilla_df[sevilla_df[dom] == domain].index,dom] = f'{domain} (N={sevilla_df[sevilla_df[dom] == domain].shape[0]})'
+    sevilla_df.loc[sevilla_df[sevilla_df[dom] == 'Other'].index,dom] = f'Other (N={sevilla_df[sevilla_df[dom] == "Other"].shape[0]})'
+    # only display important models
+    # sevilla_df["display_text"] = False
+    # for mname in :
+    #     sevilla_df.loc[sevilla_df[sevilla_df[mod] == mname].index,"display_text"] = True
+    # sevilla_df.loc[sevilla_df[sevilla_df["display_text"] == False].index,mod] = ""
+    # display data
+    fig = px.scatter(sevilla_df, x=x_axis, y=y_axis, color=dom, opacity=0.7, log_y=True, color_discrete_sequence=LAMARR_COL_SEL)
+    # fig.add_shape(type="rect", x0="2010-01-01", y0=1, x1="2025-12-01", y1=10**27)
+    fig.add_vline(x="2010-01-01", line_dash="dot", line_color="black")
+    fig.add_trace(go.Scatter(x=[2018], y=[100], text=["Start of Deep Learning"], mode="text", showlegend=False))
+    for mname in display:
+        data = sevilla_df[sevilla_df[mod] == mname]
+        if data.shape[0] == 1:
+            x, y = data[[x_axis, y_axis]].values[0]
+            fig.add_annotation(x=x, y=math.log10(y), text=mname, showarrow=True, arrowhead=1)
+    fig.update_traces(textposition='top center')
+    fig.update_layout(width=PLOT_WIDTH, height=PLOT_HEIGHT, margin={'l': 0, 'r': 0, 'b': 0, 't': 0},
+                      xaxis_range=["1948-01-01", "2026-07-01"])
+    finalize(fig, fname, show)
+
     fname = print_init('ch2_ml_areas_activity') ###############################################################################
     # load dblp data
     dblp_df = pd.read_csv(os.path.join(DISS_MATERIAL, "ch2_parse_dblp_data.csv"), sep=';', index_col=1)
