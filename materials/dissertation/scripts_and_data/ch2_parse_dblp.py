@@ -13,10 +13,9 @@ KEYWORDS = {
     "xai": "Explainability",
     "ethic": "Ethics",
     "trustworth" : "Trustworthiness",
-    "sustain": "Sustainability",
-    "fair": "Fairness",
+    "safe": "Safety",
     "responsib": "Responsibility",
-    "account": "Accountability"
+    "sustainab": "Sustainability"
 }
 
 
