@@ -129,7 +129,6 @@ def other_chapters(show):
                       margin={'l': 0, 'r': 0, 'b': 0, 't': 0}, width=int(PLOT_WIDTH*0.58), height=PLOT_HEIGHT*1.2)
     finalize(fig, fname, show)
 
-
     fname = print_init('ch2_model_sizes') ###############################################################################
     sevilla_df = pd.read_csv(os.path.join(DISS_MATERIAL, "ch2_notable_ai_models.csv"), sep=',')
     x_axis, y_axis, dom, mod = 'Publication date', 'Training compute (FLOP)', 'Domain', 'Model'
