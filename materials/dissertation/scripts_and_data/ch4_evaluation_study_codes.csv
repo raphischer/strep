@@ -1,0 +1,110 @@
+codes,parents,counts
+   ,,2260
+RQ4:<br>What About Trust?,   ,187
+RQ3:<br>Competitors?,   ,107
+RQ2:<br>How to Label?,   ,450
+RQ1:<br>Who and Why?,   ,386
+Who Needs Trust,RQ4:<br>What About Trust?,26
+Developers of AI,Who Needs Trust,6
+End-Users of AI,Who Needs Trust,8
+Experts Using AI,Who Needs Trust,11
+Dimensions of Trust,RQ4:<br>What About Trust?,66
+Others,Dimensions of Trust,9
+Regulation Skept..,Dimensions of Trust,4
+Distrust in Labels,Dimensions of Trust,7
+Trust and Privacy,Dimensions of Trust,7
+Distrust in Auth..,Dimensions of Trust,8
+Trust in Labels,Dimensions of Trust,11
+General AI Skept..,Dimensions of Trust,16
+Reasons for Trust,RQ4:<br>What About Trust?,91
+Others,Reasons for Trust,1
+No Clear Answer,Reasons for Trust,12
+Self- VS Externa..,Reasons for Trust,19
+Trust Through Us..,Reasons for Trust,20
+Trustable Author..,Reasons for Trust,39
+General Comparison,RQ3:<br>Competitors?,46
+Others,General Comparison,1
+Compet Less Reli..,General Comparison,3
+Compet More In-D..,General Comparison,13
+Compet Rather Co..,General Comparison,29
+Workflows and Use,RQ3:<br>Competitors?,61
+Others,Workflows and Use,5
+Used: Code Repos,Workflows and Use,3
+Requirements,Workflows and Use,4
+Used: Model Cards,Workflows and Use,4
+Used: Asking Exp..,Workflows and Use,5
+Used: Library Do..,Workflows and Use,6
+Used: Google,Workflows and Use,7
+Used: Paper,Workflows and Use,8
+Used: Blogs and ..,Workflows and Use,14
+Target Audience,RQ2:<br>How to Label?,10
+Associations,RQ2:<br>How to Label?,31
+Others,Associations,2
+Association: Ene..,Associations,14
+Association: Nut..,Associations,14
+Property Importance,RQ2:<br>How to Label?,64
+Consistency & Ro..,Property Importance,5
+Up-to-dateness &..,Property Importance,7
+Temporal Perform..,Property Importance,11
+Predictive Quality,Property Importance,20
+"Energy, Resource..",Property Importance,20
+Benefits,RQ2:<br>How to Label?,140
+Positive Feedback,Benefits,54
+Possible Use Cases,Benefits,86
+Limitations,RQ2:<br>How to Label?,205
+Others,Limitations,1
+Use Case Underst..,Limitations,4
+Certification,Limitations,4
+Traditional VS A..,Limitations,8
+Generalizability..,Limitations,10
+Maybe Too Abstract,Limitations,16
+Room for Improve..,Limitations,67
+Misunderstanding..,Limitations,93
+ML Tools & Brands,RQ1:<br>Who and Why?,36
+Others,ML Tools & Brands,3
+PyTorch,ML Tools & Brands,3
+AWS,ML Tools & Brands,3
+Azure,ML Tools & Brands,5
+TensorFlow,ML Tools & Brands,5
+ScikitLearn,ML Tools & Brands,7
+OpenAI,ML Tools & Brands,9
+AI Use Cases,RQ1:<br>Who and Why?,41
+Others,AI Use Cases,6
+Digitalization &..,AI Use Cases,5
+Health & Medicine,AI Use Cases,5
+Organization & M..,AI Use Cases,6
+In-House Services,AI Use Cases,7
+Manufacturing & ..,AI Use Cases,12
+General Codes,RQ1:<br>Who and Why?,63
+Using AI VS Deve..,General Codes,5
+Data & ML Literacy,General Codes,7
+Inconsistency,General Codes,8
+Business Growth ..,General Codes,10
+Insecurity,General Codes,13
+General Business..,General Codes,20
+Types of Daily Work,RQ1:<br>Who and Why?,64
+Others,Types of Daily Work,2
+Marketing & Netw..,Types of Daily Work,3
+UX Design,Types of Daily Work,4
+Business Underst..,Types of Daily Work,6
+ML Engineering,Types of Daily Work,6
+Data Exploration..,Types of Daily Work,8
+Consulting,Types of Daily Work,9
+Operation & Infr..,Types of Daily Work,11
+Software Develop..,Types of Daily Work,14
+ML Methods,RQ1:<br>Who and Why?,64
+Others,ML Methods,2
+Unsupervised & C..,ML Methods,3
+Computer Vision,ML Methods,5
+Natural Language..,ML Methods,9
+Traditional AI (..,ML Methods,15
+AI-as-a-Service ..,ML Methods,29
+Requirements on AI,RQ1:<br>Who and Why?,118
+Others,Requirements on AI,3
+Low Cost,Requirements on AI,3
+Documentation & ..,Requirements on AI,8
+Customizability,Requirements on AI,12
+Understanding & ..,Requirements on AI,16
+Availablity of D..,Requirements on AI,20
+Privacy,Requirements on AI,21
+Usability & Perf..,Requirements on AI,34

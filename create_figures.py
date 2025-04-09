@@ -82,24 +82,54 @@ def finalize(fig, fname, show, yshift=0):
         fig.show()
     fig.write_image(os.path.join(DISS_FIGURES, f"{fname}.pdf"))
 
-def finalize_tex(fname, rows, align):
+def finalize_tex(fname, rows, align, midrule=False):
     TEX_TABLE_GENERAL = r'''
     \begin{tabular}$ALIGN
         \toprule 
         $DATA
         \bottomrule
     \end{tabular}'''
+    if midrule:
+        TEX_TABLE_GENERAL = TEX_TABLE_GENERAL.replace('$DATA', rows[0] + '\n        \midrule\n        $DATA')
+        rows = rows[1:]
     final_text = TEX_TABLE_GENERAL.replace('$DATA', '\n        '.join(rows))
     final_text = final_text.replace('$ALIGN', align)
     with open(os.path.join(DISS_FIGURES, f"tab_{fname}.tex"), 'w') as outf:
         outf.write(final_text)
 
 
-def chapter1(show):
-    pass
+def other_chapters(show):
+
+    fname = print_init('ch4_evaluation_study_codes') ###############################################################################
+    results = pd.read_csv(os.path.join(DISS_MATERIAL, 'ch4_evaluation_study_codes.csv'))
+    fig = go.Figure(go.Sunburst(labels=results['codes'], parents=results['parents'], values=results['counts'],
+                                branchvalues="total", insidetextorientation='radial', sort=False,
+                                marker=dict(colors=[''] + LAMARR_COL_SEL[:4])))
+    fig.update_layout(width=PLOT_WIDTH, height=PLOT_WIDTH, margin={'l': 0, 'r': 0, 'b': 0, 't': 0})
+    fig.add_annotation(x=0.5, y=0.5, text="Opinions and Statements<br>Towards Research Questions", showarrow=False)
+    finalize(fig, fname, show, 40)
+
+    fname = print_init('ch2_profiling_comparison') ###############################################################################
+    db = pd.read_csv(os.path.join(DISS_MATERIAL, 'ch2_profiling_comparison.csv'))
+    grouped = db.groupby(['nogpu', 'model']).first().sort_values('parameters')
+    texts = grouped.loc[0].index.map(lambda v: v if v in ['MobileNetV3Small', 'MobileNetV2', 'NASNetMobile', 'EfficientNetB0', 'DenseNet121', 'DenseNet169', 'Xception', 'EfficientNetB4', 'EfficientNetB5', 'EfficientNetB6', 'ConvNeXtTiny', 'ResNet101V2', 'ResNet152', 'ConvNeXtBase', 'NASNetLarge', 'EfficientNetB7'] else '')
+
+    # power draw per model for all setups
+    fig = go.Figure([
+        go.Scatter(x=grouped.loc[1,'parameters'], y=grouped.loc[1,'externally_measured'], mode='markers+lines', marker={'color': '#e82e82'}, legendgroup="em", legendgrouptitle_text="Energy Meter", name='CPU Inference'),
+        go.Scatter(x=grouped.loc[1,'parameters'], y=grouped.loc[1,'power_draw'], mode='markers+lines', marker={'color': '#e8a2c2'}, legendgroup="cc", legendgrouptitle_text="CodeCarbon", name='CPU Inference'),
+        go.Scatter(x=grouped.loc[0,'parameters'], y=grouped.loc[0,'power_draw'], mode='markers+lines', marker={'color': '#71c1e3'}, legendgroup="cc", name='GPU Inference'),
+        go.Scatter(x=grouped.loc[0,'parameters'], y=grouped.loc[0,'externally_measured'], text=texts, mode='markers+lines+text', marker={'color': '#009ee3'}, legendgroup="em", name='GPU Inference')
+    ])
+    fig.update_yaxes(type="log")
+    fig.update_xaxes(type="log")
+    fig.update_traces(textposition='top center')
+    fig.update_layout(yaxis_title='Ws per inference', xaxis_title='Number of model parameters',
+                      legend=dict(orientation="h", yanchor="top", y=0.97, xanchor="left", x=0.02),
+                      margin={'l': 0, 'r': 0, 'b': 0, 't': 0}, width=int(PLOT_WIDTH*0.58), height=PLOT_HEIGHT*1.2)
+    finalize(fig, fname, show)
 
 
-def chapter2(show):
     fname = print_init('ch2_model_sizes') ###############################################################################
     sevilla_df = pd.read_csv(os.path.join(DISS_MATERIAL, "ch2_notable_ai_models.csv"), sep=',')
     x_axis, y_axis, dom, mod = 'Publication date', 'Training compute (FLOP)', 'Domain', 'Model'
@@ -113,14 +143,8 @@ def chapter2(show):
         else:
             sevilla_df.loc[sevilla_df[sevilla_df[dom] == domain].index,dom] = f'{domain} (N={sevilla_df[sevilla_df[dom] == domain].shape[0]})'
     sevilla_df.loc[sevilla_df[sevilla_df[dom] == 'Other'].index,dom] = f'Other (N={sevilla_df[sevilla_df[dom] == "Other"].shape[0]})'
-    # only display important models
-    # sevilla_df["display_text"] = False
-    # for mname in :
-    #     sevilla_df.loc[sevilla_df[sevilla_df[mod] == mname].index,"display_text"] = True
-    # sevilla_df.loc[sevilla_df[sevilla_df["display_text"] == False].index,mod] = ""
     # display data
     fig = px.scatter(sevilla_df, x=x_axis, y=y_axis, color=dom, opacity=0.7, log_y=True, color_discrete_sequence=LAMARR_COL_SEL)
-    # fig.add_shape(type="rect", x0="2010-01-01", y0=1, x1="2025-12-01", y1=10**27)
     fig.add_vline(x="2010-01-01", line_dash="dot", line_color="black")
     fig.add_trace(go.Scatter(x=[2018], y=[100], text=["Start of Deep Learning"], mode="text", showlegend=False))
     for mname in display:
@@ -137,19 +161,20 @@ def chapter2(show):
     # load dblp data
     dblp_df = pd.read_csv(os.path.join(DISS_MATERIAL, "ch2_parse_dblp_data.csv"), sep=';', index_col=1)
     dblp_df = dblp_df[(dblp_df.index > 2012) & (dblp_df.index < 2025)]
-    importlib.util.find_spec("ch2_parse_dblp")
+    # importlib.util.find_spec("ch2_parse_dblp")
     spec = importlib.util.spec_from_file_location("ch2_parse_dblp", os.path.join(DISS_MATERIAL, 'ch2_parse_dblp.py'))
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
+    keywords = module.KEYWORDS
     # count keyword occurrences
-    for kw, term in module.KEYWORDS.items():
+    for kw, term in keywords.items():
         if term not in dblp_df.columns:
             dblp_df[term] = 0
-        dblp_df[term] += dblp_df['title'].map(lambda t: 1 if kw in t.lower() else 0).sum()
+        dblp_df[term] += dblp_df['title'].map(lambda t: 1 if kw in t.lower() else 0)
     terms = [col for col in dblp_df.columns if col not in ['author', 'title']]
     for term in terms:
         dblp_df[term] = dblp_df[term].astype(bool)
-    dblp_df['Overlapping fields'] = dblp_df[terms].sum(axis=1) > 1
+    dblp_df['Overlapping terms'] = dblp_df[terms].sum(axis=1) > 1
     to_plot = dblp_df.groupby('year').sum().drop(['title', 'author'], axis=1)
     # plot
     to_plot[to_plot == 0] = 1
@@ -159,11 +184,6 @@ def chapter2(show):
                       xaxis_title="Year", yaxis_title="Number of publications", yaxis_range=[-0.1, 3.85],
                       legend=dict(title='', itemwidth=80, bgcolor='rgba(0,0,0,0)', orientation='h', yanchor="top", y=0.98, xanchor="center", x=0.5)
     )
-    # fig = px.bar(to_plot, orientation='h')
-    # fig.update_layout(width=PLOT_WIDTH, height=PLOT_HEIGHT, margin={'l': 0, 'r': 0, 'b': 0, 't': 0},
-    #                   legend=dict(title="Title mentioning AI and", yanchor="bottom", y=0.1, xanchor="right", x=0.9),
-    #                   xaxis_title="Number of publications", yaxis_title="Year"
-    # )
     finalize(fig, fname, show)
     print(1)
 
@@ -182,6 +202,20 @@ def chapter3(show):
     weights = _extract_weights(task_props)
     for prop, weight in zip(task_props, weights):
         task_props[prop]['weight'] = weight
+
+    fname = print_init('ch3_strep_imagenet_db') ###############################################################################
+    PROPS = ['top-1_val', 'power_draw', 'running_time']
+    SHORT_PROPS = [r'$\mu_{\text{' + lookup_meta(meta, prop, 'shortname', 'properties') + r'}}$' for prop in PROPS]
+    rows = [r'\texttt{task} ($T$) & \texttt{dataset} ($D_T)$ & \texttt{environment} ($E$) & \texttt{model} ($m$) & '
+            + ' & '.join(SHORT_PROPS) + r' & $\cdots$ \\']
+    for env, mod in product(ENV_SEL, list(MOD_SEL) + ['ResNet50']):
+        results = db[(db['model'] == mod) & (db['environment'] == env) & (db['task'] == task)].iloc[0].to_dict()
+        cells = ['infer', 'ImageNet', env.split(' - ')[0], mod]
+        for prop in PROPS:
+            cells.append(f'{results[prop]:4.2f}')
+        rows.append(' & '.join([r'\texttt{' + cell + r'}' for cell in cells]) + r' & $\cdots$ \\')
+    rows.append(' & '.join([r'$\cdots$'] * 8) + r' \\')
+    finalize_tex(fname, rows, r'{llll|llll}', midrule=True)
 
     fname = print_init('ch3_imagenet_stars') ###############################################################################
     fig = make_subplots(rows=1, cols=len(MOD_SEL), specs=[[{'type': 'polar'}] * len(MOD_SEL)], subplot_titles=MOD_SEL)
@@ -856,7 +890,7 @@ def chapter5(show):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument("--chapter", type=int, default=-1)
+    parser.add_argument("--chapter", type=int, choices=[-1, 0, 3, 5], default=-1)
     parser.add_argument("--show", default=True)
     args = parser.parse_args()
 
@@ -864,15 +898,11 @@ if __name__ == '__main__':
     fig = px.scatter(x=[0, 1, 2], y=[0, 1, 4])
     fig.write_image("dummy.pdf")
 
-    chapters = [chapter1, chapter2, chapter3, None, chapter5]
-    if args.chapter == -1:
-        for i in range(5):
-            if chapters[i]:
-                chapters[i](args.show)
-
-    if args.chapter < 1 or args.chapter > 5:
-        raise ValueError("Chapter number must be between 1 and 5")
-    
-    ####### print chapter figures
-    chapters[args.chapter-1](args.show)
+    chapters = [other_chapters, None, None, chapter3, None, chapter5]
+    if args.chapter == -1: # print all
+        for func in chapters:
+            if func:
+                func(args.show)
+    else: # print only selected
+        chapters[args.chapter](args.show)
     os.remove("dummy.pdf")
