@@ -2,14 +2,13 @@ import argparse
 import importlib
 import math
 import os
-import time
 from itertools import product
 
 # STREP imports
 from main import DATABASES
 from strep.index_scale import load_database, scale_and_rate, _extract_weights, calc_all_correlations
-from strep.util import lookup_meta, find_sub_db, fill_meta, loopup_task_ds_metrics, prop_dict_to_val, read_json
-from strep.elex.util import RATING_COLORS, RATING_COLOR_SCALE, RATING_COLOR_SCALE_REV, rgb_to_rgba, hex_to_alpha
+from strep.util import lookup_meta, find_sub_db, fill_meta, read_json
+from strep.elex.util import hex_to_alpha
 from strep.elex.graphs import assemble_scatter_data, create_scatter_graph, add_rating_background, create_star_plot
 from strep.unit_formatter import CustomUnitReformater
 from strep.labels.generator import PropertyLabel
@@ -506,7 +505,7 @@ def chapter5(show):
     ax_bounds = [idx_bounds[(t, META_DS, META_ENV)][xaxis].tolist(), idx_bounds[(t, META_DS, META_ENV)][yaxis].tolist()]
     fig = make_subplots(rows=2, cols=2, specs=[[{'type': 'scatter'}, {'type': 'polar'}], [{'type': 'scatter'}, {'type': 'polar'}]],
                         column_widths=[0.6, 0.4], horizontal_spacing=.05, vertical_spacing=.1, shared_xaxes=True,
-                        subplot_titles=[r"$\text{Model performance on }\texttt{" + META_DS + r"}$", "", r"$\text{Model performance on }\texttt{" + META_DS_2 + r"}$", ""])
+                        subplot_titles=[r"$\text{Performance on }\texttt{" + META_DS + r"}$", "", r"$\text{Performance on }\texttt{" + META_DS_2 + r"}$", ""])
     for r_idx, ds in enumerate([META_DS, META_DS_2]):
         data, meta_data = db[db["dataset"] == ds], meta_results[meta_results['dataset'] == ds]
         # add scatter plot
@@ -519,9 +518,9 @@ def chapter5(show):
         min_x, max_x = np.min([min(data['x']) for data in plot_data.values()]), np.max([max(data['x']) for data in plot_data.values()])
         min_y, max_y = np.min([min(data['y']) for data in plot_data.values()]), np.max([max(data['y']) for data in plot_data.values()])
         diff_x, diff_y = max_x - min_x, max_y - min_y
-        x_title = r'$\hat{\mu}_{\text{ENT}}$' if r_idx==1 else ""
+        x_title = r'$\tilde{\mu}_{\text{ENT}}$' if r_idx==1 else ""
         fig.update_xaxes(range=[min_x-0.1*diff_x, max_x+0.1*diff_x], showgrid=False, title=x_title, row=r_idx+1, col=1)
-        fig.update_yaxes(range=[min_y-0.1*diff_y, max_y+0.1*diff_y], showgrid=False, title=r'$\hat{\mu}_{\text{' + META_PNAME + '}}$', row=r_idx+1, col=1)
+        fig.update_yaxes(range=[min_y-0.1*diff_y, max_y+0.1*diff_y], showgrid=False, title=r'$\tilde{\mu}_{\text{' + META_PNAME + '}}$', row=r_idx+1, col=1)
         add_rating_background(fig, ax_bounds, use_grad=True, rowcol=(r_idx+1, 1, r_idx))
         # add star plot
         for col_idx, (mod, env) in enumerate(product(['kNN', 'GNB'], envs)):
@@ -532,7 +531,7 @@ def chapter5(show):
     fig.update_layout(width=PLOT_WIDTH, height=PLOT_HEIGHT*2, margin={'l': 0, 'r': 0, 'b': 15, 't': 24},
                       legend=dict( title="Selected models", yanchor="middle", y=0.5, xanchor="center", x=0.565))
     fig.update_traces(textposition='top center')
-    finalize(fig, fname, show)
+    # finalize(fig, fname, show)
 
     fname = print_init('ch5_metaqure_ds_embeddings') ###############################################################################
     ft_names = {'statistical': 'Manual', 'pca': 'PCA', 'ds2vec': 'DS2VEC', 'combined': 'Joined'}
@@ -596,7 +595,7 @@ def chapter5(show):
             gt_and_pred = pd.concat([groundtruth, predicted], axis=1)
             true_best = gt_and_pred.sort_values(['dataset', gt_col], ascending=False).groupby('dataset').first()['model'].values
             pred_best = gt_and_pred.sort_values(['dataset', pred_col], ascending=False).groupby('dataset').first()['model'].values
-            for bar_idx, (models, name) in enumerate(zip([true_best, pred_best], ['True best (exhaustive search)', 'Estimated best (via compositional meta-learning)'])):
+            for bar_idx, (models, name) in enumerate(zip([true_best, pred_best], ['True best (EXH)', 'Estimated best (CML)'])):
                 col = LAM_COL_FIVE[1] if bar_idx == 0 else LAM_COL_FIVE[0]
                 mods, counts = np.unique(models, return_counts=True)
                 all_mod_counts = {mod: 0 for mod in model_colors.keys()}
@@ -649,8 +648,8 @@ def chapter5(show):
                       legend=dict(orientation="h", yanchor="bottom", y=1.0, xanchor="center", x=0.5))
     fig.update_traces(orientation='h')
     fig.update_xaxes(type="log", title='', row=1, col=2)
-    fig.update_xaxes(title='Accuracy [%]', row=2, col=1)
-    fig.update_xaxes(type="log", title='Energy draw [Ws]', row=2, col=2)
+    fig.update_xaxes(title='Accuracy (ACC1) [%]', row=2, col=1)
+    fig.update_xaxes(type="log", title='Total energy draw (ENT + ENI) [Ws]', row=2, col=2)
     finalize(fig, fname, show)
 
     ######################################## XPCR ########################################

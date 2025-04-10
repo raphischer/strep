@@ -16,16 +16,16 @@
         "independent_of_task": true
     },
     "precision": {
-        "name": "Precision",
-        "shortname": "PREC",
+        "name": "Average precision",
+        "shortname": "AP",
         "unit": "percent",
         "group": "Quality",
         "maximize": true,
         "independent_of_task": true
     },
     "recall": {
-        "name": "Recall",
-        "shortname": "REC",
+        "name": "Average recall",
+        "shortname": "AR",
         "unit": "percent",
         "group": "Quality",
         "maximize": true,
@@ -52,7 +52,7 @@
     },
     "parameters": {
         "name": "Number of Parameters",
-        "shortname": "PAR",
+        "shortname": "MP",
         "unit": "number",
         "group": "Resources",
         "independent_of_task": true
