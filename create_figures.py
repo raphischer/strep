@@ -112,7 +112,7 @@ def other_chapters(show):
     fname = print_init('ch2_profiling_comparison') ###############################################################################
     db = pd.read_csv(os.path.join(DISS_MATERIAL, 'ch2_profiling_comparison.csv'))
     grouped = db.groupby(['nogpu', 'model']).first().sort_values('parameters')
-    texts = grouped.loc[0].index.map(lambda v: v if v in ['MobileNetV3Small', 'MobileNetV2', 'NASNetMobile', 'EfficientNetB0', 'DenseNet121', 'DenseNet169', 'Xception', 'EfficientNetB4', 'EfficientNetB5', 'EfficientNetB6', 'ConvNeXtTiny', 'ResNet101V2', 'ResNet152', 'ConvNeXtBase', 'NASNetLarge', 'EfficientNetB7'] else '')
+    texts = grouped.loc[0].index.map(lambda v: v if v in ['MobileNetV2', 'NASNetMobile', 'EfficientNetB0', 'DenseNet121', 'DenseNet169', 'Xception', 'EfficientNetB4', 'EfficientNetB5', 'EfficientNetB6', 'ConvNeXtTiny', 'ResNet101V2', 'ResNet152', 'ConvNeXtBase', 'NASNetLarge', 'EfficientNetB7'] else '')
 
     # power draw per model for all setups
     fig = go.Figure([
@@ -124,7 +124,7 @@ def other_chapters(show):
     fig.update_yaxes(type="log")
     fig.update_xaxes(type="log")
     fig.update_traces(textposition='top center')
-    fig.update_layout(yaxis_title='Ws per inference', xaxis_title='Number of model parameters',
+    fig.update_layout(yaxis_title='Average energy draw per image (Ws)', xaxis_title='Number of model parameters',
                       legend=dict(orientation="h", yanchor="top", y=0.97, xanchor="left", x=0.02),
                       margin={'l': 0, 'r': 0, 'b': 0, 't': 0}, width=int(PLOT_WIDTH*0.58), height=PLOT_HEIGHT*1.2)
     finalize(fig, fname, show)
@@ -184,7 +184,6 @@ def other_chapters(show):
                       legend=dict(title='', itemwidth=80, bgcolor='rgba(0,0,0,0)', orientation='h', yanchor="top", y=0.98, xanchor="center", x=0.5)
     )
     finalize(fig, fname, show)
-    print(1)
 
 
 def chapter3(show):
