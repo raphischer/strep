@@ -485,172 +485,172 @@ def chapter3(show):
 
 def chapter5(show):
 
-    ######################################## MetaQuRe
-    meta_features = pd.read_pickle(os.path.join(os.path.dirname(DATABASES['MetaQuRe']), "meta_features.pkl"))
-    ds_embeddings = pd.read_pickle(os.path.join(os.path.dirname(DATABASES['MetaQuRe']), "meta_features_embeddings.pkl"))
-    db, meta_info, _, idx_bounds, _, _ = load_db(DATABASES['MetaQuRe'])
-    baselines, _ = load_database(os.path.join(os.path.dirname(DATABASES['MetaQuRe']), "baselines.pkl"))
-    db['environment'] = db['environment'].map(lambda v: v.split(' - ')[0].replace(" rev 1 (v8l)", ""))
-    baselines['environment'] = baselines['environment'].map(lambda v: v.split(' - ')[0].replace(" rev 1 (v8l)", ""))
-    meta_results = pd.read_pickle(os.path.join(os.path.dirname(DATABASES['MetaQuRe']), "meta_learned.pkl"))
-    meta_errors = pd.read_pickle(os.path.join(os.path.dirname(DATABASES['MetaQuRe']), "meta_learned_errors.pkl"))
-    env_cols = {env: LAM_COL_FIVE[4-idx] for idx, env in enumerate(['Intel i9-13900K', 'Intel i7-6700', 'Intel i7-10610U', 'ARMv8'])}
-    model_colors = {mod:col for mod, col in zip(pd.unique(db['model']), LAM_COL_TEN)}
-    objectives = list(zip(['accuracy', 'train_power_draw', 'compound_index'], [r'$\Omega_\text{ACC}$', r'$\Omega_\text{ENT}$', r'$\Omega_\text{QR}$']))
-    meta_results[['dataset', 'environment', 'model']] = db[['dataset', 'environment', 'model']]
-    META_PNAME = lookup_meta(meta_info, META_PROP, "shortname", "properties")
+    # ######################################## MetaQuRe
+    # meta_features = pd.read_pickle(os.path.join(os.path.dirname(DATABASES['MetaQuRe']), "meta_features.pkl"))
+    # ds_embeddings = pd.read_pickle(os.path.join(os.path.dirname(DATABASES['MetaQuRe']), "meta_features_embeddings.pkl"))
+    # db, meta_info, _, idx_bounds, _, _ = load_db(DATABASES['MetaQuRe'])
+    # baselines, _ = load_database(os.path.join(os.path.dirname(DATABASES['MetaQuRe']), "baselines.pkl"))
+    # db['environment'] = db['environment'].map(lambda v: v.split(' - ')[0].replace(" rev 1 (v8l)", ""))
+    # baselines['environment'] = baselines['environment'].map(lambda v: v.split(' - ')[0].replace(" rev 1 (v8l)", ""))
+    # meta_results = pd.read_pickle(os.path.join(os.path.dirname(DATABASES['MetaQuRe']), "meta_learned.pkl"))
+    # meta_errors = pd.read_pickle(os.path.join(os.path.dirname(DATABASES['MetaQuRe']), "meta_learned_errors.pkl"))
+    # env_cols = {env: LAM_COL_FIVE[4-idx] for idx, env in enumerate(['Intel i9-13900K', 'Intel i7-6700', 'Intel i7-10610U', 'ARMv8'])}
+    # model_colors = {mod:col for mod, col in zip(pd.unique(db['model']), LAM_COL_TEN)}
+    # objectives = list(zip(['accuracy', 'train_power_draw', 'compound_index'], [r'$\Omega_\text{ACC}$', r'$\Omega_\text{ENT}$', r'$\Omega_\text{QR}$']))
+    # meta_results[['dataset', 'environment', 'model']] = db[['dataset', 'environment', 'model']]
+    # META_PNAME = lookup_meta(meta_info, META_PROP, "shortname", "properties")
 
-    fname = print_init('ch5_metaqure_scatter_with_stars') ###############################################################################
-    xaxis, yaxis, envs, t = "train_power_draw", META_PROP, [META_ENV.split(' - ')[0], 'ARMv8'], db["task"].iloc[0]
-    ax_bounds = [idx_bounds[(t, META_DS, META_ENV)][xaxis].tolist(), idx_bounds[(t, META_DS, META_ENV)][yaxis].tolist()]
-    fig = make_subplots(rows=2, cols=2, specs=[[{'type': 'scatter'}, {'type': 'polar'}], [{'type': 'scatter'}, {'type': 'polar'}]],
-                        column_widths=[0.6, 0.4], horizontal_spacing=.05, vertical_spacing=.1, shared_xaxes=True,
-                        subplot_titles=[r"$\text{Performance on }\texttt{" + META_DS + r"}$", "", r"$\text{Performance on }\texttt{" + META_DS_2 + r"}$", ""])
-    for r_idx, ds in enumerate([META_DS, META_DS_2]):
-        data, meta_data = db[db["dataset"] == ds], meta_results[meta_results['dataset'] == ds]
-        # add scatter plot
-        plot_data, axis_names = assemble_scatter_data(envs, data, 'index', xaxis, yaxis, meta_info, UNIT_FMT)
-        traces = create_scatter_graph(plot_data, axis_names, dark_mode=False, display_text=True, marker_width=8, return_traces=True)
-        for trace in traces:
-            if r_idx > 0:
-                trace["showlegend"] = False
-            fig.add_trace(trace, row=r_idx+1, col=1)
-        min_x, max_x = np.min([min(data['x']) for data in plot_data.values()]), np.max([max(data['x']) for data in plot_data.values()])
-        min_y, max_y = np.min([min(data['y']) for data in plot_data.values()]), np.max([max(data['y']) for data in plot_data.values()])
-        diff_x, diff_y = max_x - min_x, max_y - min_y
-        x_title = r'$\tilde{\mu}_{\text{ENT}}$' if r_idx==1 else ""
-        fig.update_xaxes(range=[min_x-0.1*diff_x, max_x+0.1*diff_x], showgrid=False, title=x_title, row=r_idx+1, col=1)
-        fig.update_yaxes(range=[min_y-0.1*diff_y, max_y+0.1*diff_y], showgrid=False, title=r'$\tilde{\mu}_{\text{' + META_PNAME + '}}$', row=r_idx+1, col=1)
-        add_rating_background(fig, ax_bounds, use_grad=True, rowcol=(r_idx+1, 1, r_idx))
-        # add star plot
-        for col_idx, (mod, env) in enumerate(product(['kNN', 'GNB'], envs)):
-            model = find_sub_db(data, environment=env, model=mod).iloc[0].to_dict()
-            summary = fill_meta(model, meta_info)
-            trace = create_star_plot(summary, meta_info['properties'], name=f'{mod} on {env}', color=LAM_COL_FIVE[col_idx], showlegend=r_idx==0, return_trace=True)
-            fig.add_trace(trace, row=r_idx+1, col=2)
-    fig.update_layout(width=PLOT_WIDTH, height=PLOT_HEIGHT*2, margin={'l': 0, 'r': 0, 'b': 15, 't': 24},
-                      legend=dict( title="Selected models", yanchor="middle", y=0.5, xanchor="center", x=0.565))
-    fig.update_traces(textposition='top center')
+    # fname = print_init('ch5_metaqure_scatter_with_stars') ###############################################################################
+    # xaxis, yaxis, envs, t = "train_power_draw", META_PROP, [META_ENV.split(' - ')[0], 'ARMv8'], db["task"].iloc[0]
+    # ax_bounds = [idx_bounds[(t, META_DS, META_ENV)][xaxis].tolist(), idx_bounds[(t, META_DS, META_ENV)][yaxis].tolist()]
+    # fig = make_subplots(rows=2, cols=2, specs=[[{'type': 'scatter'}, {'type': 'polar'}], [{'type': 'scatter'}, {'type': 'polar'}]],
+    #                     column_widths=[0.6, 0.4], horizontal_spacing=.05, vertical_spacing=.1, shared_xaxes=True,
+    #                     subplot_titles=[r"$\text{Performance on }\texttt{" + META_DS + r"}$", "", r"$\text{Performance on }\texttt{" + META_DS_2 + r"}$", ""])
+    # for r_idx, ds in enumerate([META_DS, META_DS_2]):
+    #     data, meta_data = db[db["dataset"] == ds], meta_results[meta_results['dataset'] == ds]
+    #     # add scatter plot
+    #     plot_data, axis_names = assemble_scatter_data(envs, data, 'index', xaxis, yaxis, meta_info, UNIT_FMT)
+    #     traces = create_scatter_graph(plot_data, axis_names, dark_mode=False, display_text=True, marker_width=8, return_traces=True)
+    #     for trace in traces:
+    #         if r_idx > 0:
+    #             trace["showlegend"] = False
+    #         fig.add_trace(trace, row=r_idx+1, col=1)
+    #     min_x, max_x = np.min([min(data['x']) for data in plot_data.values()]), np.max([max(data['x']) for data in plot_data.values()])
+    #     min_y, max_y = np.min([min(data['y']) for data in plot_data.values()]), np.max([max(data['y']) for data in plot_data.values()])
+    #     diff_x, diff_y = max_x - min_x, max_y - min_y
+    #     x_title = r'$\tilde{\mu}_{\text{ENT}}$' if r_idx==1 else ""
+    #     fig.update_xaxes(range=[min_x-0.1*diff_x, max_x+0.1*diff_x], showgrid=False, title=x_title, row=r_idx+1, col=1)
+    #     fig.update_yaxes(range=[min_y-0.1*diff_y, max_y+0.1*diff_y], showgrid=False, title=r'$\tilde{\mu}_{\text{' + META_PNAME + '}}$', row=r_idx+1, col=1)
+    #     add_rating_background(fig, ax_bounds, use_grad=True, rowcol=(r_idx+1, 1, r_idx))
+    #     # add star plot
+    #     for col_idx, (mod, env) in enumerate(product(['kNN', 'GNB'], envs)):
+    #         model = find_sub_db(data, environment=env, model=mod).iloc[0].to_dict()
+    #         summary = fill_meta(model, meta_info)
+    #         trace = create_star_plot(summary, meta_info['properties'], name=f'{mod} on {env}', color=LAM_COL_FIVE[col_idx], showlegend=r_idx==0, return_trace=True)
+    #         fig.add_trace(trace, row=r_idx+1, col=2)
+    # fig.update_layout(width=PLOT_WIDTH, height=PLOT_HEIGHT*2, margin={'l': 0, 'r': 0, 'b': 15, 't': 24},
+    #                   legend=dict( title="Selected models", yanchor="middle", y=0.5, xanchor="center", x=0.565))
+    # fig.update_traces(textposition='top center')
     # finalize(fig, fname, show)
 
-    fname = print_init('ch5_metaqure_ds_embeddings') ###############################################################################
-    ft_names = {'statistical': 'Manual', 'pca': 'PCA', 'ds2vec': 'DS2VEC', 'combined': 'Joined'}
-    ft_sizes = {key: meta_features.loc[:,key].shape[1] if key != "combined" else None for key in ft_names.keys()}
-    ft_sizes["combined"] = ft_sizes["statistical"] + ft_sizes["ds2vec"]
-    plot_titles=[r'$\text{' + name + r' }|X_D|=' + str(ft_sizes[key]) + r'$' for key, name in ft_names.items()]
-    fig = make_subplots(rows=2, cols=4, subplot_titles=plot_titles, horizontal_spacing=0.01, vertical_spacing=0.1)
-    for idx, (key, name) in enumerate( ft_names.items() ):
-        # add scatter
-        embedding = ds_embeddings.loc[:,key]
-        min_x, max_x, min_y, max_y = embedding["x"].min(), embedding["x"].max(), embedding["y"].min(), embedding["y"].max()
-        fig.update_xaxes(range=[min_x-0.5, max_x+0.5], showticklabels=False, row=1, col=idx+1)
-        fig.update_yaxes(range=[min_y-0.5, max_y+0.5], showticklabels=False, row=1, col=idx+1)
-        colors, sizes = zip(*[(meta_features.loc[ds,('statistical','n_predictors')], meta_features.loc[ds,('statistical','n_instances')]) for ds in embedding.index])
-        fig.add_trace( go.Scatter(x=embedding["x"], y=embedding["y"], mode='markers', showlegend=False, marker={'color': np.log(colors), 'size': np.log(sizes), 'coloraxis': 'coloraxis', 'sizemin': 1}), row=1, col=idx+1)
-        # add bars for objective errors
-        pred_error_mean = [meta_errors[(key, "index", f'{col}_test_err')].abs().mean() for col, _, in objectives]
-        fig.add_trace(go.Bar(x=list(zip(*objectives))[1], y=pred_error_mean, text=[f'{v:4.3f}' for v in pred_error_mean], textposition='auto', marker_color=LAM_COL_FIVE[0], showlegend=False), row=2, col=idx+1)
-        fig.update_yaxes(range=[0, 0.18], showticklabels=idx==0, row=2, col=idx+1)
-    fig.update_yaxes(title=r'$\text{MAE}_\mathfrak{D}(S_\Omega)$', row=2, col=1)
-    # add traces for the scatter size legend
-    for idx, n in enumerate([int(min(list(sizes))), 500, 5000, int(max(list(sizes)))]):
-        fig.add_trace( go.Scatter(x=[-100], y=[-100], mode='markers', marker={'color': [1], 'size': [np.log(n)], 'colorscale': LAM_COL_SCALE, 'sizemin':1}, name=n), row=1, col=1)
-    bar_ticks = [int(min(list(colors))), 10, 100, 1000, int(max(list(colors)))]
-    fig.update_layout(
-        coloraxis={'colorscale': LAM_COL_SCALE, 'colorbar': {'title': '# Features', 'len': 0.55, 'xanchor': 'right', 'x': 0.01, 'y': 0.8, 'tickvals': np.log(bar_ticks), 'ticktext': bar_ticks}},
-        legend=dict(title='Number of rows in the dataset', y=0.5, x=0.5, xanchor='center', yanchor='middle', orientation='h'),
-        width=PLOT_WIDTH, height=PLOT_HEIGHT*1.5, margin={'l': 0, 'r': 0, 'b': 0, 't': 24}
-    )
-    finalize(fig, fname, show)
+    # fname = print_init('ch5_metaqure_ds_embeddings') ###############################################################################
+    # ft_names = {'statistical': 'Manual', 'pca': 'PCA', 'ds2vec': 'DS2VEC', 'combined': 'Joined'}
+    # ft_sizes = {key: meta_features.loc[:,key].shape[1] if key != "combined" else None for key in ft_names.keys()}
+    # ft_sizes["combined"] = ft_sizes["statistical"] + ft_sizes["ds2vec"]
+    # plot_titles=[r'$\text{' + name + r' }|X_D|=' + str(ft_sizes[key]) + r'$' for key, name in ft_names.items()]
+    # fig = make_subplots(rows=2, cols=4, subplot_titles=plot_titles, horizontal_spacing=0.01, vertical_spacing=0.1)
+    # for idx, (key, name) in enumerate( ft_names.items() ):
+    #     # add scatter
+    #     embedding = ds_embeddings.loc[:,key]
+    #     min_x, max_x, min_y, max_y = embedding["x"].min(), embedding["x"].max(), embedding["y"].min(), embedding["y"].max()
+    #     fig.update_xaxes(range=[min_x-0.5, max_x+0.5], showticklabels=False, row=1, col=idx+1)
+    #     fig.update_yaxes(range=[min_y-0.5, max_y+0.5], showticklabels=False, row=1, col=idx+1)
+    #     colors, sizes = zip(*[(meta_features.loc[ds,('statistical','n_predictors')], meta_features.loc[ds,('statistical','n_instances')]) for ds in embedding.index])
+    #     fig.add_trace( go.Scatter(x=embedding["x"], y=embedding["y"], mode='markers', showlegend=False, marker={'color': np.log(colors), 'size': np.log(sizes), 'coloraxis': 'coloraxis', 'sizemin': 1}), row=1, col=idx+1)
+    #     # add bars for objective errors
+    #     pred_error_mean = [meta_errors[(key, "index", f'{col}_test_err')].abs().mean() for col, _, in objectives]
+    #     fig.add_trace(go.Bar(x=list(zip(*objectives))[1], y=pred_error_mean, text=[f'{v:4.3f}' for v in pred_error_mean], textposition='auto', marker_color=LAM_COL_FIVE[0], showlegend=False), row=2, col=idx+1)
+    #     fig.update_yaxes(range=[0, 0.18], showticklabels=idx==0, row=2, col=idx+1)
+    # fig.update_yaxes(title=r'$\text{MAE}_\mathfrak{D}(S_\Omega)$', row=2, col=1)
+    # # add traces for the scatter size legend
+    # for idx, n in enumerate([int(min(list(sizes))), 500, 5000, int(max(list(sizes)))]):
+    #     fig.add_trace( go.Scatter(x=[-100], y=[-100], mode='markers', marker={'color': [1], 'size': [np.log(n)], 'colorscale': LAM_COL_SCALE, 'sizemin':1}, name=n), row=1, col=1)
+    # bar_ticks = [int(min(list(colors))), 10, 100, 1000, int(max(list(colors)))]
+    # fig.update_layout(
+    #     coloraxis={'colorscale': LAM_COL_SCALE, 'colorbar': {'title': '# Features', 'len': 0.55, 'xanchor': 'right', 'x': 0.01, 'y': 0.8, 'tickvals': np.log(bar_ticks), 'ticktext': bar_ticks}},
+    #     legend=dict(title='Number of rows in the dataset', y=0.5, x=0.5, xanchor='center', yanchor='middle', orientation='h'),
+    #     width=PLOT_WIDTH, height=PLOT_HEIGHT*1.5, margin={'l': 0, 'r': 0, 'b': 0, 't': 24}
+    # )
+    # finalize(fig, fname, show)
 
-    fname = print_init('ch5_metaqure_prop_errors') ###############################################################################
-    traces, titles = [], []
-    for idx, (prop, prop_meta) in enumerate(meta_info['properties'].items()):
-        row, col = 2 if idx >= len(meta_info['properties']) / 2 else 1, int(idx % (len(meta_info['properties']) / 2)) + 1
-        for e_idx, (scale, trace, color) in enumerate(zip(['recalc_value', 'value'], ['Index', 'Value'], [LAM_COL_FIVE[0], LAM_SPEC])):
-            res = meta_results[(scale, f'{prop}_test_err')]
-            if e_idx == 0: # use same target unit for both scales!
-                _, to_unit = UNIT_FMT.reformat_value(res.iloc[0], prop_meta['unit'])
-            reformatted = res.abs().map(lambda val: UNIT_FMT.reformat_value(val, prop_meta['unit'], unit_to=to_unit, as_str=False))
-            traces.append( (row, col, go.Box(name=trace, y=reformatted, legendgroup=trace, showlegend=idx==0, marker_color=color)) )
-            if e_idx == 0:
-                titles.append(f"{prop_meta['shortname']} {to_unit}")
-    fig = make_subplots(rows=2, cols=int(len(meta_info['properties']) / 2), y_title=r'$\text{MAE}_\mathfrak{D}(\mu)$', subplot_titles=titles, vertical_spacing=0.12, horizontal_spacing=0.05)
-    for row, col, trace in traces:
-        fig.add_trace(trace, row=row, col=col)
-        fig.update_xaxes(visible=False, showticklabels=False, row=row, col=col)
-        if row==2:
-            fig.update_yaxes(type="log", row=row, col=col) 
-    fig.update_layout(width=PLOT_WIDTH, height=PLOT_HEIGHT*1.3, margin={'l': 57, 'r': 0, 'b': 0, 't': 24},
-                      legend=dict(title='Meta-learning from values on scale:', orientation="h", yanchor="top", y=-0.02, xanchor="center", x=0.5))
-    finalize(fig, fname, show)
+    # fname = print_init('ch5_metaqure_prop_errors') ###############################################################################
+    # traces, titles = [], []
+    # for idx, (prop, prop_meta) in enumerate(meta_info['properties'].items()):
+    #     row, col = 2 if idx >= len(meta_info['properties']) / 2 else 1, int(idx % (len(meta_info['properties']) / 2)) + 1
+    #     for e_idx, (scale, trace, color) in enumerate(zip(['recalc_value', 'value'], ['Index', 'Value'], [LAM_COL_FIVE[0], LAM_SPEC])):
+    #         res = meta_results[(scale, f'{prop}_test_err')]
+    #         if e_idx == 0: # use same target unit for both scales!
+    #             _, to_unit = UNIT_FMT.reformat_value(res.iloc[0], prop_meta['unit'])
+    #         reformatted = res.abs().map(lambda val: UNIT_FMT.reformat_value(val, prop_meta['unit'], unit_to=to_unit, as_str=False))
+    #         traces.append( (row, col, go.Box(name=trace, y=reformatted, legendgroup=trace, showlegend=idx==0, marker_color=color)) )
+    #         if e_idx == 0:
+    #             titles.append(f"{prop_meta['shortname']} {to_unit}")
+    # fig = make_subplots(rows=2, cols=int(len(meta_info['properties']) / 2), y_title=r'$\text{MAE}_\mathfrak{D}(\mu)$', subplot_titles=titles, vertical_spacing=0.12, horizontal_spacing=0.05)
+    # for row, col, trace in traces:
+    #     fig.add_trace(trace, row=row, col=col)
+    #     fig.update_xaxes(visible=False, showticklabels=False, row=row, col=col)
+    #     if row==2:
+    #         fig.update_yaxes(type="log", row=row, col=col) 
+    # fig.update_layout(width=PLOT_WIDTH, height=PLOT_HEIGHT*1.3, margin={'l': 57, 'r': 0, 'b': 0, 't': 24},
+    #                   legend=dict(title='Meta-learning from values on scale:', orientation="h", yanchor="top", y=-0.02, xanchor="center", x=0.5))
+    # finalize(fig, fname, show)
 
-    fname = print_init('ch5_metaqure_optimal_model_choice') ###############################################################################
-    fig = make_subplots(rows=len(objectives), cols=len(env_cols), shared_yaxes=True, shared_xaxes=True, horizontal_spacing=0.01, vertical_spacing=0.01, subplot_titles=list(env_cols.keys()))
-    for row_idx, (sort_col, text) in enumerate(objectives):
-        for col_idx, env in enumerate( env_cols.keys() ):
-            pred_col, gt_col = ('index', f'{sort_col}_test_pred'), sort_col if "index" in sort_col else f'{sort_col}_index'
-            groundtruth = db[db['environment'] == env][['dataset','model', gt_col]]
-            predicted = meta_results.loc[groundtruth.index, pred_col]
-            gt_and_pred = pd.concat([groundtruth, predicted], axis=1)
-            true_best = gt_and_pred.sort_values(['dataset', gt_col], ascending=False).groupby('dataset').first()['model'].values
-            pred_best = gt_and_pred.sort_values(['dataset', pred_col], ascending=False).groupby('dataset').first()['model'].values
-            for bar_idx, (models, name) in enumerate(zip([true_best, pred_best], ['True best (EXH)', 'Estimated best (CML)'])):
-                col = LAM_COL_FIVE[1] if bar_idx == 0 else LAM_COL_FIVE[0]
-                mods, counts = np.unique(models, return_counts=True)
-                all_mod_counts = {mod: 0 for mod in model_colors.keys()}
-                for mod, cnt in zip(mods, counts):
-                    all_mod_counts[mod] = cnt
-                fig.add_trace(go.Bar(x=list(all_mod_counts.keys()), y=list(all_mod_counts.values()), marker_color=col, name=name, showlegend=row_idx+col_idx==0), row=row_idx+1, col=col_idx+1)
-        fig.update_yaxes(title=text, row=row_idx+1, col=1)
-    fig.update_layout(width=PLOT_WIDTH, height=PLOT_HEIGHT*1.8, margin={'l': 0, 'r': 0, 'b': 0, 't': 24},
-                      legend=dict(orientation="h", yanchor="top", y=-0.1, xanchor="center", x=0.5))
-    finalize(fig, fname, show)
+    # fname = print_init('ch5_metaqure_optimal_model_choice') ###############################################################################
+    # fig = make_subplots(rows=len(objectives), cols=len(env_cols), shared_yaxes=True, shared_xaxes=True, horizontal_spacing=0.01, vertical_spacing=0.01, subplot_titles=list(env_cols.keys()))
+    # for row_idx, (sort_col, text) in enumerate(objectives):
+    #     for col_idx, env in enumerate( env_cols.keys() ):
+    #         pred_col, gt_col = ('index', f'{sort_col}_test_pred'), sort_col if "index" in sort_col else f'{sort_col}_index'
+    #         groundtruth = db[db['environment'] == env][['dataset','model', gt_col]]
+    #         predicted = meta_results.loc[groundtruth.index, pred_col]
+    #         gt_and_pred = pd.concat([groundtruth, predicted], axis=1)
+    #         true_best = gt_and_pred.sort_values(['dataset', gt_col], ascending=False).groupby('dataset').first()['model'].values
+    #         pred_best = gt_and_pred.sort_values(['dataset', pred_col], ascending=False).groupby('dataset').first()['model'].values
+    #         for bar_idx, (models, name) in enumerate(zip([true_best, pred_best], ['True best (EXH)', 'Estimated best (CML)'])):
+    #             col = LAM_COL_FIVE[1] if bar_idx == 0 else LAM_COL_FIVE[0]
+    #             mods, counts = np.unique(models, return_counts=True)
+    #             all_mod_counts = {mod: 0 for mod in model_colors.keys()}
+    #             for mod, cnt in zip(mods, counts):
+    #                 all_mod_counts[mod] = cnt
+    #             fig.add_trace(go.Bar(x=list(all_mod_counts.keys()), y=list(all_mod_counts.values()), marker_color=col, name=name, showlegend=row_idx+col_idx==0), row=row_idx+1, col=col_idx+1)
+    #     fig.update_yaxes(title=text, row=row_idx+1, col=1)
+    # fig.update_layout(width=PLOT_WIDTH, height=PLOT_HEIGHT*1.8, margin={'l': 0, 'r': 0, 'b': 0, 't': 24},
+    #                   legend=dict(orientation="h", yanchor="top", y=-0.1, xanchor="center", x=0.5))
+    # finalize(fig, fname, show)
 
-    fname = print_init('ch5_metaqure_baseline_comparisons') ###############################################################################
-    pfn_ds = pd.unique(baselines[baselines['model'] == 'PFN']['dataset'])
-    meta_results[['dataset', 'environment', 'model']] = db[['dataset', 'environment', 'model']]
-    # instead of per batch inference energy, use the inference energy for the complete test split for this comparison
-    dataset_split_sizes = read_json(os.path.join(os.path.dirname(DATABASES['MetaQuRe']), "dataset_split_sizes.json"))
-    for db_ in [baselines, db]:
-        db_["test_size"] = db_["dataset"].map(lambda ds: int(dataset_split_sizes[ds]["test"][0]))
-        db_["power_draw"] = db_["power_draw"] * db_["test_size"]
-    comparison_data = {
-        'Small datasets (71)':  ( meta_results[meta_results['dataset'].isin(pfn_ds)], baselines[baselines['dataset'].isin(pfn_ds)], db[db['dataset'].isin(pfn_ds)] ),
-        'Large datasets (129)': ( meta_results[~meta_results['dataset'].isin(pfn_ds)], baselines[~baselines['dataset'].isin(pfn_ds)], db[~db['dataset'].isin(pfn_ds)] )
-    }
-    fig = make_subplots(rows=2, cols=2, shared_yaxes=True, horizontal_spacing=0.01, vertical_spacing=0.01, shared_xaxes=True, row_titles=list(comparison_data.keys()))
-    for row_idx, (meta_res, bl_res, exhau_res) in enumerate(comparison_data.values()):
-        baseline_results = {mod: {'ene': [], 'acc': [], 'env': []} for mod in ['CML', 'EXH'] + list(pd.unique(bl_res['model']))}
-        for env, mod in product(reversed(env_cols.keys()), baseline_results.keys()):
-            if mod == 'CML':
-                # access results of our method
-                sub_pred = meta_res[meta_res['environment'] == env]
-                rec_models = sub_pred.sort_values(['dataset', ('index', 'accuracy_test_pred')], ascending=False).groupby('dataset').first()['model']
-                data = pd.concat([db[(db['environment'] == env) & (db['dataset'] == ds) & (db['model'] == mod)] for ds, mod in rec_models.items()])
-            elif mod == 'EXH':
-                # access results of via exhaustive search
-                sub_db = exhau_res[(exhau_res['environment'] == env)]
-                data = sub_db.sort_values(['dataset','accuracy'], ascending=False).groupby('dataset').first()
-                data['power_draw'] = sub_db.groupby('dataset')['power_draw'].sum()
-                data['train_power_draw'] = sub_db.groupby('dataset')['train_power_draw'].sum()
-            else:
-                data = bl_res.loc[(bl_res['model'] == mod) & (bl_res['environment'] == env),['train_power_draw', 'power_draw', 'accuracy']].dropna()
-                if data.size < 1:
-                    continue
-            baseline_results[mod]['ene'] = baseline_results[mod]['ene'] + data[['train_power_draw', 'power_draw']].sum(axis=1).values.tolist()
-            baseline_results[mod]['acc'] = baseline_results[mod]['acc'] + data['accuracy'].values.tolist()
-            baseline_results[mod]['env'] = baseline_results[mod]['env'] + [env] * data.shape[0]
-        for idx, (mod, results) in enumerate( baseline_results.items() ):
-            fig.add_trace(go.Box(x=results['acc'], y=results['env'], offsetgroup=f'{mod}{mod}', name=mod, legendgroup=mod, marker_color=LAM_COL_FIVE[idx], showlegend=False), row=1+row_idx, col=1)
-            fig.add_trace(go.Box(x=results['ene'], y=results['env'], offsetgroup=f'{mod}{mod}', name=mod, legendgroup=mod, marker_color=LAM_COL_FIVE[idx], showlegend=row_idx==0), row=1+row_idx, col=2)
-    fig.update_layout(boxmode='group', width=PLOT_WIDTH, height=PLOT_HEIGHT*2.5, margin={'l': 0, 'r': 15, 'b': 46, 't': 0},
-                      legend=dict(orientation="h", yanchor="bottom", y=1.0, xanchor="center", x=0.5))
-    fig.update_traces(orientation='h')
-    fig.update_xaxes(type="log", title='', row=1, col=2)
-    fig.update_xaxes(title='Accuracy (ACC1) [%]', row=2, col=1)
-    fig.update_xaxes(type="log", title='Total energy draw (ENT + ENI) [Ws]', row=2, col=2)
-    finalize(fig, fname, show)
+    # fname = print_init('ch5_metaqure_baseline_comparisons') ###############################################################################
+    # pfn_ds = pd.unique(baselines[baselines['model'] == 'PFN']['dataset'])
+    # meta_results[['dataset', 'environment', 'model']] = db[['dataset', 'environment', 'model']]
+    # # instead of per batch inference energy, use the inference energy for the complete test split for this comparison
+    # dataset_split_sizes = read_json(os.path.join(os.path.dirname(DATABASES['MetaQuRe']), "dataset_split_sizes.json"))
+    # for db_ in [baselines, db]:
+    #     db_["test_size"] = db_["dataset"].map(lambda ds: int(dataset_split_sizes[ds]["test"][0]))
+    #     db_["power_draw"] = db_["power_draw"] * db_["test_size"]
+    # comparison_data = {
+    #     'Small datasets (71)':  ( meta_results[meta_results['dataset'].isin(pfn_ds)], baselines[baselines['dataset'].isin(pfn_ds)], db[db['dataset'].isin(pfn_ds)] ),
+    #     'Large datasets (129)': ( meta_results[~meta_results['dataset'].isin(pfn_ds)], baselines[~baselines['dataset'].isin(pfn_ds)], db[~db['dataset'].isin(pfn_ds)] )
+    # }
+    # fig = make_subplots(rows=2, cols=2, shared_yaxes=True, horizontal_spacing=0.01, vertical_spacing=0.01, shared_xaxes=True, row_titles=list(comparison_data.keys()))
+    # for row_idx, (meta_res, bl_res, exhau_res) in enumerate(comparison_data.values()):
+    #     baseline_results = {mod: {'ene': [], 'acc': [], 'env': []} for mod in ['CML', 'EXH'] + list(pd.unique(bl_res['model']))}
+    #     for env, mod in product(reversed(env_cols.keys()), baseline_results.keys()):
+    #         if mod == 'CML':
+    #             # access results of our method
+    #             sub_pred = meta_res[meta_res['environment'] == env]
+    #             rec_models = sub_pred.sort_values(['dataset', ('index', 'accuracy_test_pred')], ascending=False).groupby('dataset').first()['model']
+    #             data = pd.concat([db[(db['environment'] == env) & (db['dataset'] == ds) & (db['model'] == mod)] for ds, mod in rec_models.items()])
+    #         elif mod == 'EXH':
+    #             # access results of via exhaustive search
+    #             sub_db = exhau_res[(exhau_res['environment'] == env)]
+    #             data = sub_db.sort_values(['dataset','accuracy'], ascending=False).groupby('dataset').first()
+    #             data['power_draw'] = sub_db.groupby('dataset')['power_draw'].sum()
+    #             data['train_power_draw'] = sub_db.groupby('dataset')['train_power_draw'].sum()
+    #         else:
+    #             data = bl_res.loc[(bl_res['model'] == mod) & (bl_res['environment'] == env),['train_power_draw', 'power_draw', 'accuracy']].dropna()
+    #             if data.size < 1:
+    #                 continue
+    #         baseline_results[mod]['ene'] = baseline_results[mod]['ene'] + data[['train_power_draw', 'power_draw']].sum(axis=1).values.tolist()
+    #         baseline_results[mod]['acc'] = baseline_results[mod]['acc'] + data['accuracy'].values.tolist()
+    #         baseline_results[mod]['env'] = baseline_results[mod]['env'] + [env] * data.shape[0]
+    #     for idx, (mod, results) in enumerate( baseline_results.items() ):
+    #         fig.add_trace(go.Box(x=results['acc'], y=results['env'], offsetgroup=f'{mod}{mod}', name=mod, legendgroup=mod, marker_color=LAM_COL_FIVE[idx], showlegend=False), row=1+row_idx, col=1)
+    #         fig.add_trace(go.Box(x=results['ene'], y=results['env'], offsetgroup=f'{mod}{mod}', name=mod, legendgroup=mod, marker_color=LAM_COL_FIVE[idx], showlegend=row_idx==0), row=1+row_idx, col=2)
+    # fig.update_layout(boxmode='group', width=PLOT_WIDTH, height=PLOT_HEIGHT*2.5, margin={'l': 0, 'r': 15, 'b': 46, 't': 0},
+    #                   legend=dict(orientation="h", yanchor="bottom", y=1.0, xanchor="center", x=0.5))
+    # fig.update_traces(orientation='h')
+    # fig.update_xaxes(type="log", title='', row=1, col=2)
+    # fig.update_xaxes(title='Accuracy (ACC1) [%]', row=2, col=1)
+    # fig.update_xaxes(type="log", title='Total energy draw (ENT + ENI) [Ws]', row=2, col=2)
+    # finalize(fig, fname, show)
 
     ######################################## XPCR ########################################
     database, meta, _, idx_bounds, _, _ = load_db(DATABASES['XPCR_FULL'])
@@ -669,7 +669,7 @@ def chapter5(show):
     fname = print_init('ch5_xpcr_method_comparison') ###############################################################################
     rows = [
         ' & '.join(['Dataset'] + [r'\multicolumn{3}{c}{$' + mod + r'$}' for mod in [r'\text{CML + } \Omega_\text{PCR}', r'\text{CML + } \Omega_\text{MASE}', r'\texttt{AutoGluonTS}', r'\texttt{AutoKeras}', r'\texttt{AutoSklearn}']]) + r' \\',
-        ' & '.join([ ' ' ] + [r'$S$', r'$\tilde{\mu}_{\text{MASE}}$', r'$\mu_{\text{ENT}}$'] * 5) + r' \\',
+        ' & '.join([ ' ' ] + [r'$S_\Omega$', r'$\tilde{\mu}_{\text{MASE}}$', r'$\mu_{\text{ENT}}$'] * 5) + r' \\',
         r'\midrule',
     ]
     for ds, data in meta_learned_db.groupby('dataset'):
@@ -796,12 +796,12 @@ def chapter5(show):
             min_x, max_x = np.min([min(data['x']) for data in plot_data.values()]), np.max([max(data['x']) for data in plot_data.values()])
             min_y, max_y = np.min([min(data['y']) for data in plot_data.values()]), np.max([max(data['y']) for data in plot_data.values()])
             diff_x, diff_y = max_x - min_x, max_y - min_y
-            x_title = r'$\hat{\mu}_{\text{ENT}}$' if r_idx==2 else ""
+            x_title = r'$\tilde{\mu}_{\text{ENT}}$' if r_idx==2 else ""
             fig.update_xaxes(range=[min_x-0.1*diff_x, max_x+0.1*diff_x], showgrid=False, title=x_title, row=r_idx, col=1)
-            fig.update_yaxes(range=[min_y-0.1*diff_y, max_y+0.1*diff_y], showgrid=False, title=r'$\hat{\mu}_{\text{' + XPCR_PROP + '}}$', row=r_idx, col=1)
+            fig.update_yaxes(range=[min_y-0.1*diff_y, max_y+0.1*diff_y], showgrid=False, title=r'$\tilde{\mu}_{\text{' + XPCR_PROP + '}}$', row=r_idx, col=1)
             add_rating_background(fig, ax_bounds, use_grad=True, rowcol=(r_idx, 1, 0 if r_idx==1 else 1))
             # add star plot
-            for model, m_str, col_idx in zip([pred_xpcr, pred_afo, 'autogluon'], [r'$\texttt{CML}\text{ with }\Omega_\text{PCR}$', r'$\texttt{CML}\text{ with }\Omega_\text{MASE}$', r'$\texttt{AGl}$'], [0, 2, 4]):
+            for model, m_str, col_idx in zip([pred_xpcr, pred_afo, 'autogluon'], [r'$\texttt{CML} + \Omega_\text{PCR}$', r'$\texttt{CML} + \Omega_\text{MASE}$', r'$\texttt{AGl}$'], [0, 2, 4]):
                 model = find_sub_db(data, model=model).iloc[0].to_dict()
                 summary = fill_meta(model, meta)
                 trace = create_star_plot(summary, meta['properties'], name=m_str, color=LAM_COL_FIVE[col_idx], showlegend=r_idx==1, return_trace=True)
@@ -834,7 +834,7 @@ def chapter5(show):
     db_raw, meta = load_database(DATABASES['XPCR_FULL'])
     db_raw = db_raw[~db_raw["model"].isin(["autokeras", "autogluon", "autosklearn"])]
     db_no_comp, meta, _, _, _, _ = scale_and_rate(db_raw, meta)
-    stat_str = [r'$\text{MAE}_\mathfrak{D}(\tilde{\mu})$', r'$\text{ACC}_\mathfrak{D}(\tilde{\mu})$', r'$\text{TOP-3 ACC}_\mathfrak{D}(\tilde{\mu})$']
+    stat_str = [r'$\text{MAE}_\mathfrak{D}(\tilde{\mu})$', r'$\text{ACC1}_\mathfrak{D}(\tilde{\mu})$', r'$\text{ACC3}_\mathfrak{D}(\tilde{\mu})$']
     k_best, result_scores = 3, {s_str: {} for s_str in stat_str}
     # assemble the error stats
     for col in pred_cols:
