@@ -95,7 +95,7 @@ for col in dfs_merged.columns:
         dfs_merged[col] = dfs_merged[col].fillna(value=np.nan).astype(float)
         prop_meta[col] = {
             "name": "Clean Accuracy",
-            "shortname": "ACC",
+            "shortname": "ACC1",
             "weight": 0.2,
             "group": "Quality",
             "unit": "percent",

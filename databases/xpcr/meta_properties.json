@@ -53,7 +53,7 @@
     },
     "parameters": {
         "name": "Number of Parameters",
-        "shortname": "PAR",
+        "shortname": "MP",
         "unit": "number",
         "group": "Complexity",
         "independent_of_task": true

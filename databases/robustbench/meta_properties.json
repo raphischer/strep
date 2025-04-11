@@ -1,7 +1,7 @@
 {
     "clean_acc": {
         "name": "Clean Accuracy",
-        "shortname": "ACC",
+        "shortname": "ACC1",
         "weight": 0.2,
         "group": "Quality",
         "unit": "percent",

@@ -52,16 +52,16 @@
         "maximize": true
     },
     "precision_M": {
-        "name": "Mean Precision", 
-        "shortname": "PRC",
+        "name": "Average precision", 
+        "shortname": "AP",
         "unit": "percent",
         "group": "Quality",
         "symbol": "[%]",
         "maximize": true
     },
     "recall_M": {
-        "name": "Mean Recall", 
-        "shortname": "REC",
+        "name": "Average recall", 
+        "shortname": "AR",
         "unit": "percent",
         "group": "Quality",
         "symbol": "[%]",
@@ -83,7 +83,7 @@
     },
     "total_parameters": {
         "name": "Number of Parameters",
-        "shortname": "PAR",
+        "shortname": "MP",
         "unit": "number",
         "group": "Resources"
     }
