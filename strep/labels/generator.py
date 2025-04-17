@@ -112,45 +112,21 @@ def find_icon(metric_key, metric, icons):
     return next(iter(icons.values()))
 
 
-def select_top_metrics(metrics):
-    # Capture original insertion order and indexes
-    ordered_names = list(metrics.keys())
-    index_map = {name: idx for idx, name in enumerate(ordered_names)}
-    
-    groups = {}
-    for name, (group, weight) in metrics.items():
-        if group not in groups:
-            groups[group] = []
-        # Store (-weight, original index, name) for sorting
-        groups[group].append( (-weight, index_map[name], name) )
-    
-    # Sort each group's metrics by: highest weight first, then earliest index
-    for group in groups:
-        groups[group].sort()
-    
-    # Collect top metric from each group (highest weight/earliest index)
-    top_candidates = []
-    for group, metrics_list in groups.items():
-        top_metrics = metrics_list[0]  # Take highest weight/earliest index
-        top_candidates.append( (top_metrics[0], top_metrics[1], top_metrics[2], group) )
-    
-    # Sort top_candidates by weight (descending) and then original index (ascending)
-    top_candidates.sort()
-    
+def select_top_metrics(metrics, k=4):
+    sorted_by_weight = sorted(metrics)
+    groups = set([group for _, _, group in sorted_by_weight])
     selected = []
-    group_counts = {group: 0 for group in groups.keys()}
-    
-    # Select metrics while maintaining group diversity
-    for weight_neg, idx, name, group in top_candidates:
-        if len(selected) >= 4:
-            break
-        if group_counts[group] < 1:  # Ensure max 1 per group
-            selected.append( (idx, name) )
-            group_counts[group] += 1
-    
-    # Sort selected metrics by their original insertion order (index)
+    while len(sorted_by_weight) > 0 and len(selected) < min(k, len(metrics)):
+        for sel_group in groups:
+            for idx, (weight, name, group) in enumerate(sorted_by_weight):
+                if group == sel_group:
+                    orig_index = metrics.index((weight, name, group))
+                    selected.append((orig_index, name))
+                    del sorted_by_weight[idx]
+                    break
+    selected = selected[:k]
     selected.sort(key=lambda x: x[0])
-    return [name for idx, name in selected]
+    return [name for _, name in selected]
 
 
 class PropertyLabel(fitz.Document):
@@ -161,7 +137,7 @@ class PropertyLabel(fitz.Document):
             with open(os.path.join(custom, 'label_map.json'), 'r') as jf:
                 metric_map = json.load(jf)
         except Exception:
-            properties = {prop: (vals['group'], float(vals['weight'])) for prop, vals in meta.items()}
+            properties = [(float(vals['weight']), prop, vals['group']) for prop, vals in meta.items()]
             most_important = select_top_metrics(properties)
             metric_map = {pos: prop for pos, prop in zip(POS_METRICS.keys(), most_important)}
 
