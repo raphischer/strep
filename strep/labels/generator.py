@@ -112,6 +112,47 @@ def find_icon(metric_key, metric, icons):
     return next(iter(icons.values()))
 
 
+def select_top_metrics(metrics):
+    # Capture original insertion order and indexes
+    ordered_names = list(metrics.keys())
+    index_map = {name: idx for idx, name in enumerate(ordered_names)}
+    
+    groups = {}
+    for name, (group, weight) in metrics.items():
+        if group not in groups:
+            groups[group] = []
+        # Store (-weight, original index, name) for sorting
+        groups[group].append( (-weight, index_map[name], name) )
+    
+    # Sort each group's metrics by: highest weight first, then earliest index
+    for group in groups:
+        groups[group].sort()
+    
+    # Collect top metric from each group (highest weight/earliest index)
+    top_candidates = []
+    for group, metrics_list in groups.items():
+        top_metrics = metrics_list[0]  # Take highest weight/earliest index
+        top_candidates.append( (top_metrics[0], top_metrics[1], top_metrics[2], group) )
+    
+    # Sort top_candidates by weight (descending) and then original index (ascending)
+    top_candidates.sort()
+    
+    selected = []
+    group_counts = {group: 0 for group in groups.keys()}
+    
+    # Select metrics while maintaining group diversity
+    for weight_neg, idx, name, group in top_candidates:
+        if len(selected) >= 4:
+            break
+        if group_counts[group] < 1:  # Ensure max 1 per group
+            selected.append( (idx, name) )
+            group_counts[group] += 1
+    
+    # Sort selected metrics by their original insertion order (index)
+    selected.sort(key=lambda x: x[0])
+    return [name for idx, name in selected]
+
+
 class PropertyLabel(fitz.Document):
 
     def __init__(self, summary, meta, unit_fmt, custom=None):
@@ -120,15 +161,9 @@ class PropertyLabel(fitz.Document):
             with open(os.path.join(custom, 'label_map.json'), 'r') as jf:
                 metric_map = json.load(jf)
         except Exception:
-            metric_map = {}
-        # apart from customs, per default display most important (highest weighted) properties
-        weights = {prop: vals['weight'] for prop, vals in meta.items() if prop not in metric_map.values()}
-        met_by_weight = list(reversed(sorted(weights, key=weights.get)))
-        idx = 0
-        for pos in POS_METRICS.keys():
-            if pos not in metric_map and idx < len(met_by_weight):
-                metric_map[pos] = met_by_weight[idx]
-                idx += 1        
+            properties = {prop: (vals['group'], float(vals['weight'])) for prop, vals in meta.items()}
+            most_important = select_top_metrics(properties)
+            metric_map = {pos: prop for pos, prop in zip(POS_METRICS.keys(), most_important)}
 
         icons = ICONS.copy()
         bg = os.path.join(PARTS_DIR, "bg.png")

@@ -1,0 +1,60 @@
+{
+    "sparse_categorical_accuracy": {
+        "name": "Average top-1 accuracy",
+        "shortname": "ACC1",
+        "unit": "percent",
+        "group": "Quality",
+        "maximize": true,
+        "independent_of_task": true
+    },
+    "corr_sparse_categorical_accuracy": {
+        "name": "Corruption top-1 accuracy",
+        "shortname": "CACC1",
+        "unit": "percent",
+        "group": "Robustness",
+        "maximize": true,
+        "independent_of_task": true
+    },
+    "sparse_top_k_categorical_accuracy": {
+        "name": "Average top-5 accuracy",
+        "shortname": "ACC5",
+        "unit": "percent",
+        "group": "Quality",
+        "maximize": true,
+        "independent_of_task": true
+    },
+    "corr_sparse_top_k_categorical_accuracy": {
+        "name": "Corruption top-5 accuracy",
+        "shortname": "CACC5",
+        "unit": "percent",
+        "group": "Robustness",
+        "maximize": true,
+        "independent_of_task": true
+    },
+    "parameters": {
+        "name": "Number of parameters",
+        "shortname": "MP",
+        "unit": "number",
+        "group": "Complexity",
+        "independent_of_task": true
+    },
+    "fsize": {
+        "name": "File size on disk",
+        "shortname": "FS",
+        "unit": "byte",
+        "group": "Complexity",
+        "independent_of_task": true
+    },
+    "power_draw": {
+        "name": "Energy draw per sample",
+        "shortname": "ENI",
+        "unit": "wattseconds",
+        "group": "Resources"
+    },
+    "running_time": {
+        "name": "Running time per sample",
+        "shortname": "RTI",
+        "unit": "seconds",
+        "group": "Resources"
+    }
+}

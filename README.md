@@ -2,7 +2,7 @@
 
 Software repository for more **sustainable and trustworthy reporting of machine learning results** - associated research paper published in [Data Mining and Knowledge Discovery (open access)](https://link.springer.com/article/10.1007/s10618-024-01020-3). With our publicly available [Exploration tool](https://strep.onrender.com), you can investigate all results - no code needs to run on your machine!
 
-![Framework Overview](./materials/general/framework.png)
+![Framework Overview](./materials/dissertation/figures/manual/ch3_framework.png)
 
 Note that we continue to advance our software - it is work in progress and subject to change, so you might encounter delays, off-times, and slight differences to our paper. Check out the [paper branch](https://github.com/raphischer/strep/tree/paper) for a frozen state of the software when the paper was published.
 
