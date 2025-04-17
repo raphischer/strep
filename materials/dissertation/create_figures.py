@@ -3,6 +3,8 @@ import importlib
 import math
 import os
 from itertools import product
+import sys
+sys.path.insert(1, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
 # STREP imports
 from main import DATABASES

@@ -27,6 +27,7 @@ app.run_server()
 ```
 
 ## News and Release History
+- **17 April 2025** - Some changes and lots of new figures, to be found in my PhD thesis (just submitted)
 - **13 January 2025** - Many fixes, (re-)added [Papers with Code](https://paperswithcode.com/) and [EdgeAccUSB](https://github.com/raphischer/edge-acc) databases
 - **2 October 2024** - Greatly improved index scaling (x15 speed), added / updated result databases from [MetaQuRe](https://github.com/raphischer/metaqure) and [AutoXPCR](https://github.com/raphischer/xpcr) (Forecasting)
 - **11 September 2024** - Presented our paper and repository at ECML-PKDD '24
@@ -72,9 +73,9 @@ or using the bibkey below:
 
 ## Repository Structure
 - `databases` contain different gathered evaluation databases of ML reports, including scripts to assemble some of them.
-- `strep` contains code that processes the databases, calculates index values and compound scores, and visualizes them.
-- `materials` contains some figures used in the central paper
-- the top-level `main.py` script is for running the application locally, while `deploy_on_render.py` is used for the website (using [render](https://dashboard.render.com/))
+- `strep` contains software that processes the databases, calculates index values and compound scores, and visualizes them.
+- `materials` contains some additional data, scripts, and figures used in papers and my PhD thesis.
+- The top level scripts are used to deploy the exploration tool on [render](https://dashboard.render.com/), and a main script for running it locally.
 
 ## Terms of Use
 Copyright (c) 2025 Raphael Fischer
