@@ -8,4 +8,4 @@ for name, fname in DATABASES.items():
     
 app = Visualization(databases)
 server = app.server
-app.run_server(debug=False, host='0.0.0.0', port=10000)
+app.run(debug=False, host='0.0.0.0', port=10000)
