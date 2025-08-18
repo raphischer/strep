@@ -22,6 +22,7 @@ import plotly.graph_objects as go
 import plotly.express as px
 from plotly.subplots import make_subplots
 from plotly.colors import sample_colorscale, make_colorscale
+import plotly.io as pio
 
 PLOT_WIDTH = 800
 PLOT_HEIGHT = PLOT_WIDTH // 3
@@ -48,8 +49,8 @@ LAM_SPEC, LAM_SPEC_TRANSP = LAMARR_COLORS[1], hex_to_alpha(LAMARR_COLORS[0], 0.3
 
 UNIT_FMT = CustomUnitReformater()
 
-DISS_MATERIAL = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'materials', 'dissertation', 'scripts_and_data')
-DISS_FIGURES = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'materials', 'dissertation', 'figures')
+DISS_MATERIAL = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'scripts_and_data')
+DISS_FIGURES = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'figures')
 
 XPCR_DS, XPCR_DS_2, XPCR_PROP = 'hospital_dataset', "car_parts_dataset_without_missing_values", 'MASE'
 META_DS, META_DS_2, META_PROP, META_ENV = 'parkinsons', 'breast_cancer', 'accuracy', 'Intel i7-6700 - Scikit-learn 1.4.0'
@@ -101,13 +102,16 @@ def finalize_tex(fname, rows, align, midrule=False):
 
 def other_chapters(show):
 
+    SEL_COLORS = ['#59bdf7', '#ffbc29', '#35cdb4', '#ec6469']
+
+    pio.templates[pio.templates.default].layout.colorway = SEL_COLORS
+
     fname = print_init('ch4_evaluation_study_codes') ###############################################################################
     results = pd.read_csv(os.path.join(DISS_MATERIAL, 'ch4_evaluation_study_codes.csv'))
     fig = go.Figure(go.Sunburst(labels=results['codes'], parents=results['parents'], values=results['counts'],
-                                branchvalues="total", insidetextorientation='radial', sort=False,
-                                marker=dict(colors=[''] + LAMARR_COL_SEL[:4])))
+                                branchvalues="total", insidetextorientation='radial', sort=False))
     fig.update_layout(width=PLOT_WIDTH, height=PLOT_WIDTH, margin={'l': 0, 'r': 0, 'b': 0, 't': 0})
-    fig.add_annotation(x=0.5, y=0.5, text="Opinions and Statements<br>Towards Research Questions", showarrow=False)
+    fig.add_annotation(x=0.5, y=0.5, text="Opinions and Statements<br>Toward Research Questions", showarrow=False)
     finalize(fig, fname, show, 40)
 
     fname = print_init('ch2_profiling_comparison') ###############################################################################
