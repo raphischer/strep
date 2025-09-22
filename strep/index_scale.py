@@ -194,7 +194,7 @@ def _scale_single(input, scale_m, meta, reference, mode):
 def _scaled_cols(input):
     return [col for col in input.columns if '_index' in col or '_rating' in col]
 
-def load_database(fname):
+def load_database(fname, average_model_doubles=True, separate_batch_size=False):
     try:
         if ".pkl" in fname:
             database = pd.read_pickle(fname)
@@ -207,6 +207,9 @@ def load_database(fname):
                 database.reset_index(drop=True)
         else:
             raise RuntimeError
+        database['model'] = database['model'].map(lambda mod: f'skt_{mod.replace("Classifier", "")}' if 'Classifier' in mod else mod)
+        if separate_batch_size:
+            database['model'] = database['model'] + '_' + database['batch_size'].astype(str) # add batch size to model name
     except Exception:
         raise RuntimeError(f'Could not load database "{fname}"\nPlease check the given file path and make sure to pass a pickled pandas dataframe!')
     meta = load_meta(fname)
@@ -226,6 +229,11 @@ def load_database(fname):
         'envs': ('environment', 2),
         'models': ('model', 4)
     }
+    # Calculate averages for numeric values grouped by 'environment', 'task', 'dataset', and 'model'
+    if average_model_doubles:
+        grouped_averages = database.groupby(['task', 'dataset', 'environment', 'model']).mean(numeric_only=True)[prop_cols]
+        rest_data = database.groupby(['task', 'dataset', 'environment', 'model']).first().drop(columns=prop_cols)
+        database = pd.concat([grouped_averages, rest_data], axis=1).reset_index()
     stats = [f'#{skey}: {str(pd.unique(database[key]).size).rjust(l)}' for skey, (key, l) in stats.items()]
     incompl = []
     for _, data in database.groupby(['task', 'dataset', 'environment']):

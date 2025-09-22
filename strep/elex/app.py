@@ -259,5 +259,6 @@ class Visualization(dash.Dash):
         elif 'sum' in dash.callback_context.triggered[0]['prop_id']:
             return dict(content=json.dumps(self.state['model'], indent=4, cls=PatchedJSONEncoder), filename=f'energy_summary_{f_id}.json')
         else: # full logs
-            # TODO load logs
-            raise NotImplementedError
+            columns = ['model', 'environment'] + list(self.state["metrics"].keys())
+            fname = f'comparison_{self.state["db"]}_{self.state["task"]}_{self.state["ds"]}.csv'
+            return dict(content=self.state["sub_database"][columns].to_csv(None), filename=fname)

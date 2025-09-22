@@ -155,7 +155,7 @@ def create_page(databases, indexmode, compound_mode, **kwargs):
             dbc.Col(dbc.Button("Open Paper", id="btn-open-paper", class_name='col-12'), width=3),
             dbc.Col(dbc.Button("Save Label", id="btn-save-label", class_name='col-12'), width=3),
             dbc.Col(dbc.Button("Save Summary", id="btn-save-summary", class_name='col-12'), width=3),
-            dbc.Col(dbc.Button("Save Logs", id="btn-save-logs", class_name='col-12'), width=3)
+            dbc.Col(dbc.Button("Save Compare", id="btn-save-logs", class_name='col-12'), width=3)
         ], style={'height': '50px'}, className="g-1"),
         # config buttons
         dbc.Row([
