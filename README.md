@@ -1,18 +1,18 @@
 # STREP - Sustainable and Trustworthy Reporting for ML and AI
 
-Software repository for more **sustainable and trustworthy reporting** in machine learning and artificial intelligence, as proposed in my [PhD thesis](http://doi.org/10.17877/DE290R-25716) and original [research paper](https://doi.org/10.1007/s10618-024-01020-3). With the publicly available [Exploration tool](https://strep.onrender.com), you can investigate all results - no code needs to run on your machine!
+Software repository for more **sustainable and trustworthy reporting** in machine learning and artificial intelligence, as proposed in my [PhD thesis](https://doi.org/10.17877/DE290R-25716) and original [research paper](https://doi.org/10.1007/s10618-024-01020-3). With the publicly available [Exploration tool](https://strep.onrender.com), you can investigate all results - no code needs to run on your machine!
 
 ![Framework Overview](./materials/dissertation/figures/manual/ch3_framework.png)
 
 Note that this software is under active development - it relfects work in progress and is subject to change, so you might encounter delays, off-times, and slight differences to earlier publications. Check out the [paper branch](https://github.com/raphischer/strep/tree/paper) and [dissertation branch](https://github.com/raphischer/strep/tree/diss) for frozen repository states at the respective time of publication.
 
 ## News and Release History
-- **22 September 2025** - Published my [PhD thesis](http://doi.org/10.17877/DE290R-25716) based on STREP
-- **17 April 2025** - Some changes and lots of new figures, soon to be found in my PhD thesis
-- **13 January 2025** - Many fixes, updated [Papers with Code](https://paperswithcode.com/) and [EdgeAccUSB](https://github.com/raphischer/edge-acc) databases
-- **2 October 2024** - Improved scaling methodology (x15 speed), updated [MetaQuRe](https://github.com/raphischer/metaqure) and [AutoXPCR](https://github.com/raphischer/xpcr) databases
-- **11 September 2024** - Improved functionality and presented the work at ECML-PKDD '24
-- **30 April 2024** - paper published in [Data Mining and Knowledge Discovery](https://link.springer.com/article/10.1007/s10618-024-01020-3), alongside the initial verison of this repository
+- **22/09/2025** - Published my [PhD thesis](https://doi.org/10.17877/DE290R-25716) based on STREP
+- **17/04/2025** - Some changes and lots of new figures, soon to be found in my PhD thesis
+- **13/01/2025** - Many fixes, updated [Papers with Code](https://paperswithcode.com/) and [EdgeAccUSB](https://github.com/raphischer/edge-acc) databases
+- **02/10/2024** - Improved scaling methodology (x15 speed), updated [MetaQuRe](https://github.com/raphischer/metaqure) and [AutoXPCR](https://github.com/raphischer/xpcr) databases
+- **11/09/2024** - Improved functionality and presented the work at ECML-PKDD '24
+- **30/04/2024** - paper published in [Data Mining and Knowledge Discovery](https://link.springer.com/article/10.1007/s10618-024-01020-3), alongside initial repository version
 
 ## Explore your own databases
 Instead of exploring the pre-assembled databases, you can also investigate your own custom results by following these steps:
@@ -49,11 +49,11 @@ I would love to showcase other resource-aware evaluation databases and highlight
 
 ## Citing
 
-If you appreciate our work and code, please cite my [PhD thesis](http://doi.org/10.17877/DE290R-25716) and original [research paper](https://doi.org/10.1007/s10618-024-01020-3):
+If you appreciate our work and code, please cite my [PhD thesis](https://doi.org/10.17877/DE290R-25716) and original [research paper](https://doi.org/10.1007/s10618-024-01020-3):
 
 ```
-Fischer, R. Advancing the Sustainability of Machine Learning and Artificial Intelligence via Labeling and Meta-Learning,”
-Ph.D. Dissertation, TU Dortmund University, 2025. https://doi.org/10.17877/DE290R-25716
+Fischer, R. Advancing the Sustainability of Machine Learning and Artificial Intelligence via Labeling and Meta-Learning.
+Ph.D. Dissertation, TU Dortmund University (2025). https://doi.org/10.17877/DE290R-25716
 
 Fischer, R., Liebig, T. & Morik, K. Towards More Sustainable and Trustworthy Reporting in Machine Learning. Data Mining and Knowledge Discovery 38, 1909–1928 (2024). https://doi.org/10.1007/s10618-024-01020-3
 ```
