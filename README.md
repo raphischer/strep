@@ -1,6 +1,6 @@
 # STREP - Sustainable and Trustworthy Reporting for ML and AI
 
-Software repository for more **sustainable and trustworthy reporting** in machine learning and artificial intelligence, as proposed in my [PhD thesis](https://doi.org/10.17877/DE290R-25716) and original [research paper](https://doi.org/10.1007/s10618-024-01020-3). With the publicly available [Exploration tool](https://strep.onrender.com), you can investigate all results - no code needs to run on your machine!
+Software repository for more **sustainable and trustworthy reporting** in machine learning and artificial intelligence, as proposed in my [PhD thesis](https://doi.org/10.17877/DE290R-25716) and original [research paper](https://doi.org/10.1007/s10618-024-01020-3). With the publicly available [Exploration tool](https://strep.lamarr.tu-dortmund.de/), you can investigate all results - no code needs to run on your machine!
 
 ![Framework Overview](./materials/dissertation/figures/manual/ch3_framework.png)
 

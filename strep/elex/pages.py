@@ -173,6 +173,7 @@ def create_page(databases, indexmode, compound_mode, **kwargs):
     )
     
     row0 = [
+        html.Div(id='blank-output'),
         dbc.Col(html.H1('Sustainable and Trustworthy ML Reporting')),
         dbc.Col(html.Img(src="assets/lamarr-logo-2023-negative.svg", className="img-fluid"), width=2)
     ]

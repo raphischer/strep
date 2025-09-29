@@ -85,6 +85,16 @@ class Visualization(dash.Dash):
         self.callback(Output("exp-config", "is_open"), Input("btn-open-exp-config", "n_clicks"), State("exp-config", "is_open")) (toggle_element_visibility)
         self.callback(Output("graph-config", "is_open"), Input("btn-open-graph-config", "n_clicks"), State("graph-config", "is_open")) (toggle_element_visibility)
         self.callback(Output('label-modal', 'is_open'), Input('model-label', "n_clicks"), State('label-modal', 'is_open')) (toggle_element_visibility)
+        # update browser tab title
+        dash.clientside_callback(
+            """
+            function(tab_value) {
+                document.title = 'STREP | ' + tab_value
+            }
+            """,
+            Output('blank-output', 'children'),
+            Input('db-switch', 'value')
+        )
 
     def update_scatter_graph(self, env_names=None, scale_switch=None, indexmode_switch=None, compound_mode=None, xweight=None, yweight=None, *slider_args):
         update_db = False
