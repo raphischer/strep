@@ -17,7 +17,7 @@ Note that this software is under active development - it reflects work in progre
 
 ## Explore your own databases
 Instead of exploring the pre-assembled databases, you can also investigate your own custom evaluations by following these steps:
-1. Prepare an evaluation database as a `pandas` DataFrame OR use [mlflow experiments csv](https://mlflow.org/docs/latest/api_reference/cli.html) export to create a `csv` file with your ML experiment runs (each row should list one model performance evaluation on some data set)
+1. Prepare an evaluation database as a `pandas` DataFrame OR use [mlflow experiments csv](https://mlflow.org/docs/latest/api_reference/cli.html#mlflow-experiments-csv) export to create a `csv` file with your ML experiment runs (each row should list one model performance evaluation on some data set)
 2. Store the pickled database or `csv` summary in any directory, and optionally add some `JSON` meta information (check our [databases](https://github.com/raphischer/strep/databases) for examples).
 3. Install the complete STREP functionaility by running `pip install strep[frontend]` (Python 3.8 - 3.12).
 4. Run the following code snippet:
