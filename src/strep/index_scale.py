@@ -299,6 +299,15 @@ def scale(input, meta=None, reference=None, mode='index', verbose=True):
     return final, boundaries
 
 def scale_and_rate(input, meta, reference=None, boundaries=None, compound_mode='mean', verbose=False):
+    # for downstream scaling, convert all columns to numeric type (wherever possible without information loss)
+    for col in input.columns:
+        try:
+            assert col not in input.select_dtypes('number').columns # already numeric
+            conv = input[col].astype(float) # test conversion
+            assert np.all(np.equal(conv, input[col])) # check for equality
+            input[col] = conv # store result
+        except Exception: # skip column
+            pass
     # make some properties available across all tasks if "independent_of_task" in meta
     if meta is not None and len(meta['properties']) >= 0:
         is_indep = lambda p, df: meta['properties'][p].get('independent_of_task') and df[p].dropna().size > 0
