@@ -5,7 +5,7 @@ with open("README.md", "r", encoding="utf-8") as fh:
 
 setup(
     name="strep",
-    version="0.0.3",
+    version="0.0.4",
     author="Raphael Fischer",
     author_email="raphael.fischer@tu-dortmund.de",
     description="Software for sustainable and trustworty reporting (STREP) in ML and AI",
