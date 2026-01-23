@@ -195,6 +195,7 @@ def _scaled_cols(input):
     return [col for col in input.columns if '_index' in col or '_rating' in col]
 
 def load_database(fname, average_model_doubles=True, separate_batch_size=False):
+    meta = load_meta(fname)
     try:
         if ".pkl" in fname:
             database = pd.read_pickle(fname)
@@ -205,14 +206,18 @@ def load_database(fname, average_model_doubles=True, separate_batch_size=False):
                 database = database.drop([col for col in database.columns if "params." not in col and "metrics." not in col], axis=1)
                 database = database.rename(lambda col: col.replace("metrics.", "").replace("params.", ""), axis=1)
                 database.reset_index(drop=True)
+            elif "timestamp" in database.columns and "tracking_mode" in database.columns: # codecarbon csv export
+                database["model"] = database["run_id"] + "_" + database["experiment_id"]
+                database = database.drop(database.drop(["model", "energy_consumed", "emissions", "duration"], axis=1).columns, axis=1)
+                database.reset_index(drop=True)
+            else:
+                raise RuntimeError
         else:
             raise RuntimeError
-        database['model'] = database['model'].map(lambda mod: f'skt_{mod.replace("Classifier", "")}' if 'Classifier' in mod else mod)
         if separate_batch_size:
             database['model'] = database['model'] + '_' + database['batch_size'].astype(str) # add batch size to model name
     except Exception:
         raise RuntimeError(f'Could not load database "{fname}"\nPlease check the given file path and make sure to pass a pickled pandas dataframe!')
-    meta = load_meta(fname)
     for field in ['environment', 'task', 'dataset']:
         if field not in database.columns:
             database[field] = 'unknown'
