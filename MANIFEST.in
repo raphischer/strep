@@ -1,0 +1,4 @@
+include src/strep/elex/assets/*
+include src/strep/labels/label_design/*
+include src/strep/labels/label_design/graphic_parts/*
+include /materials/dissertation/figures/manual/ch3_framework.png

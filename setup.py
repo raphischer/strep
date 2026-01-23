@@ -5,7 +5,7 @@ with open("README.md", "r", encoding="utf-8") as fh:
 
 setup(
     name="strep",
-    version="0.0.1",
+    version="0.0.3",
     author="Raphael Fischer",
     author_email="raphael.fischer@tu-dortmund.de",
     description="Software for sustainable and trustworty reporting (STREP) in ML and AI",
@@ -14,6 +14,7 @@ setup(
     url="https://github.com/raphischer/strep",
     package_dir={"": "src"},
     packages=find_packages(where="src"),
+    include_package_data=True,
     classifiers=[
         "Development Status :: 3 - Alpha",
         "Intended Audience :: Science/Research",
