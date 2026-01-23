@@ -3,18 +3,6 @@ from setuptools import setup, find_packages
 with open("README.md", "r", encoding="utf-8") as fh:
     long_description = fh.read()
 
-requirements, curr_extra = {'general': []}, 'general'
-with open('requirements.txt') as rf:
-    req = rf.readlines()
-
-for req_line in req:
-    if len(req_line.strip()) > 0: # empty line
-        if req_line.startswith('#'):
-            curr_extra = req_line.replace('#', '').strip()
-            requirements[curr_extra] = []
-        else:
-            requirements[curr_extra].append(req_line.strip())
-
 setup(
     name="strep",
     version="0.0.1",
@@ -38,6 +26,19 @@ setup(
         "Programming Language :: Python :: 3.12"
     ],
     python_requires=">=3.8",
-    install_requires=requirements['general'],
-    extras_require={k: req for k, req in requirements.items() if k != 'general'}
+    install_requires=[
+        "pandas==2.2.3",
+        "tqdm",
+    ],
+    extras_require={
+        "frontend": [
+            "pint",
+            "dash",
+            "plotly==5.24.1",
+            "dash-bootstrap-components",
+            "reportlab",
+            "PyMuPDF",
+            "qrcode",
+            "kaleido",
+    ]},
 )

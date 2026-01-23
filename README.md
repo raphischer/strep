@@ -1,12 +1,13 @@
 # STREP - Sustainable and Trustworthy Reporting for ML and AI
 
-Software repository for more **sustainable and trustworthy reporting** in machine learning and artificial intelligence, as proposed in my [PhD thesis](https://doi.org/10.17877/DE290R-25716) and original [research paper](https://doi.org/10.1007/s10618-024-01020-3). With the publicly available [Exploration tool](https://strep.lamarr.tu-dortmund.de/), you can investigate all results - no code needs to run on your machine!
+Software for **sustainable and trustworthy reporting** in machine learning and artificial intelligence, as proposed in my [PhD thesis](https://doi.org/10.17877/DE290R-25716) and original [research paper](https://doi.org/10.1007/s10618-024-01020-3). With the publicly available [Exploration tool](https://strep.lamarr.tu-dortmund.de/), you can investigate evaluation databases - no code needs to run on your machine!
 
 ![Framework Overview](./materials/dissertation/figures/manual/ch3_framework.png)
 
-Note that this software is under active development - it relfects work in progress and is subject to change, so you might encounter delays, off-times, and slight differences to earlier publications. Check out the [paper branch](https://github.com/raphischer/strep/tree/paper) and [dissertation branch](https://github.com/raphischer/strep/tree/diss) for frozen repository states at the respective time of publication.
+Note that this software is under active development - it relfects work in progress and is subject to change, so you might encounter delays, off-times, and differences to earlier publications. Check out the [paper branch](https://github.com/raphischer/strep/tree/paper) and [dissertation branch](https://github.com/raphischer/strep/tree/diss) for frozen repository states at the respective time of publication.
 
 ## News and Release History
+- **23/01/2026** - Now available on [PyPI](https://pypi.org/project/strep/0.0.1/), so you can finally just run `pip install strep`
 - **22/09/2025** - Published my [PhD thesis](https://doi.org/10.17877/DE290R-25716) based on STREP
 - **17/04/2025** - Some changes and lots of new figures, soon to be found in my PhD thesis
 - **13/01/2025** - Many fixes, updated [Papers with Code](https://paperswithcode.com/) and [EdgeAccUSB](https://github.com/raphischer/edge-acc) databases
@@ -15,11 +16,11 @@ Note that this software is under active development - it relfects work in progre
 - **30/04/2024** - paper published in [Data Mining and Knowledge Discovery](https://link.springer.com/article/10.1007/s10618-024-01020-3), alongside initial repository version
 
 ## Explore your own databases
-Instead of exploring the pre-assembled databases, you can also investigate your own custom results by following these steps:
-1. Prepare your database as a `pandas` DataFrame (each row lists one model performance result on some data set, with different measures as columns). 
-2. Store it in a directory, optionally add some `JSON` meta information (check our databases folder for examples and follow these naming conventions).
-3. Clone the repo and install necessary libraries via `pip install -r requirements.txt` (tested on Python 3.10).
-4. Either run `python main.py --custom path/to/database.pkl`, or use the following code snippet:
+Instead of exploring the databases assembled during my work, you can also investigate your own custom results by following these steps:
+1. Prepare your database as a `pandas` DataFrame (each row lists one model performance evaluation on some data set)
+2. Store it in a directory, optionally add some `JSON` meta information (check our [databases](https://github.com/raphischer/strep/tree/main/databases) for examples).
+3. Install all STREP functionaility by running `pip install strep[frontend]` (Python 3.8 - 3.12).
+4. Run the following code snippet:
 ```python
 from strep.index_scale import load_database, scale_and_rate
 from strep.elex.app import Visualization
