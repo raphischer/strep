@@ -18,14 +18,14 @@ Note that this software is under active development - it reflects work in progre
 ## Explore your own databases
 Instead of exploring the pre-assembled databases, you can also investigate your own custom evaluations by following these steps:
 1. Prepare an evaluation database as a `pandas` DataFrame OR use [mlflow experiments csv](https://mlflow.org/docs/latest/api_reference/cli.html#mlflow-experiments-csv) export to create a `csv` file with your ML experiment runs (each row should list one model performance evaluation on some data set)
-2. Store the pickled database or `csv` summary in any directory, and optionally add some `JSON` meta information (check our [databases](https://github.com/raphischer/strep/databases) for examples).
+2. Store the pickled database or `csv` summary in any directory, and optionally add some `JSON` meta information (check our [databases](https://github.com/raphischer/strep/tree/main/databases) for examples).
 3. Install the complete STREP functionaility by running `pip install strep[frontend]` (Python 3.8 - 3.12).
 4. Run the following code snippet:
 ```python
 from strep.index_scale import load_database, scale_and_rate
 from strep.elex.app import Visualization
 
-fname = 'path/to/your/database.pkl'
+fname = 'path/to/your/database.pkl' # or .csv summary
 # load database and meta information (if available)
 database, meta = load_database(fname)
 # index-scale and rate database
@@ -36,8 +36,8 @@ app.run()
 ```
 
 ## Contributing
-I firmaly believe that sustainable and trustworthy reporting is a **community effort**. 
-If you perform large-scale benchmark experiments, stress-test models, or have any other important evaluations to report - **please get in touch!**
+I firmly believe that sustainable and trustworthy reporting is a **community effort**. 
+If you perform large-scale benchmark experiments, stress-test AI models, or have other interesting ML evaluations to report - [please get in touch!](https://lamarr.cs.tu-dortmund.de/team/raphael-fischer/)
 I would love to include other resource-aware evaluation databases and highlight your work.
 
 ### Current available databases:
@@ -73,7 +73,7 @@ You can use the following bibtext entries:
 ```
 
 ```bibtex
-@article{fischer_dami,
+@article{fischer_strep,
 	title = {Towards More Sustainable and Trustworthy Reporting in Machine Learning},
 	volume = {38},
 	issn = {1573-756X},

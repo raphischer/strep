@@ -40,6 +40,6 @@ setup(
             "reportlab",
             "PyMuPDF",
             "qrcode",
-            "kaleido",
+            "kaleido==0.2.1",
     ]},
 )
